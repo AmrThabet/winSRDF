@@ -1,0 +1,32 @@
+; dlltool --base-file C:\DOCUME~1\SMARTX~1\LOCALS~1\Temp/cca00992.base --output-exp Emulator.exp --dllname Emulator.dll --output-def ../Output/libEmulator.def --no-export-all-symbols --add-stdcall-alias --exclude-symbol=DllMainCRTStartup@12 --def C:\DOCUME~1\SMARTX~1\LOCALS~1\Temp/cca00992.def --output-lib ../Output/libEmulator.a
+EXPORTS
+;	CPokasEmu::GetDirtyPage(int)
+	_ZN9CPokasEmu12GetDirtyPageEi @ 1
+;	CPokasEmu::MakeDumpFile(char*, int)
+	_ZN9CPokasEmu12MakeDumpFileEPci @ 2
+;	CPokasEmu::GetMemoryPage(int)
+	_ZN9CPokasEmu13GetMemoryPageEi @ 3
+;	CPokasEmu::SetBreakpoint(char*)
+	_ZN9CPokasEmu13SetBreakpointEPc @ 4
+;	CPokasEmu::SetBreakpoint(char*, unsigned long)
+	_ZN9CPokasEmu13SetBreakpointEPcm @ 5
+;	CPokasEmu::ClearDirtyPages()
+	_ZN9CPokasEmu15ClearDirtyPagesEv @ 6
+;	CPokasEmu::DisableBreakpoint(int)
+	_ZN9CPokasEmu17DisableBreakpointEi @ 7
+;	CPokasEmu::GetMemoryPageByVA(unsigned long)
+	_ZN9CPokasEmu17GetMemoryPageByVAEm @ 8
+;	CPokasEmu::GetNumberOfDirtyPages()
+	_ZN9CPokasEmu21GetNumberOfDirtyPagesEv @ 9
+;	CPokasEmu::GetNumberOfMemoryPages()
+	_ZN9CPokasEmu22GetNumberOfMemoryPagesEv @ 10
+;	CPokasEmu::Emulate()
+	_ZN9CPokasEmu7EmulateEv @ 11
+;	CPokasEmu::CPokasEmu(char*, char*)
+	_ZN9CPokasEmuC1EPcS0_ @ 12
+;	CPokasEmu::CPokasEmu(char*, char*)
+	_ZN9CPokasEmuC2EPcS0_ @ 13
+;	CPokasEmu::~CPokasEmu()
+	_ZN9CPokasEmuD1Ev @ 14
+;	CPokasEmu::~CPokasEmu()
+	_ZN9CPokasEmuD2Ev @ 15

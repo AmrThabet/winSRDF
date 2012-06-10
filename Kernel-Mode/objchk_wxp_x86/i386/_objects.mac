@@ -1,0 +1,28 @@
+
+
+386_OBJECTS=\
+ $(OBJ_PATH)\$O\entry.obj \
+ $(OBJ_PATH)\$O\driver.obj \
+ $(OBJ_PATH)\$O\device.obj \
+ $(OBJ_PATH)\$O\ssdtdevice.obj \
+ $(OBJ_PATH)\$O\dkomdevice.obj \
+ $(OBJ_PATH)\$O\filterdevice.obj \
+ $(OBJ_PATH)\$O\filefilterdevice.obj \
+ $(OBJ_PATH)\$O\filemanager.obj \
+ $(OBJ_PATH)\$O\registrymanager.obj \
+ $(OBJ_PATH)\$O\fastiodispatch.obj \
+ $(OBJ_PATH)\$O\tditcpsocket.obj \
+ $(OBJ_PATH)\$O\tdisniffer.obj \
+ $(OBJ_PATH)\$O\02.obj \
+
+
+
+
+
+# lowercased
+BASEDIR=e:\winddk\7600.16385.1
+OBJECT_ROOT=e:\winddk\7600.16385.1
+MAKEDIR_LOWERCASE=d:\amr\c\rootkits\02
+OBJ_PATH=d:\amr\c\rootkits\02
+CONCURRENT_MIDL=0
+CONCURRENT_MANIFEST_BUILD=0

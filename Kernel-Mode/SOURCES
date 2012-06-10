@@ -1,0 +1,26 @@
+TARGETNAME=rootkit01
+TARGETPATH=OBJ
+TARGETTYPE=DRIVER
+
+C_DEFINES=$(C_DEFINES)
+LINKER_FLAGS=/ignore:4075 /FORCE:MULTIPLE
+USER_C_FLAGS=/EHa /GR
+
+TARGETLIBS= $(BASEDIR)\lib\wnet\i386\ntoskrnl.lib   \
+            $(BASEDIR)\lib\wnet\i386\hal.lib        \
+            $(BASEDIR)\lib\wnet\i386\ntstrsafe.lib  
+            
+SOURCES=entry.cpp            \
+        Driver.cpp           \
+        Device.cpp           \
+        SSDTDevice.cpp       \
+        DKOMDevice.cpp       \
+        FilterDevice.cpp     \
+        FileFilterDevice.cpp \
+        FileManager.cpp      \
+        RegistryManager.cpp  \
+        FastIoDispatch.cpp   \
+        TdiTcpSocket.cpp     \
+        TdiSniffer.cpp       \
+        02.cpp
+        
