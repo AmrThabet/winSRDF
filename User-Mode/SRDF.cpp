@@ -2,6 +2,4 @@
 //
 
 #include "stdafx.h"
-
-
- 
+#include "SRDF.h"
