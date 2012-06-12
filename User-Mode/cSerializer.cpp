@@ -4,6 +4,7 @@
 
 using namespace std;
 using namespace Security::Elements::String;
+using namespace Security::Storage::Databases;
 
 cString cSerializer::Serialize()
 {
@@ -42,7 +43,7 @@ void cSerializer::Deserialize(cString XMLDocument)
 			while(1)
 			{
 				if (XMLDocument[i] == '>')break;
-				if (XMLDocument[i] == '\0')return;
+				if (XMLDocument[i] == '\0')goto FINISH;
 				i++;
 			}
 			Key.Substr(XMLDocument,KeyBegin,i-KeyBegin);
@@ -60,7 +61,7 @@ void cSerializer::Deserialize(cString XMLDocument)
 				while(1)
 				{
 					if (XMLDocument[i] == '>')break;
-					if (XMLDocument[i] == '\0')return;
+					if (XMLDocument[i] == '\0')goto FINISH;
 					i++;
 				}
 				CheckKey.Substr(XMLDocument,CheckKeyBegin,i-CheckKeyBegin);
@@ -73,7 +74,9 @@ void cSerializer::Deserialize(cString XMLDocument)
 		}
 		else return;
 	}
-
+FINISH:
+	GetSerialize(XMLParams);
+	cout << "Here 2 :) :)\n";
 }
 
 DWORD cSerializer::SkipInside(cString XMLDocument,int offset)
@@ -116,11 +119,11 @@ DWORD cSerializer::SkipInside(cString XMLDocument,int offset)
 
 void cSerializer::SetSerialize(cXMLHash& XMLParams)
 {
-	
+	cout << "Error Inside !!!\n";
 }
 
-void cSerializer::GetSerialize(cXMLHash XMLParams)
+void cSerializer::GetSerialize(cXMLHash& XMLParams)
 {
-	
+	cout << "Error Inside !!!\n";
 }
 

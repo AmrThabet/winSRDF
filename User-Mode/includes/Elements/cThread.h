@@ -39,14 +39,15 @@
  */
 
 using namespace Security::Elements::Application;
-
+using namespace Security::Elements::String;
 /** class Thread
   * Represents a thread of execution
   * in the process. To create a new Thread
   * write an inherited class ot Thread and
   * override the run() function
 **/
-class DLLIMPORT Security::Elements::Application::cThread {
+class DLLIMPORT Security::Elements::Application::cThread
+{
 
 private:
 	// unsigned long* to the low-level thread object
@@ -60,7 +61,7 @@ public:
 	virtual ~cThread();
 	void setName(const char* nm);
 	cString getName() const;
-	void start();
+	DWORD start();
 	virtual void run();
 	void sleep(long ms);
 	void suspend();

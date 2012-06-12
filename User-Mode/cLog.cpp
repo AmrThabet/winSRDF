@@ -23,7 +23,7 @@ cLog::cLog(cString LogName,cString Filename)
 	 }
 	time_t now = time(0);
 	struct tm* tm = localtime(&now);
-	LogFile << tm->tm_year << '/' << tm->tm_mon << '/' << tm->tm_mday
+	LogFile << tm->tm_mday << '/' << tm->tm_mon << '/' << (1900 + tm->tm_year)
          << ' ' << tm->tm_hour << ':' << tm->tm_min << ':' << tm->tm_sec << ": ";
 	cString msg = "LogFile : ";
 	msg += LogName + " Opened";

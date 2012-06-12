@@ -5,7 +5,7 @@ using namespace Security::Elements::Files;
 
 cFile::cFile(char* szFilename)
 {
-
+	Attributes = GetFileAttributes(szFilename);
     hFile = CreateFileA(szFilename,
                         GENERIC_READ,
                         FILE_SHARE_READ | FILE_SHARE_WRITE,

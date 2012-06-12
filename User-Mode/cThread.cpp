@@ -57,7 +57,8 @@ const int cThread::P_CRITICAL = THREAD_PRIORITY_TIME_CRITICAL;
 /** cThread()
   * default constructor
 **/  
-cThread::cThread() {
+cThread::cThread()
+{
 	m_hThread = NULL;
 	m_strName = "null";
 }
@@ -66,13 +67,15 @@ cThread::cThread() {
   * overloaded constructor
   * creates a Thread object identified by "nm"
 **/  
-cThread::cThread(const char* nm,cApp* App) {
+cThread::cThread(const char* nm,cApp* App)
+{
 	m_hThread = NULL;
 	m_strName = nm;
 	this->App = App;
 }
 
-cThread::~cThread() {
+cThread::~cThread()
+{
 	if(m_hThread != NULL) {
 		stop();
 	}
@@ -112,7 +115,7 @@ void cThread::sleep(long ms) {
   * creates a low-level thread object and calls the
   * run() function
 **/ 
-void cThread::start() {
+DWORD cThread::start() {
 	DWORD tid = 0;	
 	m_hThread = (unsigned long*)CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)_ou_thread_proc,(cThread*)this,0,&tid);
 	if(m_hThread == NULL) {
@@ -120,6 +123,7 @@ void cThread::start() {
 	}else {
 		setPriority(cThread::P_NORMAL);
 	}
+	return tid;
 }
 
 /** stop()
@@ -270,7 +274,8 @@ void Mutex::release() {
 	}
 }
 
-Mutex::~Mutex() {
+Mutex::~Mutex()
+{
 	/*if(m_hMutex != NULL) {
 		CloseHandle(m_hMutex);
 	}*/

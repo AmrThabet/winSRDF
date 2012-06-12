@@ -35,7 +35,47 @@ void cHash::AddItem(cString Name,cString Value)
 		HashArray = NewArray;
 	}
 }
-cString cHash::GetItem(cString Name,int id)
+void cHash::RemoveItem(DWORD id)
+{
+	if (id >= nItems) return;
+	if (nItems == 1)
+	{
+		free(HashArray);
+		nItems = 0;
+		return;
+	}
+	
+	HASH_STRUCT* NewArray = (HASH_STRUCT*)malloc(sizeof(HASH_STRUCT)*(nItems-1));
+	memset(NewArray,0,sizeof(HASH_STRUCT)*(nItems-1));
+	if (id > 0)memcpy(NewArray,HashArray,sizeof(HASH_STRUCT)*id);
+	memcpy(&NewArray[id],&HashArray[id+1],sizeof(HASH_STRUCT)*(nItems-id-1));
+	nItems--;
+	free(HashArray);
+	HashArray = NewArray;
+
+}
+void cHash::RemoveItem(cString Name,int id)
+{
+	for (DWORD i=0;i<nItems;i++)
+	{
+		if (*HashArray[i].Name == Name)
+		{
+			if (id == 0)
+			{
+				RemoveItem(i);
+				return;
+			}
+			id--;
+		}
+	}
+}
+
+void cHash::ClearItems()
+{
+	nItems = 0;
+	free(HashArray);
+}
+cString cHash::GetValue(cString Name,int id)
 {
 	for (DWORD i=0;i<nItems;i++)
 	{
@@ -49,7 +89,7 @@ cString cHash::GetItem(cString Name,int id)
 }
 cString cHash::operator[](cString Name)
 {
-	return GetItem(Name);
+	return GetValue(Name);
 }
 
 cString cHash::operator[](DWORD id)
@@ -82,7 +122,7 @@ DWORD cHash::GetNumberOfItems()
 	return nItems;
 }
 
-int cHash::GetNumberOfItems(cString Name)
+DWORD cHash::GetNumberOfItems(cString Name)
 {
 	int nThisItem = 0;
 	for (DWORD i=0; i < nItems; i++)
@@ -90,6 +130,24 @@ int cHash::GetNumberOfItems(cString Name)
 		if (*HashArray[i].Name == Name)nThisItem++;
 	}
 	return nThisItem;
+}
+
+void cHash::SetSerialize(cXMLHash& XMLParams)
+{
+	for(DWORD i = 0;i< nItems;i++)
+	{
+		XMLParams.AddText(*HashArray[i].Name,*HashArray[i].Value);
+	}
+}
+void cHash::GetSerialize(cXMLHash& XMLParams)
+{
+	cout << XMLParams.GetText(0) << "\n";
+	for(DWORD i = 0;i< XMLParams.GetNumberOfItems();i++)
+	{
+		cout << "The New Value : " << XMLParams.GetText(i) << "\n";
+		AddItem(XMLParams.GetKey(i),XMLParams.GetText(i));
+	}
+	cout << "Here :)\n";
 }
 
 void cXMLHash::AddXML(cString Name,cString XMLItem)
@@ -105,4 +163,39 @@ void cXMLHash::AddText(cString Name,cString str)
 void cXMLHash::AddBinary(cString Name,char *buff, DWORD length)
 {
 	AddItem(Name,(char*)cBase64String(buff,length));
+}
+
+cString cXMLHash::GetXML(cString Name,int id)
+{
+	return GetValue(Name,id);
+}
+cString cXMLHash::GetText(cString Name,int id)
+{
+	DWORD len = 0;
+	cXMLEncodedString EncodedStr;
+	EncodedStr.SetEncoded(GetValue(Name,id));
+	return EncodedStr.Decode(len);
+}
+cString cXMLHash::GetBinary(cString Name,DWORD &len,int id)
+{
+	cBase64String EncodedStr;
+	EncodedStr.SetEncoded(GetValue(Name,id));
+	return EncodedStr.Decode(len);
+}
+cString cXMLHash::GetXML(int id)
+{
+	return GetValue(id);
+}
+cString cXMLHash::GetText(int id)
+{
+	DWORD len = 0;
+	cXMLEncodedString EncodedStr;
+	EncodedStr.SetEncoded(GetValue(id));
+	return EncodedStr.Decode(len);
+}
+cString cXMLHash::GetBinary(int id,DWORD &len)
+{
+	cBase64String EncodedStr;
+	EncodedStr.SetEncoded(GetValue(id));
+	return EncodedStr.Decode(len);
 }

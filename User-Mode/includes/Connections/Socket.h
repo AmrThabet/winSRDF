@@ -1,3 +1,9 @@
+/*
+ * Copyrighted (C) by Elmue under The Code Project Open License (CPOL)
+ * Article: http://www.codeproject.com/Articles/34163/A-Universal-TCP-Socket-Class-for-Non-blocking-Serv
+ *
+ */
+
 
 #pragma once
 

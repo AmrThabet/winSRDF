@@ -648,7 +648,7 @@ class DLLIMPORT Security::Connections::Internet::cHTTPSocket
 	HINTERNET hConnection;
 public:
 	cHTTPSocket(cString URL,INTERNET_PORT Port){open(URL,Port);};
-	cHTTPSocket();
+	cHTTPSocket(){};
 	bool open(cString URL,INTERNET_PORT Port);
 	void close();
 	bool SendRequest(cString Request);
