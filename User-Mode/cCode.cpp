@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet@student.alx.edu.eg>
+ *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet[at]student.alx.edu.eg>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

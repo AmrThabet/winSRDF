@@ -136,6 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="wininet.lib libs\sqlite3.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -179,6 +180,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cCode.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\CFile.cpp"
 				>
 			</File>
@@ -200,10 +205,6 @@
 			</File>
 			<File
 				RelativePath=".\cLog.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Code.cpp"
 				>
 			</File>
 			<File

@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet@student.alx.edu.eg>
+ *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet[at]student.alx.edu.eg>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -142,6 +142,7 @@ public:
 
 class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cRecursiveScanner
 {
+	DWORD Level;
 	WIN32_FIND_DATA file_data;
 public:
 	int nDirectories;
@@ -151,8 +152,8 @@ public:
 	void Scan(cString DirectoryName);
 	~cRecursiveScanner();
 	void FindFiles(cString wrkdir);
-	virtual bool DirectoryCallback(cString DirName);
-	virtual void FileCallback(cString Filename,cString FullName);
+	virtual bool DirectoryCallback(cString DirName,cString FullName,int Level);
+	virtual void FileCallback(cString Filename,cString FullName,int Level);
 };
 
 class  DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cProcessScanner

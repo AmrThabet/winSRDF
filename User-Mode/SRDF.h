@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet@student.alx.edu.eg>
+ *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet[at]student.alx.edu.eg>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -190,7 +190,9 @@ using namespace Security::Storage;
 
 #define APP_NOANOTHERINSTANCE	0x01
 #define APP_ADDLOG				0x02
-#define APP_REGISTRYSETTINGS	0x04
+#define APP_DEFINEDATABASE		0x04
+#define APP_REGISTRYSETTINGS	0x08
+
 
 class DLLIMPORT Security::Elements::Application::cApp
 {
@@ -210,9 +212,9 @@ public:
 	cString AppName;
 	Security::Elements::Application::Mutex LogMutex;
 	Security::Elements::Application::Mutex DatabaseMutex;
+	Databases::cDatabase* Database;
 	Security::Storage::Files::cLog* Log;
 	Registry::cRegistryKey Settings;
-	Databases::cDatabase Database;
 	cHash Request;
 	cApp(cString AppName);
 	~cApp();

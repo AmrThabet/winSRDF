@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet@student.alx.edu.eg>
+ *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet[at]student.alx.edu.eg>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,11 +81,23 @@ cHash* cRecursiveScanner::GetDrives()
 }
 void cRecursiveScanner::Scan(cString DirectoryName)
 {
+	char* buff = (char*)malloc(MAX_PATH);
+	memset(buff,0,MAX_PATH);
+	DWORD Length = 0;
+	if (Length = ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH) > MAX_PATH)
+	{
+		char* buff = (char*)malloc(Length);
+		memset(buff,0,Length);
+		ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH);
+	}
+	DirectoryName = buff;
+	Level = 0;
 	FindFiles(DirectoryName);
 }
 
 void cRecursiveScanner::FindFiles(cString wrkdir)
 {
+	Level++;
     cString temp;
 	HANDLE fHandle;
     temp = wrkdir + "\\" + "*";
@@ -102,7 +114,7 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
                     strcmp(file_data.cFileName, "..") != 0 )
                 
 		{
-				if (DirectoryCallback(wrkdir + "\\" + file_data.cFileName))
+				if (DirectoryCallback(file_data.cFileName,wrkdir + "\\" + file_data.cFileName,Level))
 				{
 					nDirectories++;
 					FindFiles(wrkdir + "\\" + file_data.cFileName);
@@ -116,7 +128,7 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
 				strcmp(file_data.cFileName, "..") != 0)
 			{
 				nFiles++;
-				FileCallback(file_data.cFileName,wrkdir + "\\" + file_data.cFileName);
+				FileCallback(file_data.cFileName,wrkdir + "\\" + file_data.cFileName, Level);
 			}
 		}
         while( FindNextFile( fHandle, &file_data ) ) 
@@ -125,7 +137,7 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
                     strcmp(file_data.cFileName, ".") != 0 && 
                     strcmp(file_data.cFileName, "..") != 0 )
                 {
-						if (DirectoryCallback(wrkdir + "\\" + file_data.cFileName))
+						if (DirectoryCallback(file_data.cFileName,wrkdir + "\\" + file_data.cFileName,Level))
 						{
 							nDirectories++;
 							FindFiles(wrkdir + "\\" + file_data.cFileName);
@@ -137,22 +149,22 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
 						 strcmp(file_data.cFileName, "..") != 0)
 					{
 						nFiles++;
-						FileCallback(file_data.cFileName,wrkdir + "\\" + file_data.cFileName);
+						FileCallback(file_data.cFileName,wrkdir + "\\" + file_data.cFileName,Level);
 					}
 				}
         }
     }
-
+	Level--;
 }
 
 
-bool cRecursiveScanner::DirectoryCallback(cString DirName)
+bool cRecursiveScanner::DirectoryCallback(cString DirName,cString FullName,int Level)
 {
 	
 	return true;
 }
 
-void cRecursiveScanner::FileCallback(cString Filename,cString FullName)
+void cRecursiveScanner::FileCallback(cString Filename,cString FullName,int Level)
 {
 	//cout << Filename << "\n";
 	
