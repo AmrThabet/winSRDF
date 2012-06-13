@@ -172,6 +172,23 @@ public:
 };
 
 
+ class DLLIMPORT Security::Elements::String::cList
+{
+	
+	char* head;
+	DWORD nItems;
+	int Ssize;
+	
+public:
+	cList(int size);
+	~cList();
+	void AddItem(char* item);
+	DWORD GetNumberOfItems();
+	char* GetItem(int size);
+	char* GetLastItem();
+};
+
+
 class DLLIMPORT Security::Elements::String::cEncryptedString
 {
 protected:

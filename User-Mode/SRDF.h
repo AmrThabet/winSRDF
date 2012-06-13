@@ -52,6 +52,7 @@ namespace Security
 			class cHash;
 			class cXMLHash;
 			class cXMLEncodedString;
+			class cList;
 		}
 		namespace Packets
 		{
@@ -119,6 +120,7 @@ namespace Security
 					namespace Scanning
 					{
 						class cRecursiveScanner;
+						class cProcessScanner;
 					}
 					namespace Injection
 					{

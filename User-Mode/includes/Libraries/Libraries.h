@@ -154,3 +154,12 @@ public:
 	virtual bool DirectoryCallback(cString DirName);
 	virtual void FileCallback(cString Filename,cString FullName);
 };
+
+class  DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cProcessScanner
+{
+	bool isSuccess;
+public:
+	cHash ProcessList;
+	bool IsSuccess();
+	cProcessScanner(Security::Storage::Files::cLog* logObj = NULL);
+};

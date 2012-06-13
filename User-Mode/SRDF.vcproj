@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wininet.lib sqlite3.lib"
+				AdditionalDependencies="wininet.lib libs\sqlite3.lib"
 				LinkIncremental="2"
 				ModuleDefinitionFile=""
 				AddModuleNamesToAssembly=""
@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cList.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cLog.cpp"
 				>
 			</File>
@@ -208,6 +212,10 @@
 			</File>
 			<File
 				RelativePath=".\CPokasEmu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cProcessScanner.cpp"
 				>
 			</File>
 			<File
@@ -295,31 +303,39 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\cRecursiveScanner.h"
+				RelativePath=".\includes\Connections\Connections.h"
 				>
 			</File>
 			<File
-				RelativePath=".\cString.h"
+				RelativePath=".\includes\Elements\cString.h"
 				>
 			</File>
 			<File
-				RelativePath=".\cThread.h"
+				RelativePath=".\includes\Elements\cThread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Disassembler.h"
+				RelativePath=".\includes\Libraries\Disassembler.h"
 				>
 			</File>
 			<File
-				RelativePath=".\pe.h"
+				RelativePath=".\includes\Elements\Elements.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Socket.h"
+				RelativePath=".\includes\Libraries\Libraries.h"
 				>
 			</File>
 			<File
-				RelativePath=".\sqlite3.h"
+				RelativePath=".\includes\Elements\pe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Connections\Socket.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Storage\sqlite3.h"
 				>
 			</File>
 			<File
@@ -328,6 +344,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Storage\Storage.h"
 				>
 			</File>
 			<File
