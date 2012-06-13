@@ -203,6 +203,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Code.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\CPEFile.cpp"
 				>
 			</File>
