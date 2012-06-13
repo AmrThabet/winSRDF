@@ -187,7 +187,7 @@ class DLLIMPORT Security::Storage::Registry::cRegistryKey;
 //--------------------------------------//
 
 using namespace Security::Storage;
-
+using namespace Security::Elements::Application;
 #define APP_NOANOTHERINSTANCE	0x01
 #define APP_ADDLOG				0x02
 #define APP_DEFINEDATABASE		0x04
@@ -210,8 +210,9 @@ class DLLIMPORT Security::Elements::Application::cApp
 	void GetRequest(int argc, char *argv[]);
 public:
 	cString AppName;
-	Security::Elements::Application::Mutex LogMutex;
-	Security::Elements::Application::Mutex DatabaseMutex;
+	Mutex InstanceMutex;
+	Mutex LogMutex;
+	Mutex DatabaseMutex;
 	Databases::cDatabase* Database;
 	Security::Storage::Files::cLog* Log;
 	Registry::cRegistryKey Settings;

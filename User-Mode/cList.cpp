@@ -25,20 +25,23 @@ using namespace std;
 using namespace Security::Elements::String;
 
 
-
+cList::cList()
+{
+	nItems = 0;
+}
 cList::cList(int size)
 {
-	nItems=0;
-	Ssize=size;
+	nItems = 0;
+	Ssize = size;
 };
 
 cList::~cList()
 {
 
-	if(nItems>0)
+	if (nItems > 0)
 	{
-	nItems=0;
-	free(head);
+		nItems = 0;
+		free(head);
 	}
 };
 
@@ -67,28 +70,6 @@ void cList::AddItem(char* item)
 	}
 }
 
-/*
-cString cHash::operator[](cString Name)
-{
-	for (DWORD i=0;i<nItems;i++)
-	{
-		if (*HashArray[i].Name == Name)return *HashArray[i].Value;
-	}
-	return * new cString("");
-}
-*/
-
-/*
-bool cHash::IsFound(cString Name)
-{
-	for (DWORD i=0;i<nItems;i++)
-	{
-		if (*HashArray[i].Name == Name)return true;
-	}
-	return false;
-}
-*/
-
 DWORD cList::GetNumberOfItems()
 {
 	return nItems;
@@ -96,7 +77,7 @@ DWORD cList::GetNumberOfItems()
 
 char* cList::GetItem(int index)
 {
-	if(nItems>0)
+	if(nItems > 0)
 	return &head[index*Ssize];
 	return NULL;
 }
@@ -106,4 +87,30 @@ char* cList::GetLastItem()
 	if(nItems>0)
 	return &head[(nItems-1)*Ssize];
 	return NULL;
+}
+
+void cList::SetSize(int size)
+{
+	Ssize = size;
+}
+int cList::GetSize()
+{
+	return Ssize;
+}
+char* cList::operator[](int index)
+{
+	return GetItem(index);
+}
+void cList::SetSerialize(cXMLHash& XMLParams)
+{
+	XMLParams.AddText("nItems",nItems);
+	XMLParams.AddText("Ssize",cString(Ssize));
+	XMLParams.AddBinary("Data",head,nItems*Ssize);
+}
+void cList::GetSerialize(cXMLHash& XMLParams)
+{
+	DWORD length = 0;
+	nItems = atoi(XMLParams.GetText("nItems"));
+	Ssize = atoi(XMLParams.GetText("Ssize"));
+	head = XMLParams.GetBinary("Data",length);
 }

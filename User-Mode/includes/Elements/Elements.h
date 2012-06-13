@@ -172,7 +172,7 @@ public:
 };
 
 
- class DLLIMPORT Security::Elements::String::cList
+ class DLLIMPORT Security::Elements::String::cList : public Security::Storage::Databases::cSerializer
 {
 	
 	char* head;
@@ -180,12 +180,18 @@ public:
 	int Ssize;
 	
 public:
+	cList();
 	cList(int size);
 	~cList();
 	void AddItem(char* item);
 	DWORD GetNumberOfItems();
-	char* GetItem(int size);
+	char* GetItem(int index);
 	char* GetLastItem();
+	void SetSize(int size);
+	int GetSize();
+	char* operator[](int index);
+	virtual void SetSerialize(cXMLHash& XMLParams);
+	virtual void GetSerialize(cXMLHash& XMLParams);
 };
 
 

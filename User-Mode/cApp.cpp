@@ -26,6 +26,7 @@ using namespace std;
 using namespace Security::Elements::Application;
 using namespace Security::Elements::String;
 using namespace Security::Storage::Files;
+using namespace Security::Storage::Databases;
 cApp::cApp(cString AppName)
 {
 	this->AppName = AppName;
@@ -39,6 +40,9 @@ cApp::cApp(cString AppName)
 }
 cApp::~cApp()
 {
+	InstanceMutex.release();
+	LogMutex.release();
+	DatabaseMutex.release();
 	if (Log != NULL) delete Log; 
 }
 cString cApp::GetApplicationFilename()
@@ -147,7 +151,7 @@ int cApp::getopt(int argc, char *argv[], char *optstring)
 
 void cApp::SetDefaultSettings()
 {
-	Flags |= (APP_NOANOTHERINSTANCE | APP_ADDLOG | APP_REGISTRYSETTINGS);
+	Flags |= (APP_NOANOTHERINSTANCE | APP_ADDLOG | APP_REGISTRYSETTINGS | APP_DEFINEDATABASE);
 	Options = "abc";
 	LogFilename = AppPath;
 	LogFilename += "\\LogFile.txt";
@@ -163,20 +167,20 @@ void cApp::Initialize(int argc, char *argv[])
 {
 	if (Flags & APP_NOANOTHERINSTANCE)
 	{
-		HANDLE hMutex = CreateMutex(NULL, FALSE, (char*)AppName);
-		if (GetLastError() == ERROR_ALREADY_EXISTS)
-		{
-		   // There is already an instance of this application running.
-		   ExitProcess(0);
-		}
+		if (!InstanceMutex.create(AppName))ExitProcess(0);
 	}
 	GetRequest(argc,argv);
 	if (Flags & APP_ADDLOG)
 	{
-		Log = new cLog("AppName",LogFilename);
-		LogMutex;
+		Log = new cLog(AppName,LogFilename);
+		LogMutex.create(AppName + "Log");
 	}
 	if (Flags & APP_REGISTRYSETTINGS)Settings.Initialize(RegistryType,RegistryPath,true);
+	if (Flags & APP_DEFINEDATABASE)
+	{
+		Database = new cSQLiteDatabase(AppName+".db");
+		DatabaseMutex.create(AppName + "Database");
+	}
 }
 void cApp::GetRequest(int argc, char *argv[])
 {

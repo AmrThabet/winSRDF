@@ -183,7 +183,8 @@ void cThread::resume() {
   * "ms" specifies a time-out for the wait operation.
   * "ms" defaults to 5000 milli-seconds
 **/ 
-bool cThread::wait(const char* m,long ms) {
+bool cThread::wait(const char* m,long ms)
+{
 	HANDLE h = OpenMutex(MUTEX_ALL_ACCESS,FALSE,m);
 	if(h == NULL) {
 		throw cThreadException("Mutex not found");
@@ -202,6 +203,11 @@ bool cThread::wait(const char* m,long ms) {
 	return false;
 }
 
+bool cThread::wait(Mutex* m,long ms)
+{
+	return wait(m->getName(),ms);
+}
+
 /** release(const char* m)  
   * releases the mutex "m" and makes it 
   * available for other threads
@@ -215,7 +221,10 @@ void cThread::release(const char* m) {
 		throw cThreadException("Failed to release mutex");
 	}
 }
-
+void cThread::release(Mutex* m)
+{
+	release(m->getName());
+}
 /**@ The Mutex class implementation
 **@/
 
@@ -243,16 +252,18 @@ Mutex::Mutex(const char* nm) {
   * frees the current mutex handle.
   * creates a Mutex object identified by "nm"
 **/  
-void Mutex::create(const char* nm) {
+bool Mutex::create(const char* nm) {
 	if(m_hMutex != NULL) {
 		CloseHandle(m_hMutex);
 		m_hMutex = NULL;
 	}
 	m_strName = nm;
 	m_hMutex = (unsigned long*)CreateMutex(NULL,FALSE,nm);
-	if(m_hMutex == NULL) {
-		throw cThreadException("Failed to create mutex");
+	if(m_hMutex == NULL)
+	{
+		return false;
 	}
+	return true;
 }
 /** getMutexHandle()
   * returns the handle of the low-level mutex object

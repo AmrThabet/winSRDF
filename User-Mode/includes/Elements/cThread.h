@@ -69,8 +69,9 @@ public:
 	void stop();
 
 	void setPriority(int p);
-
+	bool wait(Mutex* m,long ms=5000);
 	bool wait(const char* m,long ms=5000);
+	void release(Mutex* m);
 	void release(const char* m);
 
 public:
@@ -98,7 +99,7 @@ private:
 public:
 	Mutex();
 	Mutex(const char* nm);
-	void create(const char* nm);
+	bool create(const char* nm);
 	unsigned long* getMutexHandle();
 	cString getName();
 	void release();

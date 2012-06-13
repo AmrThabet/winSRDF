@@ -75,7 +75,8 @@ void cRegistryKey::EnumerateValues(DWORD &nValues)
 }
 void cRegistryKey::RefreshEntries()
 {
-	for(DWORD i = 0;i< nEntries;i++){
+	for(DWORD i = 0;i< nEntries;i++)
+	{
 		delete Entries[i];
 	}
 	free((PVOID)Entries);
