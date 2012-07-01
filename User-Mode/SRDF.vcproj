@@ -94,7 +94,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\Objs"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
@@ -136,13 +136,20 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wininet.lib libs\sqlite3.lib"
+				LinkLibraryDependencies="true"
+				AdditionalDependencies="wininet.lib libs\X86Emulator.lib libs\libyara.lib libs\sqlite3.lib"
 				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				SetChecksum="false"
+				DataExecutionPrevention="2"
 				TargetMachine="1"
+				ErrorReporting="1"
+				CLRUnmanagedCodeCheck="false"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -244,6 +251,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cYaraScanner.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\dllmain.cpp"
 				>
 				<FileConfiguration
@@ -320,7 +331,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\includes\Libraries\Disassembler.h"
+				RelativePath=".\includes\Libraries\cYaraScanner.h"
 				>
 			</File>
 			<File
@@ -356,7 +367,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\includes\Targets\Targets.h"
+				>
+			</File>
+			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Libraries\tib.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Libraries\x86emu.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Libraries\yara.h"
 				>
 			</File>
 		</Filter>

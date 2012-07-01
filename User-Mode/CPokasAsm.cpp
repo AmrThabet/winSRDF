@@ -17,45 +17,47 @@
  *  amr.thabet[at]student.alx.edu.eg
  *
  */
-
+ 
 #include "stdafx.h"
 #include "SRDF.h"
 #include <iostream>
 using namespace Security::Libraries::Malware::Assembly::x86;
 using namespace std;
 
-HMODULE PokasAsmDLL;
-
-
-CPokasAsm::CPokasAsm(char* DLLPath)
+CPokasAsm::CPokasAsm()
 {
-      PokasAsmDLL = LoadLibrary("Emulator.dll");
-	  if (PokasAsmDLL == NULL)return;
-	  PokasAsmConstructorFunc = (PokasAsmConstructor)GetProcAddress(PokasAsmDLL,"_Z20CPokasAsmConstructorPc");
-	  PokasAsmDestructorFunc = (PokasAsmDestructor)GetProcAddress(PokasAsmDLL,"_Z19CPokasAsmDestructorP9CPokasAsm"); 
-	  CPokasAsm_AssembleFunc = (CPokasAsm_Assemble)GetProcAddress(PokasAsmDLL,"_Z8AssembleP9CPokasAsmPcRm");
-	  CPokasAsm_DisassembleFunc = (CPokasAsm_Disassemble)GetProcAddress(PokasAsmDLL,"_Z11DisassembleP9CPokasAsmPcRm");
-	  CPokasAsm_Disassemble2Func = (CPokasAsm_Disassemble2)GetProcAddress(PokasAsmDLL,"_Z11DisassembleP9CPokasAsmPcP10ins_disasm"); 
-	  PokasAsmObj = PokasAsmConstructorFunc(DLLPath);
+	 m_objSystem = new System();
 }
+
 CPokasAsm::~CPokasAsm()
 {
-    PokasAsmDestructorFunc(PokasAsmObj);
+      delete m_objSystem;
+      m_objSystem = NULL;
 }
-char* CPokasAsm::Assemble(char* InstructionString, DWORD &Length)
+
+char* CPokasAsm::Disassemble(char* Buffer,DWORD &InstructionLength)
 {
-    return (char*)CPokasAsm_AssembleFunc(PokasAsmObj,InstructionString,Length);
-}
-char* CPokasAsm::Disassemble(char* Buffer, DWORD &InstructionLength)
-{
-    return (char*)CPokasAsm_DisassembleFunc(PokasAsmObj,Buffer,InstructionLength);
-}
+    string strInst;
+    DISASM_INSTRUCTION* ins;
+    ins = (DISASM_INSTRUCTION*)malloc(sizeof(DISASM_INSTRUCTION));
+    ins = m_objSystem->disasm(ins, Buffer, strInst);
+    char* cIns = (char*)malloc(strInst.length()+1);
+    memset(cIns,0,strInst.length()+1);
+    memcpy(cIns, strInst.c_str(), strInst.length());
+    InstructionLength = (DWORD)ins->hde.len;
+    free(ins);
+    return cIns;
+};
+
 DISASM_INSTRUCTION* CPokasAsm::Disassemble(char* Buffer,DISASM_INSTRUCTION* ins)
 {
-	return (DISASM_INSTRUCTION*)CPokasAsm_Disassemble2Func(PokasAsmObj,Buffer,ins);
-}
-/*DISASM_INSTRUCTION* CPokasAsm::Disassemble(char* Buffer, DWORD &InstructionLength)
+    ins = m_objSystem->disasm(ins, Buffer);
+    return ins;
+};
+char* CPokasAsm::Assemble(char* InstructionString, DWORD &Length)
 {
-    return (char*)CPokasAsm_DisassembleFunc(PokasAsmObj,Buffer,InstructionLength);
+      string s = InstructionString;
+      bytes* Data = m_objSystem->assembl(s);
+      Length = Data->length;
+      return (char*)Data->s;
 }
-*/

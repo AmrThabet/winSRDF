@@ -37,6 +37,7 @@ void cRegistryKey::Initialize(HKEY Key,cString KeyPath, bool Create)
 	{
 		isFound = true;
 		EnumerateValues(nEntries);
+		EnumerateKeys(nSubKeys);
 	}
 	else isFound = false;
 
@@ -73,6 +74,34 @@ void cRegistryKey::EnumerateValues(DWORD &nValues)
 	}
 	return;
 }
+void cRegistryKey::EnumerateKeys(DWORD &nKeys)
+{
+	DWORD maxKeyLength = 0;
+	RegQueryInfoKey(hKey,NULL,NULL,NULL,&nKeys,&maxKeyLength,NULL,NULL,NULL,NULL,NULL,NULL);
+	maxKeyLength++;
+	char* buff = (char*)malloc(maxKeyLength);	
+	memset(buff,0,maxKeyLength);
+	DWORD KeySize = maxKeyLength;
+	for (DWORD i = 0;i < nKeys;i++)
+	{
+			FILETIME ftLastWriteTime;
+            DWORD retCode = RegEnumKeyEx(hKey, i,
+                     buff, 
+                     &KeySize, 
+                     NULL, 
+                     NULL, 
+                     NULL, 
+                     &ftLastWriteTime); 
+            if (retCode == ERROR_NO_MORE_ITEMS) 
+            {
+                break;
+            }
+		SubKeys.AddItem(cString(i),buff);
+		memset(buff,0,maxKeyLength);
+		KeySize = maxKeyLength;
+	}
+	return;
+}
 void cRegistryKey::RefreshEntries()
 {
 	for(DWORD i = 0;i< nEntries;i++)
@@ -102,6 +131,10 @@ HKEY cRegistryKey::GetKeyHandle()
 int cRegistryKey::GetNumberOfEntries()
 {
 	return nEntries;
+}
+int cRegistryKey::GetNumberOfSubKeys()
+{
+	return nSubKeys;
 }
 //-----------------------------------------------------------------------------
 cRegistryEntry::cRegistryEntry(cRegistryKey* RegKey,cString Valuename)

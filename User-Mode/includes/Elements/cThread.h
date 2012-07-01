@@ -38,7 +38,7 @@
  * from use of the Software.
  */
 
-using namespace Security::Elements::Application;
+using namespace Security::Core;
 using namespace Security::Elements::String;
 /** class Thread
   * Represents a thread of execution
@@ -46,7 +46,7 @@ using namespace Security::Elements::String;
   * write an inherited class ot Thread and
   * override the run() function
 **/
-class DLLIMPORT Security::Elements::Application::cThread
+class DLLIMPORT Security::Core::cThread
 {
 
 private:
@@ -90,7 +90,7 @@ private:
   * Represents a Mutex object to synchronize
   * access to shaed resources.
 **/
-class DLLIMPORT Security::Elements::Application::Mutex {
+class DLLIMPORT Security::Core::Mutex {
 private:
 	// unsigned long* to the low-level mutex object
 	unsigned long* m_hMutex;
@@ -110,7 +110,7 @@ public:
   * thrown by Thread and Mutex function 
   * calls
 **/
-class DLLIMPORT Security::Elements::Application::cThreadException {
+class DLLIMPORT Security::Core::cThreadException {
 private:
 	cString msg;
 public:

@@ -20,62 +20,101 @@
 
 #include "stdafx.h"
 #include "SRDF.h"
+#include <stdio.h>
+#include <math.h>
 #include <iostream>
 
+
 using namespace Security::Libraries::Malware::OS::Win32::Emulation;
+using namespace Security::Targets::Files;
 using namespace std;
-HMODULE PokasEmuDLL;
-
-
+ 
 CPokasEmu::CPokasEmu(char *szFileName,char* DLLPath)
 {
-      PokasEmuDLL = LoadLibrary("Emulator.dll");
-	  if (PokasEmuDLL == NULL)return;
-	  PokasEmuConstructorFunc = (PokasEmuConstructor)GetProcAddress(PokasEmuDLL,"_Z20CPokasEmuConstructorPcS_");
-	  PokasEmuDestructorFunc = (PokasEmuDestructor)GetProcAddress(PokasEmuDLL,"_Z19CPokasEmuDestructorP9CPokasEmu"); 
-	  CPokasEmu_EmulateFunc = (CPokasEmu_Emulate)GetProcAddress(PokasEmuDLL,"_Z7EmulateP9CPokasEmu"); 
-	  CPokasEmu_SetBreakpoint1Func = (CPokasEmu_SetBreakpoint1)GetProcAddress(PokasEmuDLL,"_Z13SetBreakpointP9CPokasEmuPc"); 
-	  CPokasEmu_SetBreakpoint2Func = (CPokasEmu_SetBreakpoint2)GetProcAddress(PokasEmuDLL,"_Z13SetBreakpointP9CPokasEmuPcm"); 
-	  CPokasEmu_DisableBreakpointFunc = (CPokasEmu_DisableBreakpoint)GetProcAddress(PokasEmuDLL,"_ZN9CPokasEmu17DisableBreakpointEi "); 
-	  CPokasEmu_GetNumberOfMemoryPagesFunc = (CPokasEmu_GetNumberOfMemoryPages)GetProcAddress(PokasEmuDLL,"_Z22GetNumberOfMemoryPagesP9CPokasEmu"); 
-	  CPokasEmu_GetMemoryPageFunc = (CPokasEmu_GetMemoryPage)GetProcAddress(PokasEmuDLL,"_ZN9CPokasEmu13GetMemoryPageEi"); 
-	  CPokasEmu_GetMemoryPageByVAFunc = (CPokasEmu_GetMemoryPageByVA)GetProcAddress(PokasEmuDLL,"_Z17GetMemoryPageByVAP9CPokasEmum"); 
-	  CPokasEmu_GetRealAddrFunc = (CPokasEmu_GetRealAddr)GetProcAddress(PokasEmuDLL,"_Z11GetRealAddrP9CPokasEmum"); 
-	  CPokasEmu_GetNumberOfDirtyPagesFunc = (CPokasEmu_GetNumberOfDirtyPages)GetProcAddress(PokasEmuDLL,"_Z21GetNumberOfDirtyPagesP9CPokasEmu"); 
-	  CPokasEmu_GetDirtyPageFunc = (CPokasEmu_GetDirtyPage)GetProcAddress(PokasEmuDLL,"_Z12GetDirtyPageP9CPokasEmui"); 
-	  CPokasEmu_ClearDirtyPagesFunc = (CPokasEmu_ClearDirtyPages)GetProcAddress(PokasEmuDLL,"_Z15ClearDirtyPagesP9CPokasEmu");
-	  CPokasEmu_MakeDumpFileFunc = (CPokasEmu_MakeDumpFile)GetProcAddress(PokasEmuDLL,"_Z12MakeDumpFileP9CPokasEmuPci");
-	  CPokasEmu_GetRegFunc = (CPokasEmu_GetReg)GetProcAddress(PokasEmuDLL,"_Z6GetRegP9CPokasEmui");
-	  CPokasEmu_GetEipFunc = (CPokasEmu_GetEip)GetProcAddress(PokasEmuDLL,"_Z6GetEipP9CPokasEmu");
-	  CPokasEmu_GetImagebaseFunc = (CPokasEmu_GetImagebase)GetProcAddress(PokasEmuDLL,"_Z12GetImagebaseP9CPokasEmu");
-	  CPokasEmu_GetDisassemblyFunc = (CPokasEmu_GetDisassembly)GetProcAddress(PokasEmuDLL,"_Z14GetDisassemblyP9CPokasEmuPcS1_");
-	  PokasEmuObj = PokasEmuConstructorFunc(szFileName,DLLPath);
+	 m_szFileName = szFileName;
+	 process = NULL;
+	 m_objSystem = NULL;
+	 m_objEnvVar = NULL;
+	 m_objEnvVar = (EnviromentVariables*)malloc(sizeof(EnviromentVariables)); 
+	 memset( m_objEnvVar,0,sizeof(EnviromentVariables));
+	 m_objEnvVar->dllspath=DLLPath; 
+	 m_objEnvVar->kernel32=(DWORD)LoadLibraryA("kernel32.dll");
+	 m_objEnvVar->user32=(DWORD)LoadLibraryA("user32.dll");
+	 m_objEnvVar->MaxIterations=10000000;  
+	 m_objSystem = new System(m_objEnvVar);
+     process = new Process(m_objSystem,szFileName);
 }
+
+CPokasEmu::CPokasEmu(cPEFile* PEFile,char* DLLPath)
+{
+	m_szFileName = NULL;
+     process = NULL;
+     m_objEnvVar = NULL;
+     m_objEnvVar = (EnviromentVariables*)malloc(sizeof(EnviromentVariables)); 
+     memset( m_objEnvVar,0,sizeof(EnviromentVariables));
+     m_objEnvVar->dllspath=DLLPath; 
+     m_objEnvVar->kernel32=(DWORD)LoadLibraryA("kernel32.dll");
+     m_objEnvVar->user32=(DWORD)LoadLibraryA("user32.dll");
+	 m_objEnvVar->MaxIterations=10000000;  
+	 m_objSystem = new System(m_objEnvVar);
+     process = new Process(m_objSystem,(char*)PEFile->BaseAddress,PEFile->FileLength,PROCESS_UNLOADEDIMAGE);
+}
+CPokasEmu::CPokasEmu(char *buff,int size,int ImageType,char* DLLPath)
+{
+	 m_szFileName = NULL;
+     process = NULL;
+     m_objEnvVar = NULL;
+     m_objEnvVar = (EnviromentVariables*)malloc(sizeof(EnviromentVariables)); 
+     memset( m_objEnvVar,0,sizeof(EnviromentVariables));
+     m_objEnvVar->dllspath=DLLPath; 
+     m_objEnvVar->kernel32=(DWORD)LoadLibraryA("kernel32.dll");
+     m_objEnvVar->user32=(DWORD)LoadLibraryA("user32.dll");
+	 m_objEnvVar->MaxIterations=10000000;  
+	 m_objSystem = new System(m_objEnvVar);
+     process = new Process(m_objSystem,buff,size,ImageType);
+}
+
 CPokasEmu::~CPokasEmu()
 {
-    PokasEmuDestructorFunc(PokasEmuObj);
+      m_szFileName = NULL;
+      nSystemObjUses--;
+      if (nSystemObjUses == 0)
+      {
+          delete m_objSystem;
+          m_objSystem = NULL;
+      }
 }
 
 int CPokasEmu::Emulate()
 { 
-	return CPokasEmu_EmulateFunc(PokasEmuObj);
-	
+	process->MaxIterations = 1000000;
+    return process->emulate();
 }
 
+int CPokasEmu::Step()
+{
+	return process->emulatecommand();
+}
 //Breakpoints:
 //------------
 
 int CPokasEmu::SetBreakpoint(char* Breakpoint)
 {
-    return CPokasEmu_SetBreakpoint1Func(PokasEmuObj,Breakpoint);
+    	return process->debugger->AddBp(Breakpoint);
 }
-int CPokasEmu::SetBreakpoint(char* FuncName ,DWORD BreakpointFunc)
+
+int  CPokasEmu::SetBreakpoint(char* FuncName ,DWORD BreakpointFunc)
 {
-    return CPokasEmu_SetBreakpoint2Func(PokasEmuObj,FuncName,BreakpointFunc);
+        char* buffer = (char*)malloc(strlen(FuncName)+11);
+        memset(buffer,0,strlen(FuncName)+11);
+        _snprintf(buffer,10+strlen(FuncName),"__%s()",FuncName);
+    	process->debugger->define_func(FuncName,0,BreakpointFunc,0);
+    	return process->debugger->AddBp(buffer);
 }
+
 VOID CPokasEmu::DisableBreakpoint(int index)
 {
-     CPokasEmu_DisableBreakpointFunc(PokasEmuObj,index);
+     process->debugger->RemoveBp(index);
 }
 
 
@@ -84,60 +123,140 @@ VOID CPokasEmu::DisableBreakpoint(int index)
 
 int CPokasEmu::GetNumberOfMemoryPages()
 {
-    return CPokasEmu_GetNumberOfMemoryPagesFunc(PokasEmuObj);
+    return process->SharedMem->vmem_length;
 }
 MEMORY_STRUCT* CPokasEmu::GetMemoryPage(int index)
 {
-      return (MEMORY_STRUCT*)CPokasEmu_GetMemoryPageFunc(PokasEmuObj,index);
+      return (MEMORY_STRUCT*)process->SharedMem->vmem[index];
 }
 MEMORY_STRUCT* CPokasEmu::GetMemoryPageByVA(DWORD vAddr)
 {
-      return (MEMORY_STRUCT*)CPokasEmu_GetMemoryPageByVAFunc(PokasEmuObj,vAddr);
+      for (int i = 0; i < process->SharedMem->vmem_length; i++)
+      {
+          if (process->SharedMem->vmem[i]->vmem == vAddr)return (MEMORY_STRUCT*)process->SharedMem->vmem[i];
+      }
+      return NULL;   
 }
+
 DWORD CPokasEmu::GetRealAddr(DWORD vAddr)
 {
-	return CPokasEmu_GetRealAddrFunc(PokasEmuObj,vAddr);
+    for (int i = 0; i < process->SharedMem->vmem_length; i++)
+    {
+        if (vAddr >= process->SharedMem->vmem[i]->vmem && vAddr < (process->SharedMem->vmem[i]->vmem + process->SharedMem->vmem[i]->size))
+                  return process->SharedMem->vmem[i]->rmem + (vAddr - process->SharedMem->vmem[i]->vmem);
+    }
+	return NULL;
 }
 int CPokasEmu::GetNumberOfDirtyPages()
 {
-    return CPokasEmu_GetNumberOfDirtyPagesFunc(PokasEmuObj);
+    return process->SharedMem->cmem_length;
 }
 DIRTYPAGES_STRUCT* CPokasEmu::GetDirtyPage(int index)
 {
-    return (DIRTYPAGES_STRUCT*)CPokasEmu_GetDirtyPageFunc(PokasEmuObj,index);
+    return (DIRTYPAGES_STRUCT*)process->SharedMem->cmem[index];               
 }
 VOID CPokasEmu::ClearDirtyPages()
 {
-  return CPokasEmu_ClearDirtyPagesFunc(PokasEmuObj);
+  process->SharedMem->cmem_length = 0;   
 }
 int CPokasEmu::MakeDumpFile(char* OutputFile, int ImportFixType)
 {
 	if (ImportFixType == DUMP_ZEROIMPORTTABLE)
 	{
-		
-	}else if (ImportFixType == DUMP_FIXIMPORTTABLE)
-	{
-		//ReconstructImportTable(process);
-	}else
-	{
-		//UnloadImportTable(process);
+		ZeroImportTable(process);
 	}
-    return CPokasEmu_MakeDumpFileFunc(PokasEmuObj,OutputFile,ImportFixType);
+	else if (ImportFixType == DUMP_UNLOADIMPORTTABLE)
+	{
+		UnloadImportTable(process);
+	}
+	else if (ImportFixType == DUMP_FIXIMPORTTABLE)
+	{
+		ReconstructImportTable(process);
+	}
+    return PEDump(process->GetThread(0)->Eip,process,OutputFile);
 }
 
+//Working With Registers:
+//-----------------------
 DWORD CPokasEmu::GetReg(int index)
 {
-	return CPokasEmu_GetRegFunc(PokasEmuObj,index);
+    return process->GetThread(0)->Exx[index];
 }
+
 DWORD CPokasEmu::GetEip()
 {
-	return CPokasEmu_GetEipFunc(PokasEmuObj);
+  return process->GetThread(0)->Eip;  
 }
+
+DWORD CPokasEmu::GetEFLAGS()
+{
+  return process->GetThread(0)->EFlags;  
+}
+
+void CPokasEmu::SetReg(int index,DWORD value)
+{
+	process->GetThread(0)->Exx[index] = value;
+}
+
+void CPokasEmu::SetEip(DWORD value)
+{
+	process->GetThread(0)->EFlags = value;
+}
+
+void CPokasEmu::SetEFLAGS(DWORD value)
+{
+	process->GetThread(0)->Eip = value;
+}
+
+DWORD CPokasEmu::GetTIB()
+{
+	return process->GetThread(0)->GetFS();
+}
+
 DWORD CPokasEmu::GetImagebase()
 {
-	return CPokasEmu_GetImagebaseFunc(PokasEmuObj);
+    return process->GetImagebase();
 }
-int CPokasEmu::GetDisassembly(char* ptr, char* OutputString)
+
+//Disassembling:
+//-------------
+int CPokasEmu::GetDisassembly(char* ptr, char *OutputString)
 {
-	return CPokasEmu_GetDisassemblyFunc(PokasEmuObj,ptr,OutputString);
-};
+    string strInst;
+    DISASM_INSTRUCTION ins;
+	memset(&ins,0,sizeof(DISASM_INSTRUCTION));
+    DWORD dwLength;
+    char* byBuffer = (char*)process->SharedMem->read_virtual_mem((DWORD)ptr);
+    m_objSystem->disasm(&ins, byBuffer, strInst);
+    memcpy(OutputString, strInst.c_str(), strInst.length());
+    dwLength = (DWORD)ins.hde.len;
+    return dwLength;
+}
+
+//Working with APIs:
+//------------------
+DWORD CPokasEmu::DefineDLL(char* DLLName,char* DLLPath, DWORD VirtualAddress)
+{
+	int DLLIndex = m_objSystem->define_dll(DLLName,DLLPath,VirtualAddress);
+	return m_objSystem->DLLs[DLLIndex].vAddr;
+}
+
+#define API_INTERNAL_FUNC int (*)(Thread *, DWORD *)
+
+DWORD CPokasEmu::DefineAPI(DWORD DLLBase,char* APIName,int nArgs,DWORD APIFunc)
+{
+	int DLLIndex = 0;
+	for (int i = 0;i< m_objSystem->dll_entries;i++)
+	{
+		if (DLLBase == m_objSystem->DLLs[i].vAddr)
+		{
+			DLLIndex = i;
+			goto DLL_FOUND;
+		}
+	}
+	return 0;
+
+DLL_FOUND:
+	int APIIndex = m_objSystem->define_api(APIName,&m_objSystem->DLLs[DLLIndex],nArgs,(API_INTERNAL_FUNC)APIFunc);
+	return m_objSystem->APITable[APIIndex].addr;
+}

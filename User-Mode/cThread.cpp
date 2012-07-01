@@ -41,7 +41,7 @@
 
 #include <windows.h>
 #include "SRDF.h"
-using namespace Security::Elements::Application;
+using namespace Security::Core;
 
 const int cThread::P_ABOVE_NORMAL = THREAD_PRIORITY_ABOVE_NORMAL;
 const int cThread::P_BELOW_NORMAL = THREAD_PRIORITY_BELOW_NORMAL;

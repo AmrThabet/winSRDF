@@ -18,114 +18,34 @@
  *
  */
 #include "cString.h"
-#include "cThread.h"
 #include <Wincrypt.h>
-#include "pe.h"
 
 using namespace Security::Elements::String;
-
+using namespace Security::Elements::XML;
 
 //--------------------------------------//
-//--          Files Namespace         --//
+//--       Serializer Namespace       --//
 //--------------------------------------//
 
-
-class DLLIMPORT Security::Elements::Files::cFile
-{
-	HANDLE        hFile;
-    HANDLE        hMapping;
-public:
-    DWORD        BaseAddress;
-    DWORD        FileLength;
-	DWORD		 Attributes;
-	char*		 Filename;
-	cFile(char* szFilename);
-	int OpenFile(char* szFilename);
-	~cFile();
-};
-
-struct IMPORTTABLE_DLL;
-struct IMPORTTABLE_API;
-
-struct SECTION_STRUCT
-{
-	char* SectionName;
-	DWORD VirtualAddress;
-	DWORD VirtualSize;
-	DWORD PointerToRawData;
-	DWORD SizeOfRawData;
-	DWORD Characterisics;
-	DWORD RealAddr;
-};
-struct IMPORTTABLE
-{
-	DWORD nDLLs;
-	IMPORTTABLE_DLL* DLL;
-};
-struct IMPORTTABLE_DLL
-{
-	char* DLLName;
-	DWORD nAPIs;
-	IMPORTTABLE_API* API;
-};
-struct IMPORTTABLE_API
-{
-	char* APIName;
-	DWORD APIAddressPlace;
-};
-
-#define DATADIRECTORY_EXPORT		0x0001
-#define DATADIRECTORY_IMPORT		0x0002
-#define DATADIRECTORY_RESOURCE		0x0004
-#define DATADIRECTORY_EXCEPTION		0x0008
-#define DATADIRECTORY_CERTIFICATE	0x0010
-#define DATADIRECTORY_RELOCATION	0x0020
-#define DATADIRECTORY_DEBUG			0x0040
-#define DATADIRECTORY_ARCHITECT		0x0080
-#define DATADIRECTORY_MACHINE		0x0100
-#define DATADIRECTORY_TLS			0x0200
-#define DATADIRECTORY_CONF			0x0400
-#define DATADIRECTORY_BOUNDIMPORT	0x0800
-#define DATADIRECTORY_IAT			0x1000
-#define DATADIRECTORY_DELAYIMPORT	0x2000
-#define DATADIRECTORY_RUNTIME		0x4000
-#define DATADIRECTORY_RESERVED		0x8000
-
-class DLLIMPORT Security::Elements::Files::cPEFile : public Security::Elements::Files::cFile
+class DLLIMPORT Security::Elements::XML::cSerializer
 {
 private:
-
-	//Functions:
-	VOID initDataDirectory();
-	VOID initSections();
-	VOID initImportTable();
+	DWORD SkipInside(cString XMLDocument,int offset);		//it returns the new offset of the end;
 public:
-	//Variables
-	bool FileLoaded;
-	image_header* PEHeader;
-	DWORD Magic;
-	DWORD Subsystem;
-	DWORD Imagebase;
-	DWORD SizeOfImage;
-	DWORD Entrypoint;
-	DWORD FileAlignment;
-	DWORD SectionAlignment;
-	DWORD DataDirectories;
-	short nSections;
-	SECTION_STRUCT* Section;
-	IMPORTTABLE ImportTable;
-	//Functions
-	cPEFile(char* szFilename);
-	~cPEFile();
-	DWORD RVAToOffset(DWORD RVA);
-	DWORD OffsetToRVA(DWORD RawOffset);
-
+	cSerializer(){};
+	~cSerializer(){};
+	cString Serialize();
+	void Deserialize(cString XMLDocument);
+	virtual void SetSerialize(cXMLHash& XMLParams);
+	virtual void GetSerialize(cXMLHash& XMLParams);
 };
+
+
 //--------------------------------------//
 //--        Strings Namespace         --//
 //--------------------------------------//
 
-class DLLIMPORT Security::Elements::String::cHash : public Security::Storage::Databases::cSerializer
+class DLLIMPORT Security::Elements::String::cHash : public Security::Elements::XML::cSerializer
 {
 protected:
 	struct HASH_STRUCT
@@ -155,7 +75,7 @@ public:
 	virtual void GetSerialize(cXMLHash& XMLParams);
 };
 
-class DLLIMPORT Security::Elements::String::cXMLHash : public Security::Elements::String::cHash
+class DLLIMPORT Security::Elements::XML::cXMLHash : public Security::Elements::String::cHash
 {
 public:
 	void AddXML(cString Name, cString XMLItem);
@@ -172,7 +92,7 @@ public:
 };
 
 
- class DLLIMPORT Security::Elements::String::cList : public Security::Storage::Databases::cSerializer
+ class DLLIMPORT Security::Elements::String::cList : public Security::Elements::XML::cSerializer
 {
 	
 	char* head;
@@ -252,7 +172,7 @@ public:
 	
 };
 
-class DLLIMPORT Security::Elements::String::cXMLEncodedString : public Security::Elements::String::cEncodedString
+class DLLIMPORT Security::Elements::XML::cXMLEncodedString : public Security::Elements::String::cEncodedString
 {
 public:
 	cXMLEncodedString(){};
@@ -266,7 +186,7 @@ public:
 //--         Code Namespace           --//
 //--------------------------------------//
 
-class DLLIMPORT Security::Elements::Code::cStoredProcedure : public Security::Storage::Databases::cSerializer
+class DLLIMPORT Security::Elements::Code::cStoredProcedure : public Security::Elements::XML::cSerializer
 {
 public:
 	cString Name;
@@ -281,7 +201,7 @@ public:
 	virtual void GetSerialize(cXMLHash& XMLParams);
 };
 
-class DLLIMPORT Security::Elements::Code::cNativeCode : public Security::Storage::Databases::cSerializer
+class DLLIMPORT Security::Elements::Code::cNativeCode : public Security::Elements::XML::cSerializer
 {
 	char* buff;
 	DWORD length;

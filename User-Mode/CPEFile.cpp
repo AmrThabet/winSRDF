@@ -24,7 +24,7 @@
 #include <iostream>
 
 using namespace std;
-using namespace Security::Elements::Files;
+using namespace Security::Targets::Files;
 
 cPEFile::cPEFile(char* szFilename) : cFile(szFilename)
 {

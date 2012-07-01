@@ -54,7 +54,7 @@ cHash* cSQLiteDatabase::GetItems(cString TableName)
         result = sqlite3_step(QueryTableStm);
         if(result == SQLITE_ROW)
         {
-			Values->AddItem(cString(sqlite3_column_int(QueryTableStm, 0)),(char*)sqlite3_column_text(QueryTableStm, 1));
+			Values->AddItem(cString(sqlite3_column_int(QueryTableStm, 0)),cString((char*)sqlite3_column_text(QueryTableStm, 1)));
         }
         else
         {

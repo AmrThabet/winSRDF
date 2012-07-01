@@ -35,13 +35,22 @@ using namespace std;
 //-----------------------------
 namespace Security
 {
-	namespace Elements
+	namespace Targets
 	{
 		namespace Files
 		{
 			class cFile;
 			class cPEFile;
 		}
+		namespace Packets
+		{
+			class cPacket;
+		}
+		class cProcess;
+	}
+
+	namespace Elements
+	{
 		namespace String
 		{
 			class cString;
@@ -50,28 +59,20 @@ namespace Security
 			class cEncryptedString;
 			class cMD5String;
 			class cHash;
-			class cXMLHash;
-			class cXMLEncodedString;
 			class cList;
-		}
-		namespace Packets
-		{
-			class cPacket;
 		}
 		namespace Code
 		{
 			class cStoredProcedure;
 			class cNativeCode;
 		}
-		namespace Application
+		namespace XML
 		{
-			class cApp;
-			class cThread;
-			class cThreadException;
-			class Mutex;
+			class cSerializer;
+			class cXMLHash;
+			class cXMLEncodedString;
 		}
-		
-		class cProcess;		
+			
 	}
 	namespace Connections
 	{
@@ -96,7 +97,6 @@ namespace Security
 		{
 			class cDatabase;
 			class cSQLiteDatabase;
-			class cSerializer;
 		}
 		namespace Files
 		{
@@ -121,6 +121,7 @@ namespace Security
 					{
 						class cRecursiveScanner;
 						class cProcessScanner;
+						class cYaraScanner;
 					}
 					namespace Injection
 					{
@@ -156,45 +157,43 @@ namespace Security
 			}
 		}
 	}
+
+	//Core Managment System
+
+	namespace Core
+	{
+		class cApp;
+		class cThread;
+		class cThreadException;
+		class Mutex;
+	}
 }
 
-//-------------------------------------------------------------------
-//XML Serializer
-//--------------
+
 using namespace Security::Elements::String;
-class DLLIMPORT Security::Storage::Databases::cSerializer
-{
-private:
-	DWORD SkipInside(cString XMLDocument,int offset);		//it returns the new offset of the end;
-public:
-	cSerializer(){};
-	~cSerializer(){};
-	cString Serialize();
-	void Deserialize(cString XMLDocument);
-	virtual void SetSerialize(cXMLHash& XMLParams);
-	virtual void GetSerialize(cXMLHash& XMLParams);
-};
+
 class DLLIMPORT Security::Storage::Registry::cRegistryKey;
 
 #include "includes\ELements\Elements.h"
 #include "includes\Connections\Connections.h"
 #include "includes\Storage\Storage.h"
 #include "includes\Libraries\Libraries.h"
-
-
+#include "includes\Targets\Targets.h"
 //--------------------------------------//
 //--      Application Namespace       --//
 //--------------------------------------//
 
 using namespace Security::Storage;
-using namespace Security::Elements::Application;
+using namespace Security::Core;
+
+
 #define APP_NOANOTHERINSTANCE	0x01
 #define APP_ADDLOG				0x02
 #define APP_DEFINEDATABASE		0x04
 #define APP_REGISTRYSETTINGS	0x08
 
 
-class DLLIMPORT Security::Elements::Application::cApp
+class DLLIMPORT Security::Core::cApp
 {
 	int optind;
 	int opterr;

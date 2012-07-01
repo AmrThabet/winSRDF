@@ -23,7 +23,7 @@
 #include <iostream>
 
 using namespace std;
-using namespace Security::Elements::Application;
+using namespace Security::Core;
 using namespace Security::Elements::String;
 using namespace Security::Storage::Files;
 using namespace Security::Storage::Databases;

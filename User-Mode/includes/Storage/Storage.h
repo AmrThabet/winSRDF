@@ -60,8 +60,10 @@ class DLLIMPORT Security::Storage::Registry::cRegistryKey
 	HKEY hKey;
 	bool isFound;
 	DWORD nEntries;
+	DWORD nSubKeys;
 	Security::Storage::Registry::cRegistryEntry** Entries;
 public:
+	cHash SubKeys;
 	cRegistryKey();
 	cRegistryKey(HKEY Key,cString KeyPath,bool Create){Initialize(Key,KeyPath,Create);}
 	void Initialize(HKEY Key,cString KeyPath,bool Create);
@@ -70,8 +72,10 @@ public:
 	Security::Storage::Registry::cRegistryEntry operator [](char* Value);
 	Security::Storage::Registry::cRegistryEntry operator [](DWORD index);
 	int GetNumberOfEntries();
+	int GetNumberOfSubKeys();
 	bool IsFound();									//Always == true if you set Create = true
-	void EnumerateValues(DWORD &nValues);			//Array of cString
+	void EnumerateValues(DWORD &nValues);			//Array of RegistryEntry
+	void EnumerateKeys(DWORD &nKeys);				//Hash of id and Subkey Name
 	HKEY GetKeyHandle();
 	void RefreshEntries();
 

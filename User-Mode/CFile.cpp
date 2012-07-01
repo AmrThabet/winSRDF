@@ -17,10 +17,12 @@
  *  amr.thabet[at]student.alx.edu.eg
  *
  */
+
+
 #include "stdafx.h"
 #include "SRDF.h"
 
-using namespace Security::Elements::Files;
+using namespace Security::Targets::Files;
 
 cFile::cFile(char* szFilename)
 {
