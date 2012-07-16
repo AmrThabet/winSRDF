@@ -104,11 +104,9 @@ void cProcess::AnalyzeProcess()
 		
 		ReadProcessMemory((HANDLE)procHandle,&(ppeb->ProcessParameters),&addressToProcessParameters,sizeof(addressToProcessParameters),NULL);
 		ReadProcessMemory((HANDLE)procHandle,(LPCVOID)addressToProcessParameters,&tmp3,sizeof(tmp3),NULL);
-		//cout << tmp3.Commandline.Length<<endl;
 		command = (LPWSTR) malloc ((tmp3.Commandline.Length + 1)*2);
 		memset(command , 0 ,(tmp3.Commandline.Length + 1)*2);
 		ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp3.Commandline.Buffer),command,(tmp3.Commandline.Length + 1)*2,&bytes1);
-		//cout << bytes1 <<endl;
 		processCommandLine = cString (Unicode2Ansi( command ,(tmp3.Commandline.Length+1)*2));
 		
 
@@ -192,7 +190,7 @@ cProcess::cProcess(int processId)
 
 		HINSTANCE hinstLib; 
 		MYPROC ProcAdd; 
-		BOOL fFreeResult, fRunTimeLinkSuccess = FALSE; 
+		BOOL fRunTimeLinkSuccess; 
 		isFound = false;
 	    
 		hinstLib = LoadLibrary(TEXT("ntdll.dll")); 
@@ -268,7 +266,7 @@ BOOL cProcess::Write (DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite
 
 	if (startAddressToWrite == NULL)
 	{
-		startAddressToWrite	= AllocateMemoryRemote(NULL, sizeToWrite);
+		startAddressToWrite	= Allocate(NULL, sizeToWrite);
 	}
 	
 	if (startAddressToWrite != NULL)
@@ -296,11 +294,11 @@ DWORD cProcess::DllInject(DWORD pointerToDll)
 	DWORD threadId = NULL;
 	
 	
-	remoteAddress = AllocateMemoryRemote(NULL ,(DWORD)strlen((char*) pointerToDll));
+	remoteAddress = Allocate(NULL ,(DWORD)strlen((char*) pointerToDll));
 
 	HMODULE handleToKernel32 = GetModuleHandle("KERNEL32");
 
-	if (WriteProcessMemoryRemote(remoteAddress , pointerToDll ,(DWORD)strlen( (char*) pointerToDll)))
+	if (Write(remoteAddress , pointerToDll ,(DWORD)strlen( (char*) pointerToDll)))
 	{
 		CreateRemoteThread((HANDLE)procHandle ,NULL , 0 , ( LPTHREAD_START_ROUTINE)GetProcAddress(handleToKernel32 , "LoadLibraryA") , (LPVOID)remoteAddress , 0 , & threadId);
 	

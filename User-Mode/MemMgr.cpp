@@ -292,6 +292,20 @@ void cMemoryManager::Free(void *ptr)
 
 cMemoryManager::~cMemoryManager()
 {
+	HEADER_HEAP_ELEMENT* AllocatedHeader = (HEADER_HEAP_ELEMENT*)HeapInfo->AllocatedSeparateBlocks;
+	do
+	{
+		if (AllocatedHeader == NULL)
+		{
+			break;
+		}
+		else
+		{
+			VirtualFree((LPVOID)AllocatedHeader->PointerToBuffer,0,MEM_RELEASE);
+		}
+		AllocatedHeader = (HEADER_HEAP_ELEMENT*)AllocatedHeader->pNextFreeListItem;
+	}while(1);
+
 	VirtualFree((LPVOID)pHeaderHeap,0,MEM_RELEASE);
 	VirtualFree((LPVOID)pBufferHeap,0,MEM_RELEASE);
 }
