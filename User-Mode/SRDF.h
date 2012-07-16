@@ -123,7 +123,7 @@ namespace Security
 						class cProcessScanner;
 						class cYaraScanner;
 					}
-					namespace Injection
+					namespace Hooking
 					{
 
 					}
@@ -166,6 +166,7 @@ namespace Security
 		class cThread;
 		class cThreadException;
 		class Mutex;
+		class cMemoryManager;
 	}
 }
 
@@ -179,8 +180,10 @@ class DLLIMPORT Security::Storage::Registry::cRegistryKey;
 #include "includes\Storage\Storage.h"
 #include "includes\Libraries\Libraries.h"
 #include "includes\Targets\Targets.h"
+
+
 //--------------------------------------//
-//--      Application Namespace       --//
+//--         Core Namespace           --//
 //--------------------------------------//
 
 using namespace Security::Storage;
@@ -224,3 +227,60 @@ public:
 	void Initialize(int argc, char *argv[]);
 	int Run();
 };
+
+//----------------------------------------------------------
+
+struct HEAP_INFO
+{
+	
+	DWORD	LastAllocatedHeader;
+	DWORD	LastAllocatedBuffer;
+	WORD	nHeaderAllocatedBlocks;
+	WORD	nBufferAllocatedBlocks;
+	WORD	nElements;
+	WORD	Reserved;
+	DWORD	HeapBegin;
+	DWORD	AllocatedSeparateBlocks;
+	DWORD	FreeSeparateBlocks;
+	DWORD	LargeFreeList;
+	DWORD	FreeLists[128];
+};
+
+struct HEADER_HEAP_ELEMENT
+{
+	DWORD	pNextFreeListItem;
+	DWORD	CanaryValue;
+	DWORD	PointerToBuffer;
+	DWORD	Tid;
+	WORD	Size;
+	WORD	Index;
+	WORD	Reserved;
+	BOOL	IsAllocated;
+	BOOL	IsGlobal;
+};
+
+struct BUFFER_HEAP_ELEMENT
+{
+	DWORD	CanaryValue;
+	WORD	NullBytes;
+	WORD	Index;
+};
+
+class DLLIMPORT Security::Core::cMemoryManager
+{
+	DWORD pHeaderHeap;
+	DWORD pBufferHeap;
+	HEAP_INFO* HeapInfo;
+	CRITICAL_SECTION 	CriticalSection;
+protected:
+	HEADER_HEAP_ELEMENT* AllocateHeaderElement();
+	BUFFER_HEAP_ELEMENT* AllocateBufferElement(DWORD size);
+	HEADER_HEAP_ELEMENT* GetElement(BUFFER_HEAP_ELEMENT* AllocatedBuffer);
+public:
+	cMemoryManager();
+	~cMemoryManager();
+	void* Allocate(WORD size,BOOL IsGlobal);
+	void Free(void* ptr);
+
+};
+

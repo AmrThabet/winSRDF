@@ -20,6 +20,7 @@
 
 #include "cThread.h"
 #include "pe.h"
+//#include "tib.h"
 
 using namespace Security::Elements::String;
 
@@ -119,4 +120,46 @@ public:
 	DWORD RVAToOffset(DWORD RVA);
 	DWORD OffsetToRVA(DWORD RawOffset);
 
+};
+
+//--------------------------------------//
+//--          Process Class           --//
+//--------------------------------------//
+
+
+struct ModuleInfo
+{
+	DWORD moduleImageBase;
+	DWORD moduleSizeOfImage;
+	cString* moduleName;
+	cString* modulePath;
+};
+
+class DLLIMPORT Security::Targets::cProcess
+{
+	void AnalyzeProcess();
+	cString Unicode2Ansi(LPWSTR,int);
+public:
+	// parameters
+	DWORD procHandle;
+	__PEB  *ppeb;
+	DWORD processImageBase;
+	ULONG processSizeOfImage;
+	cString processName;
+	cString processPath;
+	DWORD processParentID;
+	cString processCommandLine;
+	cList modulesList;
+	bool isFound;
+	
+	//methods
+	cProcess(int);
+	
+	DWORD Read(DWORD ,DWORD);
+	DWORD Allocate (DWORD,DWORD);
+	BOOL Write (DWORD,DWORD,DWORD);
+	DWORD DllInject(DWORD);
+	DWORD CreateThread(DWORD,DWORD);
+	
+	
 };
