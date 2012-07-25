@@ -1,3 +1,23 @@
+/*
+ *
+ *  Copyright (C) 2011-2012 Ghareeb Saad El-Deen
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to Amr Thabet
+ *  amr.thabet[at]student.alx.edu.eg
+ *
+ */
+
 #include "StdAfx.h"
 
 #include "SRDF.h"
@@ -196,47 +216,6 @@ char* cYaraScanner::CreatRule(cString name,cString wildcard,int condition)
 }
 
 
-/*
-
-void print_string(unsigned char* data, unsigned int length, int unicode)
-{
-	unsigned int i;
-	char* str;
-	
-    str = (char*) (data);
-	
-    for (i = 0; i < length; i++)
-    {
-        if (str[i] >= 32 && str[i] <= 126)
-        {
-            printf("%c",str[i]);
-        }
-        else
-        {
-            printf("\\x%02x", str[i]);
-        }
-        
-        if (unicode) i++;
-    }
-
-	printf("\n");
-}
-
-
-
-void print_hex_string(unsigned char* data, unsigned int length)
-{
-	unsigned int i;
-	
-    for (i = 0; i < length; i++)
-    {
-        printf("%02X ", data[i]);
-    }
-
-	printf("\n");
-}
-
-*/
 int callback(RULE* rule, void* data)
 {
 	cYaraScanner* x = (cYaraScanner*)data;
@@ -255,7 +234,7 @@ int cYaraScanner::ScannerCallback(RULE* rule)
 
 	if (rule_match)
 	{
-		STRING* gh=rule->string_list_head;
+		YSTRING* gh=rule->string_list_head;
 		TResult.RuleIdentifier=rule->identifier;
 		TResult.Matches=new cList(sizeof(MSTRING));
         while(gh!=NULL)

@@ -129,7 +129,7 @@ typedef struct _REGEXP
 } REGEXP;
 
 
-typedef struct _STRING
+typedef struct ___STRING
 {
     int             flags;
     char*           identifier;
@@ -143,9 +143,9 @@ typedef struct _STRING
     
     MATCH*          matches_head;
     MATCH*          matches_tail;      
-    struct _STRING* next;
+    struct ___STRING* next;
     
-} STRING;
+} YSTRING;
 
 
 typedef struct _VARIABLE
@@ -209,7 +209,7 @@ typedef struct _RULE
     char*           identifier;
     int             flags;
     NAMESPACE*      ns;
-    STRING*         string_list_head;
+    YSTRING*         string_list_head;
     TAG*            tag_list_head;
     META*           meta_list_head;
     TERM*           condition;
@@ -220,7 +220,7 @@ typedef struct _RULE
 
 typedef struct _STRING_LIST_ENTRY
 {
-    STRING* string;
+    YSTRING* string;
     struct _STRING_LIST_ENTRY* next;
     
 } STRING_LIST_ENTRY;
@@ -275,7 +275,7 @@ typedef struct _YARA_CONTEXT
     
     VARIABLE*               variables;
     
-    STRING*                 current_rule_strings;  
+    YSTRING*                 current_rule_strings;  
     int                     current_rule_flags;
     int                     inside_for;
     
@@ -299,7 +299,7 @@ typedef struct _YARA_CONTEXT
 extern "C"
 {
 RULE*             lookup_rule(RULE_LIST* rules, const char* identifier, NAMESPACE* ns);
-STRING*           lookup_string(STRING* string_list_head, const char* identifier);
+YSTRING*           lookup_string(YSTRING* string_list_head, const char* identifier);
 TAG*              lookup_tag(TAG* tag_list_head, const char* identifier);
 META*             lookup_meta(META* meta_list_head, const char* identifier);
 VARIABLE*         lookup_variable(VARIABLE* _list_head, const char* identifier);
