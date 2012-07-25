@@ -122,6 +122,7 @@ namespace Security
 						class cRecursiveScanner;
 						class cProcessScanner;
 						class cYaraScanner;
+						class ssdeep;
 					}
 					namespace Injection
 					{

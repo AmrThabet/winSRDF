@@ -20,6 +20,7 @@
 
 #include "x86emu.h"
 #include "cYaraScanner.h"
+#include "ssdeep.h"
 using namespace Security::Elements::String;
 //PokasEmu
 //---------

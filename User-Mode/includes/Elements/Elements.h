@@ -115,6 +115,10 @@ public:
 };
 
 
+
+
+
+
 class DLLIMPORT Security::Elements::String::cEncryptedString
 {
 protected:
