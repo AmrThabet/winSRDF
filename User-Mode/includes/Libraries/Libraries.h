@@ -203,3 +203,16 @@ public:
 	virtual void ThreadExitNotifyRoutine(){};
 	virtual void ProcessExitNotifyRoutine(){};
 };
+
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::SSDeep
+{
+	int count;
+public:
+	static const int Max_Result=116;
+	SSDeep(void);
+	~SSDeep(void);
+	static int Compare(const char *sig1, const char *sig2);
+	static int ScanBuffer(const unsigned char *buf,  DWORD  buf_len, char  *result);
+	static int ScanHandle(FILE *handle,char *result);
+	static int ScanFileName(const char * filename,char * result);
+};

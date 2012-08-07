@@ -123,6 +123,7 @@ namespace Security
 						class cRecursiveScanner;
 						class cProcessScanner;
 						class cYaraScanner;
+						class SSDeep;
 					}
 					namespace Hooking
 					{
