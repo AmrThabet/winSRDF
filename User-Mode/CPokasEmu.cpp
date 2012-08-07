@@ -65,6 +65,7 @@ CPokasEmu::CPokasEmu(char *buff,int size,int ImageType,char* DLLPath)
      process = NULL;
      m_objEnvVar = NULL;
      m_objEnvVar = (EnviromentVariables*)malloc(sizeof(EnviromentVariables)); 
+	 cout << (int*)m_objEnvVar << "\n";
      memset( m_objEnvVar,0,sizeof(EnviromentVariables));
      m_objEnvVar->dllspath=DLLPath; 
      m_objEnvVar->kernel32=(DWORD)LoadLibraryA("kernel32.dll");

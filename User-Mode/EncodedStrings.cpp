@@ -245,6 +245,7 @@ char* cXMLEncodedString::Decode(DWORD &len)
 {
 	char* buff = (char*)malloc(EncodedString.GetLength());
 	memset(buff,0,EncodedString.GetLength());
+	cout << (int*)EncodedString.GetLength() << "\n";
 	char* str = EncodedString;
 	char c;
 	int i = 0;
@@ -296,7 +297,9 @@ char* cXMLEncodedString::Decode(DWORD &len)
 				char* num = (char*)malloc(n-2+1);
 				memset(num,0,n-2+1);
 				memcpy(num,&str[i+2],n-2);
+				cout << num << "\n";
 				buff[j] = (char)atoi(num);
+				cout << (int)buff[j] << "\n";
 				j++;
 				i+=n+1;
 			}

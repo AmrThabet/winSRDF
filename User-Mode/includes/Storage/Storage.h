@@ -34,6 +34,7 @@ class DLLIMPORT Security::Storage::Files::cLog
 	cString Filename;
 	ofstream LogFile;
 	bool isFound;
+	CRITICAL_SECTION CriticalSection;
   public:
     cLog(cString LogName,cString Filename);
     ~cLog();
@@ -105,9 +106,11 @@ public:
 
 class DLLIMPORT Security::Storage::Databases::cDatabase
 {
+protected:
 	cString Filename;
+	CRITICAL_SECTION CriticalSection;
 public:
-	cDatabase(){};
+	cDatabase(){InitializeCriticalSection(&CriticalSection);};
 	~cDatabase(){};
 	cDatabase(cString Filename){OpenDatabase(Filename);}
 	virtual bool OpenDatabase(cString Filename){return false;};
@@ -123,9 +126,9 @@ public:
 class DLLIMPORT Security::Storage::Databases::cSQLiteDatabase : public Security::Storage::Databases::cDatabase
 {
 	sqlite3* DB;
+	bool IsDatabaseOpened;
 public:
-	cSQLiteDatabase(){};
-	~cSQLiteDatabase();
+	cSQLiteDatabase() : cDatabase(){IsDatabaseOpened = false;};
 	cSQLiteDatabase(cString Filename){OpenDatabase(Filename);}
 	virtual bool OpenDatabase(cString Filename);
 	virtual void CloseDatabase();
@@ -135,4 +138,5 @@ public:
 	virtual bool RemoveItem(cString TableName,cString Item);
 	virtual bool RemoveItem(cString TableName,int id);
 	virtual bool CreateTable(cString TableName);
+	~cSQLiteDatabase();
 };

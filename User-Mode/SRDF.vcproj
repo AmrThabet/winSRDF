@@ -277,19 +277,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ssdeep\edit_dist.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\EncodedStrings.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ssdeep\find-file-size.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ssdeep\fuzzy.cpp"
 				>
 			</File>
 			<File
@@ -302,10 +290,6 @@
 			</File>
 			<File
 				RelativePath=".\SRDF.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ssdeep.cpp"
 				>
 			</File>
 			<File
@@ -355,15 +339,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ssdeep\fuzzy.h"
-				>
-			</File>
-			<File
 				RelativePath=".\includes\Libraries\Libraries.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ssdeep\main.h"
 				>
 			</File>
 			<File
@@ -380,10 +356,6 @@
 			</File>
 			<File
 				RelativePath=".\SRDF.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ssdeep.h"
 				>
 			</File>
 			<File

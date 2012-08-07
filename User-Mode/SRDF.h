@@ -22,7 +22,7 @@
 
 
 #include <windows.h>
-
+#include <new>
 #include <winsock2.h>
 #ifndef DLLIMPORT
 #define DLLIMPORT 
@@ -33,6 +33,7 @@ using namespace std;
 
 //Development Framework Design:
 //-----------------------------
+
 namespace Security
 {
 	namespace Targets
@@ -122,7 +123,6 @@ namespace Security
 						class cRecursiveScanner;
 						class cProcessScanner;
 						class cYaraScanner;
-						class ssdeep;
 					}
 					namespace Hooking
 					{
@@ -131,6 +131,10 @@ namespace Security
 					namespace Emulation
 					{
 						class CPokasEmu;
+					}
+					namespace Debugging
+					{
+						class cDebugger;
 					}
 				}
 			}
@@ -214,26 +218,23 @@ class DLLIMPORT Security::Core::cApp
 public:
 	cString AppName;
 	Mutex InstanceMutex;
-	Mutex LogMutex;
-	Mutex DatabaseMutex;
 	Databases::cDatabase* Database;
 	Security::Storage::Files::cLog* Log;
 	Registry::cRegistryKey Settings;
 	cHash Request;
 	cApp(cString AppName);
 	~cApp();
-	void SetCustomSettings();
+	virtual void SetCustomSettings();
 	cString GetApplicationFilename();
 	cString GetApplicationPath();
 	void Initialize(int argc, char *argv[]);
-	int Run();
+	virtual int Run(){return 0;};
 };
 
 //----------------------------------------------------------
 
 struct HEAP_INFO
 {
-	
 	DWORD	LastAllocatedHeader;
 	DWORD	LastAllocatedBuffer;
 	WORD	nHeaderAllocatedBlocks;
@@ -253,9 +254,8 @@ struct HEADER_HEAP_ELEMENT
 	DWORD	CanaryValue;
 	DWORD	PointerToBuffer;
 	DWORD	Tid;
-	WORD	Size;
+	DWORD	Size;
 	WORD	Index;
-	WORD	Reserved;
 	BOOL	IsAllocated;
 	BOOL	IsGlobal;
 };
@@ -272,7 +272,7 @@ class DLLIMPORT Security::Core::cMemoryManager
 	DWORD pHeaderHeap;
 	DWORD pBufferHeap;
 	HEAP_INFO* HeapInfo;
-	CRITICAL_SECTION 	CriticalSection;
+	CRITICAL_SECTION CriticalSection;
 protected:
 	HEADER_HEAP_ELEMENT* AllocateHeaderElement();
 	BUFFER_HEAP_ELEMENT* AllocateBufferElement(DWORD size);
@@ -280,8 +280,22 @@ protected:
 public:
 	cMemoryManager();
 	~cMemoryManager();
-	void* Allocate(WORD size,BOOL IsGlobal);
+	void* Allocate(DWORD size,BOOL IsGlobal = FALSE);
 	void Free(void* ptr);
+	void FreeMemThread(DWORD Tid);
 
 };
 
+__declspec(dllexport) void * __cdecl malloc_t(_In_ size_t _Size);
+__declspec(dllexport) void __cdecl free_t(_Inout_opt_ void * _Memory);
+void *operator new(size_t size);
+void operator delete(void *p);
+void *operator new(size_t size, const std::nothrow_t &) throw();
+void operator delete(void *p, const std::nothrow_t &);
+void *operator new[](size_t size);
+void operator delete[](void *p);
+void *operator new[](size_t size, const std::nothrow_t &);
+void operator delete[](void *p, const std::nothrow_t &);//*/
+DLLIMPORT void SetMemoryAllocator(cMemoryManager* MemoryAllocator);
+#define malloc(n) malloc_t(n)
+#define free(n) free_t(n)

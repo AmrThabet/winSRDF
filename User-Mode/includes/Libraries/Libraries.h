@@ -20,7 +20,6 @@
 
 #include "x86emu.h"
 #include "cYaraScanner.h"
-#include "ssdeep.h"
 using namespace Security::Elements::String;
 //PokasEmu
 //---------
@@ -115,11 +114,92 @@ public:
 	virtual void FileCallback(cString Filename,cString FullName,int Level);
 };
 
-class  DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cProcessScanner
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cProcessScanner
 {
 	bool isSuccess;
 public:
 	cHash ProcessList;
 	bool IsSuccess();
 	cProcessScanner(Security::Storage::Files::cLog* logObj = NULL);
+};
+
+//#define DBG_STOP		0
+//#define DBG_CONTINUE	1
+
+struct DBG_BREAKPOINT
+{
+	DWORD Address;
+	DWORD Reserved;
+	BYTE  OriginalByte;
+	BOOL  IsActive;
+	WORD  wReserved;
+};
+
+#define DBG_BP_TYPE_CODE		0 
+#define DBG_BP_TYPE_READWRITE	1
+#define DBG_BP_TYPE_WRITE		3
+
+#define DBG_BP_SIZE_1			0
+#define DBG_BP_SIZE_2			1
+#define DBG_BP_SIZE_4			3
+
+#define DBG_STATUS_ERROR		-1
+#define DBG_STATUS_STEP			-2
+#define DBG_STATUS_HARDWARE_BP	-3
+struct DGB_HARDWARE_BREAKPOINT
+{
+	DWORD Address;
+	DWORD Type;
+	DWORD Size;
+};
+
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Debugging::cDebugger
+{
+protected:
+	Security::Storage::Files::cLog* Log;
+	BOOL IsDebugging;
+	BOOL bContinueDebugging;
+	
+	cString Filename;
+	cString Commandline;
+	cList* Breakpoints;
+	DGB_HARDWARE_BREAKPOINT HardwareBreakpoints[4];
+	
+	void RefreshRegisters();		//Get The Registers from the context
+	void UpdateRegisters();			//Save the updates of the registers to the context
+	void RefreshDebugRegisters();
+public:
+	Security::Targets::cProcess* DebuggeeProcess;
+	Security::Targets::Files::cPEFile* DebuggeePE;
+	DEBUG_EVENT debug_event;
+	DWORD Reg[8];
+	DWORD EFlags;
+	DWORD Eip;
+	DWORD DebugStatus;
+	DWORD ProcessId;
+	DWORD ThreadId;
+	DWORD hThread;
+	DWORD hProcess;
+	DWORD ExceptionCode;
+	DWORD LastBreakpoint;
+	
+	cDebugger(cString Filename, cString Commandline = cString(""));
+	cDebugger(Security::Targets::cProcess* Process);
+	int Run();
+	int Step();
+	void Pause();
+	void Resume();
+	void Terminate();
+	int GetBreakpoint(DWORD Address);		// returns the index of this breakpoint in the list
+	BOOL SetBreakpoint(DWORD Address);
+	void RemoveBreakpoint(DWORD Address);
+	BOOL SetHardwareBreakpoint(DWORD Address,DWORD Type, int Size);
+	void RemoveHardwareBreakpoint(DWORD Address);
+	~cDebugger();
+
+	virtual void DLLLoadedNotifyRoutine(){};
+	virtual void DLLUnloadedNotifyRoutine(){};
+	virtual void ThreadCreatedNotifyRoutine(){};
+	virtual void ThreadExitNotifyRoutine(){};
+	virtual void ProcessExitNotifyRoutine(){};
 };

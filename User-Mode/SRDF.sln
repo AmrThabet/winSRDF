@@ -15,16 +15,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SRDFTest", "..\..\SRDFTest\
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1} = {FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "..\..\Test\Test.vcproj", "{495E9B2D-D7A1-4991-8A9F-261623D27B64}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1} = {FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GTEST", "..\..\GTEST\GTEST.vcproj", "{28CF0F76-966E-4B4D-AA2C-AF0E4D9A9B54}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1} = {FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -43,14 +33,6 @@ Global
 		{35FFA499-6373-4A62-92BA-CFE5B521E589}.Debug|Win32.Build.0 = Release|Win32
 		{35FFA499-6373-4A62-92BA-CFE5B521E589}.Release|Win32.ActiveCfg = Release|Win32
 		{35FFA499-6373-4A62-92BA-CFE5B521E589}.Release|Win32.Build.0 = Release|Win32
-		{495E9B2D-D7A1-4991-8A9F-261623D27B64}.Debug|Win32.ActiveCfg = Release|Win32
-		{495E9B2D-D7A1-4991-8A9F-261623D27B64}.Debug|Win32.Build.0 = Release|Win32
-		{495E9B2D-D7A1-4991-8A9F-261623D27B64}.Release|Win32.ActiveCfg = Release|Win32
-		{495E9B2D-D7A1-4991-8A9F-261623D27B64}.Release|Win32.Build.0 = Release|Win32
-		{28CF0F76-966E-4B4D-AA2C-AF0E4D9A9B54}.Debug|Win32.ActiveCfg = Release|Win32
-		{28CF0F76-966E-4B4D-AA2C-AF0E4D9A9B54}.Debug|Win32.Build.0 = Release|Win32
-		{28CF0F76-966E-4B4D-AA2C-AF0E4D9A9B54}.Release|Win32.ActiveCfg = Release|Win32
-		{28CF0F76-966E-4B4D-AA2C-AF0E4D9A9B54}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

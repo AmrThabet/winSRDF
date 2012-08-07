@@ -26,7 +26,7 @@ using namespace std;
 using namespace Security::Elements::String;
 using namespace Security::Storage::Databases;
 
-cString cSerializer::Serialize()
+cString _cdecl cSerializer::Serialize()
 {
 	cXMLHash XMLParams;
 	SetSerialize(XMLParams);
@@ -37,7 +37,7 @@ cString cSerializer::Serialize()
 		XML<< XMLParams[i];
 		XML<< "</" << (char*)XMLParams.GetKey(i) << ">";
 	}
-	cout << (char*)XML << "\n";
+	//cout << (char*)XML << "\n";
 	return XML;
 }
 
@@ -96,7 +96,6 @@ void cSerializer::Deserialize(cString XMLDocument)
 	}
 FINISH:
 	GetSerialize(XMLParams);
-	cout << "Here 2 :) :)\n";
 }
 
 DWORD cSerializer::SkipInside(cString XMLDocument,int offset)

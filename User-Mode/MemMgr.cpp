@@ -29,8 +29,8 @@ using namespace Security::Core;
 cMemoryManager::cMemoryManager()
 {
 	InitializeCriticalSection(&CriticalSection);
-	pHeaderHeap = (DWORD)VirtualAlloc(0,0x100000,MEM_RESERVE,PAGE_READWRITE);
-	pBufferHeap = (DWORD)VirtualAlloc(0,0x100000,MEM_RESERVE,PAGE_READWRITE);
+	pHeaderHeap = (DWORD)VirtualAlloc(0,0x10000000,MEM_RESERVE,PAGE_READWRITE);
+	pBufferHeap = (DWORD)VirtualAlloc(0,0x10000000,MEM_RESERVE,PAGE_READWRITE);
 
 	pHeaderHeap = (DWORD)VirtualAlloc((LPVOID)pHeaderHeap,0x3000,MEM_COMMIT,PAGE_READWRITE);
 	VirtualAlloc((LPVOID)pBufferHeap,0x3000,MEM_COMMIT,PAGE_READWRITE);
@@ -70,7 +70,7 @@ HEADER_HEAP_ELEMENT* cMemoryManager::AllocateHeaderElement()
 BUFFER_HEAP_ELEMENT* cMemoryManager::AllocateBufferElement(DWORD size)
 {
 	if ((DWORD)(HeapInfo->LastAllocatedBuffer + sizeof(BUFFER_HEAP_ELEMENT)+ size)  >
-		(DWORD)(pBufferHeap + HeapInfo->nBufferAllocatedBlocks * 0x1000))
+		(DWORD)(pBufferHeap + (HeapInfo->nBufferAllocatedBlocks-1) * 0x1000))
 	{
 		//cout << "VirtualAlloc: " << (int*)(HeapInfo->LastAllocatedBuffer + sizeof(BUFFER_HEAP_ELEMENT)+ size) << "   " << (int*)(pBufferHeap + HeapInfo->nBufferAllocatedBlocks * 0x1000) << "\n";
 		VirtualAlloc((LPVOID)(pBufferHeap+(HeapInfo->nBufferAllocatedBlocks * 0x1000)),0x3000,MEM_COMMIT,PAGE_READWRITE);
@@ -82,12 +82,13 @@ BUFFER_HEAP_ELEMENT* cMemoryManager::AllocateBufferElement(DWORD size)
 	return BufferElement;
 }
 
-void* cMemoryManager::Allocate(WORD size, BOOL IsGlobal)
+void* cMemoryManager::Allocate(DWORD size, BOOL IsGlobal)
 {
 	HEADER_HEAP_ELEMENT* AllocatedBlockHeader;
 	BUFFER_HEAP_ELEMENT* AllocatedBlock;
 	EnterCriticalSection(&CriticalSection);
-	register WORD Size = size;
+	register DWORD Size = size;
+	if (Size == 0)Size = 8;
 	if (size % 8) Size += (8 - size % 8);			//make it multiply by 8
 	if (Size > 4096)
 	{
@@ -115,8 +116,8 @@ void* cMemoryManager::Allocate(WORD size, BOOL IsGlobal)
 		AllocatedBlockHeader->IsAllocated = TRUE;
 		AllocatedBlockHeader->IsGlobal = FALSE;
 		AllocatedBlockHeader->Size = Size;
+		//cout << "Alloc 1: Size: " << AllocatedBlockHeader->Size << "  Buffer: " << (int*)AllocatedBlockHeader->PointerToBuffer << " Elements: " << (DWORD)HeapInfo->nElements << " Index: " << (DWORD)AllocatedBlockHeader->Index <<"\n";
 		LeaveCriticalSection(&CriticalSection);
-		cout << "Alloc 1: Size: " << AllocatedBlockHeader->Size << "  Buffer: " << (int*)AllocatedBlockHeader->PointerToBuffer << " Elements: " <<HeapInfo->nElements << " Index: " << AllocatedBlockHeader->Index <<"\n";
 		return (void*)AllocatedBlockHeader->PointerToBuffer;
 	}
 	else if (Size < 1024)
@@ -146,8 +147,8 @@ void* cMemoryManager::Allocate(WORD size, BOOL IsGlobal)
 		}
 		AllocatedBlockHeader->CanaryValue = 0; // will be added soon
 		AllocatedBlock->Index = AllocatedBlockHeader->Index;
+		//cout << "Alloc 2: Size: " << AllocatedBlockHeader->Size << "  Buffer: " << (int*)AllocatedBlockHeader->PointerToBuffer << " Elements: " <<HeapInfo->nElements << " Index: " << AllocatedBlockHeader->Index <<"\n";
 		LeaveCriticalSection(&CriticalSection);
-		cout << "Alloc 2: Size: " << AllocatedBlockHeader->Size << "  Buffer: " << (int*)AllocatedBlockHeader->PointerToBuffer << " Elements: " <<HeapInfo->nElements << " Index: " << AllocatedBlockHeader->Index <<"\n";
 		return (void*)(AllocatedBlockHeader->PointerToBuffer + sizeof(BUFFER_HEAP_ELEMENT));
 	}
 	else 
@@ -190,8 +191,8 @@ void* cMemoryManager::Allocate(WORD size, BOOL IsGlobal)
 		//Initialize the Buffer
 		AllocatedBlockHeader->CanaryValue = 0; // will be added soon
 		AllocatedBlock->Index = AllocatedBlockHeader->Index;
+		//cout << "Alloc 3: Size: " << AllocatedBlockHeader->Size << "  Buffer: " << (int*)AllocatedBlockHeader->PointerToBuffer << " Elements: " <<HeapInfo->nElements << " Index: " << AllocatedBlockHeader->Index <<"\n";
 		LeaveCriticalSection(&CriticalSection);
-		cout << "Alloc 3: Size: " << AllocatedBlockHeader->Size << "  Buffer: " << (int*)AllocatedBlockHeader->PointerToBuffer << " Elements: " <<HeapInfo->nElements << " Index: " << AllocatedBlockHeader->Index <<"\n";
 		return (void*)(AllocatedBlockHeader->PointerToBuffer + sizeof(BUFFER_HEAP_ELEMENT));
 
 	}
@@ -201,7 +202,7 @@ void* cMemoryManager::Allocate(WORD size, BOOL IsGlobal)
 
 HEADER_HEAP_ELEMENT* cMemoryManager::GetElement(BUFFER_HEAP_ELEMENT* AllocatedBuffer)
 {
-	EnterCriticalSection(&CriticalSection);
+	
 	HEADER_HEAP_ELEMENT* AllocatedHeader;
 	WORD index = AllocatedBuffer->Index;
 	if (index > HeapInfo->nElements)return NULL;
@@ -209,7 +210,6 @@ HEADER_HEAP_ELEMENT* cMemoryManager::GetElement(BUFFER_HEAP_ELEMENT* AllocatedBu
 	AllocatedHeader = (HEADER_HEAP_ELEMENT*)(pHeaderHeap + sizeof(HEAP_INFO));
 	if (AllocatedHeader[index].PointerToBuffer == (DWORD)AllocatedBuffer)
 	{
-		LeaveCriticalSection(&CriticalSection);
 		return &AllocatedHeader[index];
 	}
 	else
@@ -219,47 +219,52 @@ HEADER_HEAP_ELEMENT* cMemoryManager::GetElement(BUFFER_HEAP_ELEMENT* AllocatedBu
 			if (AllocatedHeader[i].PointerToBuffer == (DWORD)AllocatedBuffer)
 			{
 				AllocatedBuffer->Index = i;		//unimportant but for investigations
-				LeaveCriticalSection(&CriticalSection);
 				return &AllocatedHeader[i];
 			}
 		}
 	}
-	LeaveCriticalSection(&CriticalSection);
 	return NULL;
 }
 
 void cMemoryManager::Free(void *ptr)
 {
+	
 	HEADER_HEAP_ELEMENT* AllocatedHeader;
 	if (ptr == NULL) return;
-	
+	EnterCriticalSection(&CriticalSection);
 	if ((DWORD)ptr > HeapInfo->HeapBegin && (DWORD)ptr < HeapInfo->LastAllocatedBuffer)
 	{
 		BUFFER_HEAP_ELEMENT* AllocatedBuffer = (BUFFER_HEAP_ELEMENT*)((DWORD)ptr - sizeof(BUFFER_HEAP_ELEMENT));
 		AllocatedHeader = GetElement(AllocatedBuffer);
-		if ((DWORD)AllocatedHeader == NULL)return;
+		if ((DWORD)AllocatedHeader == NULL)
+		{
+			LeaveCriticalSection(&CriticalSection);
+			return;
+		}
 		AllocatedHeader->IsAllocated = FALSE;
 		if (AllocatedHeader->Size < 1024)
 		{
 			if ((AllocatedHeader->Size % 8) != 0)
 			{
-				cout << "Error on Free\n";
+				//cout << "Error on Free 1\n";
+				LeaveCriticalSection(&CriticalSection);
 				return;				//Error
 			}
 			DWORD index = AllocatedHeader->Size / 8;
 			AllocatedHeader->pNextFreeListItem = HeapInfo->FreeLists[index];
 			HeapInfo->FreeLists[index] = (DWORD)AllocatedHeader;
-			cout << "Free 1: Index: " << index << " Size: " << AllocatedHeader->Size << " New Item: " << (int*)AllocatedHeader << " Old Item: " << (int*)AllocatedHeader->pNextFreeListItem << "\n";
+			//cout << "Free 1: Index: " << index << " Size: " << AllocatedHeader->Size << " New Item: " << (int*)AllocatedHeader << " Old Item: " << (int*)AllocatedHeader->pNextFreeListItem << "\n";
 		}
 		else if (AllocatedHeader->Size < 4096 && AllocatedHeader->Size > 1024)
 		{
 			AllocatedHeader->pNextFreeListItem = HeapInfo->LargeFreeList;
 			HeapInfo->LargeFreeList = (DWORD)AllocatedHeader;
-			cout << "Free 2: Size: " << AllocatedHeader->Size << " New Item: " << (int*)AllocatedHeader << " Old Item: " << (int*)AllocatedHeader->pNextFreeListItem << "\n";
+			//cout << "Free 2: Size: " << AllocatedHeader->Size << " New Item: " << (int*)AllocatedHeader << " Old Item: " << (int*)AllocatedHeader->pNextFreeListItem << "\n";
 		}
 		else
 		{
-			cout << "Error on Free\n";
+			//cout << "Error on Free 2\n";
+			LeaveCriticalSection(&CriticalSection);
 			return;		//Error (should be in the next else)
 		}
 
@@ -272,6 +277,7 @@ void cMemoryManager::Free(void *ptr)
 		{
 			if (AllocatedHeader == NULL)
 			{
+				LeaveCriticalSection(&CriticalSection);
 				return;
 			}
 			else if (AllocatedHeader->PointerToBuffer == (DWORD)ptr)
@@ -286,8 +292,9 @@ void cMemoryManager::Free(void *ptr)
 			PrevBlockHeader = AllocatedHeader;
 			AllocatedHeader = (HEADER_HEAP_ELEMENT*)AllocatedHeader->pNextFreeListItem;
 		}while(1);
-		cout << "Free 3: Size: " << AllocatedHeader->Size << " New Item: " << (int*)AllocatedHeader << " Old Item: " << (int*)AllocatedHeader->pNextFreeListItem << "\n";
+		//cout << "Free 3: Size: " << AllocatedHeader->Size << " New Item: " << (int*)AllocatedHeader << " Old Item: " << (int*)AllocatedHeader->pNextFreeListItem << "\n";
 	}
+	LeaveCriticalSection(&CriticalSection);
 }
 
 cMemoryManager::~cMemoryManager()
@@ -308,4 +315,107 @@ cMemoryManager::~cMemoryManager()
 
 	VirtualFree((LPVOID)pHeaderHeap,0,MEM_RELEASE);
 	VirtualFree((LPVOID)pBufferHeap,0,MEM_RELEASE);
+}
+
+void cMemoryManager::FreeMemThread(DWORD Tid)
+{
+	HEADER_HEAP_ELEMENT* AllocatedHeader = (HEADER_HEAP_ELEMENT*)(pHeaderHeap + sizeof(HEAP_INFO));
+	for (int i = 0;i < HeapInfo->nElements;i++)
+	{
+		if (AllocatedHeader[i].Tid == Tid && AllocatedHeader[i].IsAllocated == FALSE && AllocatedHeader[i].IsGlobal == FALSE)
+		{
+			Free((void*)(AllocatedHeader[i].PointerToBuffer + sizeof(BUFFER_HEAP_ELEMENT)));
+		}
+	}
+}
+
+//-----------------------------------------------------------
+//Memory Allocation:
+//------------------
+
+cMemoryManager* mem = NULL;
+
+void SetMemoryAllocator(cMemoryManager* MemoryAllocator)
+{
+	mem = MemoryAllocator;
+}
+
+void * __cdecl malloc_t(_In_ size_t _Size)
+{
+	if (mem != NULL)
+	{
+		//cout << "MemAlloc: ";
+		return mem->Allocate(_Size);
+	}
+	else
+	{
+		//cout << mem << "\n";
+		//cout << "HeapAlloc: " << _Size << "\n";
+		return (void*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,_Size);
+	};
+};
+void __cdecl free_t(_Inout_opt_ void * _Memory)
+{
+	if (mem != NULL)
+	{
+		return mem->Free(_Memory);
+	}else
+	{
+		//cout << "HeapFree: " << _Memory << "\n";
+		HeapFree(GetProcessHeap(),NULL,_Memory);
+	}
+};
+
+void *operator new(size_t size)
+{
+	void *p = malloc(size);
+
+	if (!p)
+	{
+		throw std::bad_alloc();
+	}
+
+	return p;
+}
+
+void operator delete(void *p)
+{
+	free(p);
+}
+
+void *operator new(size_t size, const std::nothrow_t &) throw() 
+{
+	return malloc(size);
+}
+
+void operator delete(void *p, const std::nothrow_t &)
+{
+	free(p);
+}
+
+void *operator new[](size_t size)
+{
+	void *p = malloc(size);
+
+	if (!p)
+	{
+		throw std::bad_alloc();
+	}
+
+	return p;
+}
+
+void operator delete[](void *p) 
+{
+	free(p);
+}
+
+void *operator new[](size_t size, const std::nothrow_t &)
+{
+	return malloc(size);
+}
+
+void operator delete[](void *p, const std::nothrow_t &)
+{
+	free(p);
 }

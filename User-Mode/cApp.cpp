@@ -41,8 +41,6 @@ cApp::cApp(cString AppName)
 cApp::~cApp()
 {
 	InstanceMutex.release();
-	LogMutex.release();
-	DatabaseMutex.release();
 	if (Log != NULL) delete Log; 
 }
 cString cApp::GetApplicationFilename()
@@ -173,13 +171,11 @@ void cApp::Initialize(int argc, char *argv[])
 	if (Flags & APP_ADDLOG)
 	{
 		Log = new cLog(AppName,LogFilename);
-		LogMutex.create(AppName + "Log");
 	}
 	if (Flags & APP_REGISTRYSETTINGS)Settings.Initialize(RegistryType,RegistryPath,true);
 	if (Flags & APP_DEFINEDATABASE)
 	{
 		Database = new cSQLiteDatabase(AppName+".db");
-		DatabaseMutex.create(AppName + "Database");
 	}
 }
 void cApp::GetRequest(int argc, char *argv[])

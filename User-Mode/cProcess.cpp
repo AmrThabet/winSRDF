@@ -27,7 +27,6 @@ using namespace Security::Targets;
 
 typedef NTSTATUS (NTAPI *MYPROC)(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG); 
 
-
 BOOL sm_EnableTokenPrivilege()
 {
 	HANDLE hToken		 = 0;
@@ -61,8 +60,6 @@ BOOL sm_EnableTokenPrivilege()
 	return FALSE;
 }
 
-
-
 cString cProcess::Unicode2Ansi(LPWSTR unicodeString_,int stringLength)
 {
 	char* x = (char*)unicodeString_;
@@ -84,7 +81,50 @@ cString cProcess::Unicode2Ansi(LPWSTR unicodeString_,int stringLength)
 	
 }
 
+cProcess::cProcess(int processId)
+{
 
+	if(sm_EnableTokenPrivilege() == TRUE)
+	{
+
+		HINSTANCE hinstLib; 
+		MYPROC ProcAdd; 
+		BOOL fRunTimeLinkSuccess; 
+		isFound = false;
+	    
+		hinstLib = LoadLibrary(TEXT("ntdll.dll")); 
+	 
+	    
+		if (hinstLib != NULL) 
+		{ 
+			ProcAdd = (MYPROC) GetProcAddress(hinstLib, "NtQueryInformationProcess"); 
+	 
+	        
+			if (NULL != ProcAdd) 
+			{
+				fRunTimeLinkSuccess = TRUE;
+
+				//procHandle = (DWORD)OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,FALSE,DWORD(processId)); // setting process handle
+				procHandle = (DWORD)OpenProcess(PROCESS_ALL_ACCESS, FALSE, DWORD(processId)); // setting process handle
+				if (procHandle != NULL)
+				{
+
+					__PROCESS_BASIC_INFORMATION pbi;
+					DWORD data_length = 0;
+
+					(ProcAdd)((HANDLE)procHandle, ProcessBasicInformation, &pbi, sizeof(pbi), &data_length);
+					ppeb = (__PEB*)pbi.PebBaseAddress;  // setting PEB address		
+					processParentID = pbi.InheritedFromUniqueProcessId;
+					AnalyzeProcess();
+					isFound = true;
+				}
+	       
+			}
+			
+		}
+	}
+
+}
 
 
 void cProcess::AnalyzeProcess()
@@ -93,7 +133,7 @@ void cProcess::AnalyzeProcess()
 	if(ppeb != NULL)
 	{
 		// setting process processImageBase
-
+		processName = "";
 		ReadProcessMemory((HANDLE)procHandle,&(ppeb->ImageBaseAddress),&processImageBase,sizeof(processImageBase),NULL);
 
 		// setting process commandline
@@ -111,15 +151,15 @@ void cProcess::AnalyzeProcess()
 		
 
 
-		//setting  processSizeOfImage , processPath , processName ,ModuleInfo
+		//setting  processSizeOfImage , processPath , processName ,MODULE_INFO
 
 		_PEB_LDR_DATA *tmp1=NULL;
 		_LDR_DATA_TABLE_ENTRY	tmp2;
 		LPWSTR pathBuffer,nameBuffer,moduleNameBuffer,modulePathBuffer;
 		DWORD bytesRead;
 		DWORD myFlag;
-		ModuleInfo mod;
-		modulesList =cList(sizeof(ModuleInfo));
+		MODULE_INFO mod;
+		modulesList =cList(sizeof(MODULE_INFO));
 
 		ReadProcessMemory((HANDLE)procHandle,&(ppeb->LoaderData),&tmp1,sizeof(tmp1),NULL);
 		if(tmp1)
@@ -174,58 +214,46 @@ void cProcess::AnalyzeProcess()
 				}
 				
 			}while(myFlag != tmp2.DllBase);
-
-		}
 		
-	}
-
-}
-
-
-cProcess::cProcess(int processId)
-{
-
-	if(sm_EnableTokenPrivilege() == TRUE)
-	{
-
-		HINSTANCE hinstLib; 
-		MYPROC ProcAdd; 
-		BOOL fRunTimeLinkSuccess; 
-		isFound = false;
-	    
-		hinstLib = LoadLibrary(TEXT("ntdll.dll")); 
-	 
-	    
-		if (hinstLib != NULL) 
-		{ 
-			ProcAdd = (MYPROC) GetProcAddress(hinstLib, "NtQueryInformationProcess"); 
-	 
-	        
-			if (NULL != ProcAdd) 
-			{
-				fRunTimeLinkSuccess = TRUE;
-
-				//procHandle = (DWORD)OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,FALSE,DWORD(processId)); // setting process handle
-				procHandle = (DWORD)OpenProcess(PROCESS_ALL_ACCESS, FALSE, DWORD(processId)); // setting process handle
-				if (procHandle != NULL)
-				{
-
-					__PROCESS_BASIC_INFORMATION pbi;
-					DWORD data_length = 0;
-
-					(ProcAdd)((HANDLE)procHandle, ProcessBasicInformation, &pbi, sizeof(pbi), &data_length);
-					ppeb = (__PEB*)pbi.PebBaseAddress;  // setting PEB address		
-					processParentID = pbi.InheritedFromUniqueProcessId;
-					AnalyzeProcess();
-					isFound = true;
-				}
-	       
-			}
-			
 		}
+		GetMemoryMap();
 	}
 
 }
+
+BOOL cProcess::GetMemoryMap()
+{
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	char *pMin = (char*)si.lpMinimumApplicationAddress;
+	char *pMax = (char*)si.lpMaximumApplicationAddress;
+
+	MEMORY_MAP memMap;
+	MemoryMap = cList(sizeof(MEMORY_MAP));
+	
+	for (char* pAddress = pMin; pAddress<pMax; /*Empty*/)
+	{
+		MEMORY_BASIC_INFORMATION mbi;
+		DWORD res = VirtualQueryEx((HANDLE)procHandle,pAddress, &mbi, sizeof(mbi));
+		if (res != sizeof(mbi))
+		{
+			return false;
+		}
+ 
+		if (mbi.State == MEM_COMMIT)
+		{
+			memMap.Address = (DWORD)mbi.BaseAddress;
+			memMap.Size	= (DWORD)mbi.RegionSize;
+			memMap.Protection = (DWORD)mbi.AllocationProtect;
+			MemoryMap.AddItem((char*)&memMap);
+		}
+ 
+		pAddress += mbi.RegionSize;
+	}
+ 
+	return true;
+}
+
 
 DWORD cProcess::Read(DWORD startAddress,DWORD size)
 {
@@ -259,10 +287,10 @@ DWORD cProcess::Allocate(DWORD preferedAddress,DWORD size)
 }
 
 
-BOOL cProcess::Write (DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite)
+DWORD cProcess::Write (DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite)
 {
 	DWORD sizeWritten;
-	BOOL writeFlag = FALSE;
+
 
 	if (startAddressToWrite == NULL)
 	{
@@ -271,18 +299,14 @@ BOOL cProcess::Write (DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite
 	
 	if (startAddressToWrite != NULL)
 	{
-	  if(WriteProcessMemory((HANDLE) procHandle , (LPVOID) startAddressToWrite , (LPCVOID) buffer , sizeToWrite , &sizeWritten))
-	  {
-		writeFlag = TRUE;
-	  }
-	  else
-	  {
-		writeFlag = FALSE;
-	  }
-
+		if (WriteProcessMemory((HANDLE) procHandle , (LPVOID) startAddressToWrite , (LPCVOID) buffer , sizeToWrite , &sizeWritten))
+		{
+			FlushInstructionCache((HANDLE)procHandle,(LPCVOID)startAddressToWrite,sizeToWrite);
+			return startAddressToWrite;
+		}
 	}
-
-	return writeFlag;
+	
+	return 0;
 
 }
 

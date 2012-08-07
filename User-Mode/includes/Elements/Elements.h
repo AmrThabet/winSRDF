@@ -31,10 +31,12 @@ class DLLIMPORT Security::Elements::XML::cSerializer
 {
 private:
 	DWORD SkipInside(cString XMLDocument,int offset);		//it returns the new offset of the end;
+protected:
+
 public:
 	cSerializer(){};
 	~cSerializer(){};
-	cString Serialize();
+	cString _cdecl Serialize();
 	void Deserialize(cString XMLDocument);
 	virtual void SetSerialize(cXMLHash& XMLParams);
 	virtual void GetSerialize(cXMLHash& XMLParams);
@@ -115,10 +117,6 @@ public:
 };
 
 
-
-
-
-
 class DLLIMPORT Security::Elements::String::cEncryptedString
 {
 protected:
@@ -133,7 +131,6 @@ public:
 	operator char*(){return EncryptedString.GetChar();}
 	void SetEncrypted(cString encryptedString){EncryptedString = encryptedString;}
 	bool operator == (char* x){return (EncryptedString == x);}
-
 };
 
 class DLLIMPORT Security::Elements::String::cMD5String : public Security::Elements::String::cEncryptedString

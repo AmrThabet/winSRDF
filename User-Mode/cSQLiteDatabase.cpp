@@ -28,25 +28,29 @@ using namespace Security::Storage::Databases;
 
 cSQLiteDatabase::~cSQLiteDatabase()
 {
+	CloseDatabase();
 }
 bool cSQLiteDatabase::OpenDatabase(cString Filename)
 {
 	int x = 0;
-	cout << "01\n";
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_open(Filename, &DB) != SQLITE_OK)return false;
-	//if(x = sqlite3_prepare_v2(DB, DROPTABLE_QUERY, -1, &DropTableStm, 0) != SQLITE_OK)cout << x << "\n";//return false;
+	IsDatabaseOpened = true;
+	LeaveCriticalSection(&CriticalSection);
     return true;  
 }
 
 
 cHash* cSQLiteDatabase::GetItems(cString TableName)
 {
+
 	sqlite3_stmt* QueryTableStm;
 	cString Query;
 	int result = 0;
 	cHash* Values = new cHash();
-
 	Query << "select * from " << TableName;
+	if (!IsDatabaseOpened) return NULL;
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_prepare_v2(DB, Query, -1, &QueryTableStm, 0) != SQLITE_OK)return NULL;
 
     while(true)
@@ -62,6 +66,7 @@ cHash* cSQLiteDatabase::GetItems(cString TableName)
         }
     }
     sqlite3_finalize(QueryTableStm);
+	LeaveCriticalSection(&CriticalSection);
 	return Values;
 }
 cString cSQLiteDatabase::GetItem(cString TableName,int id)
@@ -70,8 +75,9 @@ cString cSQLiteDatabase::GetItem(cString TableName,int id)
 	cString Query;
 	int result = 0;
 	cString Value;
-
 	Query << "select * from " << TableName << " where id = ? ";
+	if (!IsDatabaseOpened) return "";
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_prepare_v2(DB, Query, -1, &QueryTableStm, 0) != SQLITE_OK)return "";
 	sqlite3_reset(QueryTableStm);
 	sqlite3_bind_int(QueryTableStm,1,id);
@@ -85,6 +91,7 @@ cString cSQLiteDatabase::GetItem(cString TableName,int id)
         Value = "";  
     }
     sqlite3_finalize(QueryTableStm);
+	LeaveCriticalSection(&CriticalSection);
 	return Value;
 }
 bool cSQLiteDatabase::AddItem(cString TableName,cString Item)
@@ -92,6 +99,8 @@ bool cSQLiteDatabase::AddItem(cString TableName,cString Item)
 	sqlite3_stmt* InsertTableStm;
 	cString Query;
 	Query << "insert into " << TableName << " (XML) values (?)";
+	if (!IsDatabaseOpened) return false;
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_prepare_v2(DB, Query, -1, &InsertTableStm, 0) != SQLITE_OK)return false;
 	sqlite3_reset(InsertTableStm);
 	sqlite3_bind_text(InsertTableStm,1,Item,-1,SQLITE_TRANSIENT);
@@ -99,9 +108,11 @@ bool cSQLiteDatabase::AddItem(cString TableName,cString Item)
 	if(result != SQLITE_DONE)
 	{
 		sqlite3_finalize(InsertTableStm);
+		LeaveCriticalSection(&CriticalSection);
 		return false;
 	}
 	sqlite3_finalize(InsertTableStm);
+	LeaveCriticalSection(&CriticalSection);
 	return true;
 }
 bool cSQLiteDatabase::RemoveItem(cString TableName,cString Item)
@@ -109,6 +120,8 @@ bool cSQLiteDatabase::RemoveItem(cString TableName,cString Item)
 	sqlite3_stmt* DeleteTableStm;
 	cString Query;
 	Query << "delete from " << TableName << " where XML = ? ";
+	if (!IsDatabaseOpened) return false;
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_prepare_v2(DB, Query, -1, &DeleteTableStm, 0) != SQLITE_OK)
 	sqlite3_reset(DeleteTableStm);
 	sqlite3_bind_text(DeleteTableStm,1,Item,-1,SQLITE_TRANSIENT);
@@ -116,9 +129,11 @@ bool cSQLiteDatabase::RemoveItem(cString TableName,cString Item)
 	if(result != SQLITE_DONE)
 	{
 		sqlite3_finalize(DeleteTableStm);
+		LeaveCriticalSection(&CriticalSection);
 		return false;
 	}
 	sqlite3_finalize(DeleteTableStm);
+	LeaveCriticalSection(&CriticalSection);
 	return true;
 }
 bool cSQLiteDatabase::RemoveItem(cString TableName,int id)
@@ -126,6 +141,8 @@ bool cSQLiteDatabase::RemoveItem(cString TableName,int id)
 	sqlite3_stmt* DeleteTableStm;
 	cString Query;
 	Query << "delete from " << TableName << " where id = ? ";
+	if (!IsDatabaseOpened) return false;
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_prepare_v2(DB, Query, -1, &DeleteTableStm, 0) != SQLITE_OK)
 	sqlite3_reset(DeleteTableStm);
 	sqlite3_bind_int(DeleteTableStm,1,id);
@@ -133,9 +150,11 @@ bool cSQLiteDatabase::RemoveItem(cString TableName,int id)
 	if(result != SQLITE_DONE)
 	{
 		sqlite3_finalize(DeleteTableStm);
+		LeaveCriticalSection(&CriticalSection);
 		return false;
 	}
 	sqlite3_finalize(DeleteTableStm);
+	LeaveCriticalSection(&CriticalSection);
 	return true;
 }
 bool cSQLiteDatabase::CreateTable(cString TableName)
@@ -143,18 +162,25 @@ bool cSQLiteDatabase::CreateTable(cString TableName)
 	sqlite3_stmt* CreateTableStm;
 	cString Query;
 	Query << "create table " << TableName << " (id INTEGER PRIMARY KEY ASC, XML TEXT)";
+	if (!IsDatabaseOpened) return false;
+	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_prepare_v2(DB, Query, -1, &CreateTableStm, 0) != SQLITE_OK) return false;
 	int result = sqlite3_step(CreateTableStm);
 	if(result != SQLITE_DONE)
 	{
 		sqlite3_finalize(CreateTableStm);
+		LeaveCriticalSection(&CriticalSection);
 		return false;
 	}
 	sqlite3_finalize(CreateTableStm);
+	LeaveCriticalSection(&CriticalSection);
 	return true;
 }
 
 void cSQLiteDatabase::CloseDatabase()
 {
+	EnterCriticalSection(&CriticalSection);
 	sqlite3_close(DB);
+	IsDatabaseOpened = false;
+	LeaveCriticalSection(&CriticalSection);
 }

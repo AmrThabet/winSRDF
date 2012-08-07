@@ -127,7 +127,7 @@ public:
 //--------------------------------------//
 
 
-struct ModuleInfo
+struct MODULE_INFO
 {
 	DWORD moduleImageBase;
 	DWORD moduleSizeOfImage;
@@ -135,10 +135,18 @@ struct ModuleInfo
 	cString* modulePath;
 };
 
+struct MEMORY_MAP
+{
+	DWORD Address;
+	DWORD Size;
+	DWORD Protection;
+};
+
 class DLLIMPORT Security::Targets::cProcess
 {
 	void AnalyzeProcess();
 	cString Unicode2Ansi(LPWSTR,int);
+	BOOL GetMemoryMap();
 public:
 	// parameters
 	DWORD procHandle;
@@ -150,6 +158,7 @@ public:
 	DWORD processParentID;
 	cString processCommandLine;
 	cList modulesList;
+	cList MemoryMap;
 	bool isFound;
 	
 	//methods
@@ -157,9 +166,7 @@ public:
 	
 	DWORD Read(DWORD ,DWORD);
 	DWORD Allocate (DWORD,DWORD);
-	BOOL Write (DWORD,DWORD,DWORD);
+	DWORD Write(DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite);
 	DWORD DllInject(DWORD);
 	DWORD CreateThread(DWORD,DWORD);
-	
-	
 };
