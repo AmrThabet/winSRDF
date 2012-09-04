@@ -24,7 +24,7 @@
 #include <iostream>
 
 using namespace std;
-
+using namespace Security::Targets;
 
 int callback(RULE* rule, void* data);
 
@@ -75,17 +75,21 @@ void cYaraScanner::FreeResults()
 	}
 	Results->~cList();
 	Results=new cList(sizeof(YARA_RESULT));
-//	count=0;
 }
 
 cList* cYaraScanner::Scan(unsigned char* buffer,DWORD buffer_size)
 {
-
 	FreeResults();
 	yr_scan_mem( buffer, buffer_size, YContext,callback, this);
     return Results;
 }
 
+cList* cYaraScanner::Scan(cProcess* Process)
+{
+	FreeResults();
+	yr_scan_proc(Process->ProcessId, YContext,callback, this);
+    return Results;
+}
 
 char* cYaraScanner::CreatRule(cString name,cList strings,cString condition)
 {

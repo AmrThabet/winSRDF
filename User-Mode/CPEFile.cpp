@@ -28,18 +28,30 @@ using namespace Security::Targets::Files;
 
 cPEFile::cPEFile(char* szFilename) : cFile(szFilename)
 {
-	dos_header* DosHeader;
-	FileLoaded = false;
+	FileLoaded = ParsePE();
+}
 
-	if (BaseAddress == NULL) return;
+cPEFile::cPEFile(char* buffer,DWORD size) : cFile(buffer,size)
+{
+	FileLoaded = ParsePE();
+}
+bool cPEFile::identify(cFile* File)
+{
+	return true;
+}
+bool cPEFile::ParsePE()
+{
+	dos_header* DosHeader;
+
+	if (BaseAddress == NULL) return false;
 
 	DosHeader = (dos_header*)BaseAddress;
 	
-	if (DosHeader->e_magic != 'ZM') return;
+	if (DosHeader->e_magic != 'ZM') return false;
 	
 	PEHeader = (image_header*)(BaseAddress + DosHeader->e_lfanew);
 	
-	if(PEHeader->signature != 'EP') return;
+	if(PEHeader->signature != 'EP') return false;
 
 	Magic = PEHeader->optional.magic;
 	Subsystem = PEHeader->optional.subsystem;
@@ -51,11 +63,8 @@ cPEFile::cPEFile(char* szFilename) : cFile(szFilename)
 	initDataDirectory();
 	initSections();
 	initImportTable();
-
-	FileLoaded = true;
-
-};
-
+	return true;
+}
 cPEFile::~cPEFile()
 {
 	free(Section);

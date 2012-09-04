@@ -40,7 +40,7 @@ cApp::cApp(cString AppName)
 }
 cApp::~cApp()
 {
-	InstanceMutex.release();
+	if (Flags & APP_NOANOTHERINSTANCE) InstanceMutex.release();
 	if (Log != NULL) delete Log; 
 }
 cString cApp::GetApplicationFilename()
@@ -146,11 +146,11 @@ int cApp::getopt(int argc, char *argv[], char *optstring)
 	}
 	return c;
 }
-
+//////////////////////////////////////////////////////////////////////////////////////
 void cApp::SetDefaultSettings()
 {
 	Flags |= (APP_NOANOTHERINSTANCE | APP_ADDLOG | APP_REGISTRYSETTINGS | APP_DEFINEDATABASE);
-	Options = "abc";
+	Options = "a:bcCdef";
 	LogFilename = AppPath;
 	LogFilename += "\\LogFile.txt";
 	RegistryPath = "Software\\";
@@ -181,7 +181,7 @@ void cApp::Initialize(int argc, char *argv[])
 void cApp::GetRequest(int argc, char *argv[])
 {
 	char c;
-	while ((c = getopt(argc, argv, "a:bcCdef")) != EOF)
+	while ((c = getopt(argc, argv, Options)) != EOF)
 	{
 		if (optarg != NULL)
 		{

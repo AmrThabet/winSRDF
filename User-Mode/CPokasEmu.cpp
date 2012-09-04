@@ -89,7 +89,7 @@ CPokasEmu::~CPokasEmu()
 int CPokasEmu::Emulate()
 { 
 	process->MaxIterations = 1000000;
-    return process->emulate();
+	return process->emulate("C:\\EmuFile.txt");
 }
 
 int CPokasEmu::Step()
@@ -134,7 +134,8 @@ MEMORY_STRUCT* CPokasEmu::GetMemoryPageByVA(DWORD vAddr)
 {
       for (int i = 0; i < process->SharedMem->vmem_length; i++)
       {
-          if (process->SharedMem->vmem[i]->vmem == vAddr)return (MEMORY_STRUCT*)process->SharedMem->vmem[i];
+		  if (vAddr >= process->SharedMem->vmem[i]->vmem && vAddr < (process->SharedMem->vmem[i]->vmem + process->SharedMem->vmem[i]->size))
+			  return (MEMORY_STRUCT*)process->SharedMem->vmem[i];
       }
       return NULL;   
 }
@@ -221,17 +222,15 @@ DWORD CPokasEmu::GetImagebase()
 
 //Disassembling:
 //-------------
-int CPokasEmu::GetDisassembly(char* ptr, char *OutputString)
+cString CPokasEmu::GetDisassembly(char* ptr,DWORD &InsLength)
 {
     string strInst;
     DISASM_INSTRUCTION ins;
 	memset(&ins,0,sizeof(DISASM_INSTRUCTION));
-    DWORD dwLength;
     char* byBuffer = (char*)process->SharedMem->read_virtual_mem((DWORD)ptr);
     m_objSystem->disasm(&ins, byBuffer, strInst);
-    memcpy(OutputString, strInst.c_str(), strInst.length());
-    dwLength = (DWORD)ins.hde.len;
-    return dwLength;
+    InsLength = (DWORD)ins.hde.len;
+    return strInst.c_str();
 }
 
 //Working with APIs:

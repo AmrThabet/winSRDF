@@ -66,6 +66,7 @@ public:
        int GetNumberOfMemoryPages();
        MEMORY_STRUCT* GetMemoryPage(int index);
        MEMORY_STRUCT* GetMemoryPageByVA(DWORD vAddr);
+	   DWORD GetRealAddr(DWORD vAddr);
        int GetNumberOfDirtyPages();
        DIRTYPAGES_STRUCT* GetDirtyPage(int index);
        VOID ClearDirtyPages();
@@ -77,9 +78,8 @@ public:
 	   void SetReg(int index,DWORD value);
 	   void SetEip(DWORD value);
 	   void SetEFLAGS(DWORD value);
-	   DWORD GetRealAddr(DWORD vAddr);
 	   DWORD GetImagebase();
-	   int GetDisassembly(char* ptr, char* OutputString);
+	   cString GetDisassembly(char* ptr,DWORD &InsLength);
 	   DWORD DefineDLL(char* DLLName,char* DLLPath, DWORD VirtualAddress);	//The Desired Virtual Address
 	   DWORD DefineAPI(DWORD DLLBase,char* APIName,int nArgs,DWORD APIFunc);
 };
@@ -102,6 +102,7 @@ class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cRecursiveSca
 {
 	DWORD Level;
 	WIN32_FIND_DATA file_data;
+	void FindFiles(cString wrkdir);
 public:
 	int nDirectories;
 	int nFiles;
@@ -109,7 +110,6 @@ public:
 	cHash* GetDrives();
 	void Scan(cString DirectoryName);
 	~cRecursiveScanner();
-	void FindFiles(cString wrkdir);
 	virtual bool DirectoryCallback(cString DirName,cString FullName,int Level);
 	virtual void FileCallback(cString Filename,cString FullName,int Level);
 };
@@ -126,15 +126,6 @@ public:
 //#define DBG_STOP		0
 //#define DBG_CONTINUE	1
 
-struct DBG_BREAKPOINT
-{
-	DWORD Address;
-	DWORD Reserved;
-	BYTE  OriginalByte;
-	BOOL  IsActive;
-	WORD  wReserved;
-};
-
 #define DBG_BP_TYPE_CODE		0 
 #define DBG_BP_TYPE_READWRITE	1
 #define DBG_BP_TYPE_WRITE		3
@@ -143,16 +134,42 @@ struct DBG_BREAKPOINT
 #define DBG_BP_SIZE_2			1
 #define DBG_BP_SIZE_4			3
 
-#define DBG_STATUS_ERROR		-1
-#define DBG_STATUS_STEP			-2
-#define DBG_STATUS_HARDWARE_BP	-3
-struct DGB_HARDWARE_BREAKPOINT
+#define DBG_STATUS_STEP				4
+#define DBG_STATUS_HARDWARE_BP		3
+#define DBG_STATUS_MEM_BREAKPOINT	2
+#define DBG_STATUS_BREAKPOINT		1
+#define DBG_STATUS_EXITPROCESS		0
+#define DBG_STATUS_ERROR			-1
+#define DBG_STATUS_INTERNAL_ERROR	-2
+
+struct DBG_BREAKPOINT
 {
 	DWORD Address;
+	DWORD UserData;
+	BYTE  OriginalByte;
+	BOOL  IsActive;
+	WORD  wReserved;
+};
+
+struct DBG_HARDWARE_BREAKPOINT
+{
+	DWORD Address;
+	DWORD UserData;
 	DWORD Type;
 	DWORD Size;
 };
 
+struct DBG_MEMORY_BREAKPOINT
+{
+	DWORD Address;
+	DWORD UserData;
+	DWORD OldProtection;
+	DWORD NewProtection;
+	DWORD Size;
+	BOOL IsActive;
+	CHAR cReserved;				//they are written for padding
+	WORD wReserved;
+};
 class DLLIMPORT Security::Libraries::Malware::OS::Win32::Debugging::cDebugger
 {
 protected:
@@ -163,7 +180,8 @@ protected:
 	cString Filename;
 	cString Commandline;
 	cList* Breakpoints;
-	DGB_HARDWARE_BREAKPOINT HardwareBreakpoints[4];
+	cList* MemoryBreakpoints;
+	DBG_HARDWARE_BREAKPOINT HardwareBreakpoints[4];
 	
 	void RefreshRegisters();		//Get The Registers from the context
 	void UpdateRegisters();			//Save the updates of the registers to the context
@@ -182,7 +200,8 @@ public:
 	DWORD hProcess;
 	DWORD ExceptionCode;
 	DWORD LastBreakpoint;
-	
+	DWORD LastMemoryBreakpoint;
+
 	cDebugger(cString Filename, cString Commandline = cString(""));
 	cDebugger(Security::Targets::cProcess* Process);
 	int Run();
@@ -190,11 +209,15 @@ public:
 	void Pause();
 	void Resume();
 	void Terminate();
-	int GetBreakpoint(DWORD Address);		// returns the index of this breakpoint in the list
+	void Exit();
+	DBG_BREAKPOINT* GetBreakpoint(DWORD Address);		// returns the index of this breakpoint in the list
 	BOOL SetBreakpoint(DWORD Address);
 	void RemoveBreakpoint(DWORD Address);
 	BOOL SetHardwareBreakpoint(DWORD Address,DWORD Type, int Size);
 	void RemoveHardwareBreakpoint(DWORD Address);
+	DBG_MEMORY_BREAKPOINT* GetMemoryBreakpoint(DWORD Address);
+	BOOL SetMemoryBreakpoint(DWORD Address,DWORD Size, DWORD Type);		//usually Size is multiply of 0x1000
+	void RemoveMemoryBreakpoint(DWORD Address);
 	~cDebugger();
 
 	virtual void DLLLoadedNotifyRoutine(){};
@@ -208,7 +231,7 @@ class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::SSDeep
 {
 	int count;
 public:
-	static const int Max_Result=116;
+	static const int Max_Result = 116;
 	SSDeep(void);
 	~SSDeep(void);
 	static int Compare(const char *sig1, const char *sig2);

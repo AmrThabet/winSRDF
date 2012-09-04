@@ -191,6 +191,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cDebugger.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\CFile.cpp"
 				>
 			</File>
@@ -224,6 +228,10 @@
 			</File>
 			<File
 				RelativePath=".\CPokasEmu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cProcess.cpp"
 				>
 			</File>
 			<File
@@ -281,6 +289,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\KernelModeComm.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MemMgr.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Registry.cpp"
 				>
 			</File>
@@ -290,6 +306,10 @@
 			</File>
 			<File
 				RelativePath=".\SRDF.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SSDeep.cpp"
 				>
 			</File>
 			<File
@@ -311,6 +331,10 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\ThreadMgr.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
@@ -375,10 +399,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\includes\Libraries\tib.h"
-				>
-			</File>
-			<File
 				RelativePath=".\includes\Libraries\x86emu.h"
 				>
 			</File>
@@ -386,6 +406,30 @@
 				RelativePath=".\includes\Libraries\yara.h"
 				>
 			</File>
+			<Filter
+				Name="SSDeep"
+				>
+				<File
+					RelativePath=".\SSDeep\edit_dist.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SSDeep\find-file-size.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SSDeep\fuzzy.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SSDeep\fuzzy.h"
+					>
+				</File>
+				<File
+					RelativePath=".\SSDeep\main.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

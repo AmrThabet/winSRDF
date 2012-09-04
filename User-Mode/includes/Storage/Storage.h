@@ -74,6 +74,8 @@ public:
 	Security::Storage::Registry::cRegistryEntry operator [](DWORD index);
 	int GetNumberOfEntries();
 	int GetNumberOfSubKeys();
+	bool DeleteEntry(cString Name);
+	bool DeleteSubKey(cString Name);
 	bool IsFound();									//Always == true if you set Create = true
 	void EnumerateValues(DWORD &nValues);			//Array of RegistryEntry
 	void EnumerateKeys(DWORD &nKeys);				//Hash of id and Subkey Name

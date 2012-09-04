@@ -34,12 +34,14 @@ class DLLIMPORT Security::Targets::Files::cFile
 {
 	HANDLE        hFile;
     HANDLE        hMapping;
+	BOOL		  IsFile;
 public:
     DWORD        BaseAddress;
     DWORD        FileLength;
 	DWORD		 Attributes;
 	char*		 Filename;
 	cFile(char* szFilename);
+	cFile(char* buffer,DWORD size);
 	int OpenFile(char* szFilename);
 	~cFile();
 };
@@ -96,6 +98,7 @@ class DLLIMPORT Security::Targets::Files::cPEFile : public Security::Targets::Fi
 private:
 
 	//Functions:
+	bool ParsePE();
 	VOID initDataDirectory();
 	VOID initSections();
 	VOID initImportTable();
@@ -110,13 +113,16 @@ public:
 	DWORD Entrypoint;
 	DWORD FileAlignment;
 	DWORD SectionAlignment;
-	DWORD DataDirectories;
+	WORD DataDirectories;
 	short nSections;
 	SECTION_STRUCT* Section;
 	IMPORTTABLE ImportTable;
+
 	//Functions
 	cPEFile(char* szFilename);
+	cPEFile(char* buffer,DWORD size);
 	~cPEFile();
+	static bool identify(cFile* File);
 	DWORD RVAToOffset(DWORD RVA);
 	DWORD OffsetToRVA(DWORD RawOffset);
 
@@ -151,22 +157,24 @@ public:
 	// parameters
 	DWORD procHandle;
 	__PEB  *ppeb;
-	DWORD processImageBase;
-	ULONG processSizeOfImage;
+	DWORD ImageBase;
+	ULONG SizeOfImage;
 	cString processName;
 	cString processPath;
-	DWORD processParentID;
-	cString processCommandLine;
+	DWORD ParentID;
+	DWORD ProcessId;
+	cString CommandLine;
 	cList modulesList;
 	cList MemoryMap;
 	bool isFound;
 	
 	//methods
-	cProcess(int);
+	cProcess(int processId);
 	
-	DWORD Read(DWORD ,DWORD);
-	DWORD Allocate (DWORD,DWORD);
+	DWORD Read(DWORD startAddress,DWORD size);
+	DWORD Allocate (DWORD preferedAddress,DWORD size);
 	DWORD Write(DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite);
-	DWORD DllInject(DWORD);
-	DWORD CreateThread(DWORD,DWORD);
+	DWORD DllInject(DWORD pointerToDll);
+	DWORD CreateThread(DWORD addressToFunction , DWORD addressToParameter);
+	bool IsFound();
 };

@@ -67,12 +67,10 @@ void cSerializer::Deserialize(cString XMLDocument)
 				i++;
 			}
 			Key.Substr(XMLDocument,KeyBegin,i-KeyBegin);
-			cout << "Key = " << (char*)Key << "\n";
 			i++;
 			int ValueBegin = i;
 			i = SkipInside(XMLDocument,i);
 			Value.Substr(XMLDocument,ValueBegin,i-ValueBegin);
-			cout << "Value = " << (char*)Value << "\n";;
 			if(XMLDocument[i] == '<' && XMLDocument[i+1] == '/')
 			{
 				i+=2;				//Skip The "</"
@@ -85,7 +83,6 @@ void cSerializer::Deserialize(cString XMLDocument)
 					i++;
 				}
 				CheckKey.Substr(XMLDocument,CheckKeyBegin,i-CheckKeyBegin);
-				cout << "CheckKey = " << (char*)CheckKey << "\n\n";
 				XMLParams.AddItem(Key,Value);
 				if (Key != CheckKey)return;
 				i++;
@@ -112,7 +109,6 @@ DWORD cSerializer::SkipInside(cString XMLDocument,int offset)
 				if(XMLDocument[i] == '>')break;
 				i++;
 			}
-			cout << i << "\n";
 			i = SkipInside(XMLDocument,i);
 			if(XMLDocument[i] == '<' && XMLDocument[i+1] == '/')
 			{

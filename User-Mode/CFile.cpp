@@ -67,12 +67,20 @@ cFile::cFile(char* szFilename)
         return;
     }
     FileLength  = (DWORD) GetFileSize(hFile,NULL);
+	IsFile = TRUE;
 	return;
 }
-
+cFile::cFile(char* buffer,DWORD size)
+{
+	BaseAddress = (DWORD)buffer;
+	FileLength = size;
+	Attributes = NULL;
+	Filename = NULL;
+	IsFile = FALSE;
+}
 cFile::~cFile()
 {
-	if (BaseAddress != NULL)
+	if (BaseAddress != NULL && IsFile)
 	{
 		UnmapViewOfFile((LPVOID)BaseAddress);
 		CloseHandle(hMapping);

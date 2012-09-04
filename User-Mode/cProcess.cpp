@@ -83,7 +83,7 @@ cString cProcess::Unicode2Ansi(LPWSTR unicodeString_,int stringLength)
 
 cProcess::cProcess(int processId)
 {
-
+	ProcessId = processId;
 	if(sm_EnableTokenPrivilege() == TRUE)
 	{
 
@@ -114,7 +114,7 @@ cProcess::cProcess(int processId)
 
 					(ProcAdd)((HANDLE)procHandle, ProcessBasicInformation, &pbi, sizeof(pbi), &data_length);
 					ppeb = (__PEB*)pbi.PebBaseAddress;  // setting PEB address		
-					processParentID = pbi.InheritedFromUniqueProcessId;
+					ParentID = pbi.InheritedFromUniqueProcessId;
 					AnalyzeProcess();
 					isFound = true;
 				}
@@ -126,15 +126,19 @@ cProcess::cProcess(int processId)
 
 }
 
+bool cProcess::IsFound()
+{
+	return isFound;
+}
 
 void cProcess::AnalyzeProcess()
 {	
 
 	if(ppeb != NULL)
 	{
-		// setting process processImageBase
+		// setting process ImageBase
 		processName = "";
-		ReadProcessMemory((HANDLE)procHandle,&(ppeb->ImageBaseAddress),&processImageBase,sizeof(processImageBase),NULL);
+		ReadProcessMemory((HANDLE)procHandle,&(ppeb->ImageBaseAddress),&ImageBase,sizeof(ImageBase),NULL);
 
 		// setting process commandline
 
@@ -147,7 +151,7 @@ void cProcess::AnalyzeProcess()
 		command = (LPWSTR) malloc ((tmp3.Commandline.Length + 1)*2);
 		memset(command , 0 ,(tmp3.Commandline.Length + 1)*2);
 		ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp3.Commandline.Buffer),command,(tmp3.Commandline.Length + 1)*2,&bytes1);
-		processCommandLine = cString (Unicode2Ansi( command ,(tmp3.Commandline.Length+1)*2));
+		CommandLine = cString (Unicode2Ansi( command ,(tmp3.Commandline.Length+1)*2));
 		
 
 
@@ -171,9 +175,9 @@ void cProcess::AnalyzeProcess()
 			do{
 				
 				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.InLoadOrderLinks.Flink),&tmp2,sizeof(tmp2),&bytesRead);
-				if (processImageBase == tmp2.DllBase)
+				if (ImageBase == tmp2.DllBase)
 				{
-					processSizeOfImage = tmp2.SizeOfImage;
+					SizeOfImage = tmp2.SizeOfImage;
 
 					pathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
 					memset(pathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);

@@ -58,6 +58,7 @@ public:
 	cYaraScanner(cString,cString);
 	void AddRule(cString rule);
 	cList* Scan(unsigned char* buffer,DWORD buffer_size);
+	cList* Scan(Security::Targets::cProcess* Process);
 	int ScannerCallback(RULE* rule);
 	char* CreatRule(cString name,cList strings,cString condition);
 	char* CreatRule(cString name,cList strings,int condition);

@@ -136,6 +136,20 @@ int cRegistryKey::GetNumberOfSubKeys()
 {
 	return nSubKeys;
 }
+bool cRegistryKey::DeleteEntry(cString Name)
+{
+	if (RegDeleteValue(hKey,(LPCTSTR)Name.GetChar()) == ERROR_SUCCESS)
+	{
+		RefreshEntries();
+		return true;
+	}
+	return false;
+}
+bool cRegistryKey::DeleteSubKey(cString Name)
+{
+	if (RegDeleteKey(hKey,(LPCTSTR)Name.GetChar()) == ERROR_SUCCESS) return true;
+	return false;
+}
 //-----------------------------------------------------------------------------
 cRegistryEntry::cRegistryEntry(cRegistryKey* RegKey,cString Valuename)
 {
@@ -148,6 +162,7 @@ cRegistryEntry::cRegistryEntry(HKEY hKey,cString Valuename)
 {
 	if (RegQueryValueEx(hKey,Valuename,NULL,&Type,NULL,NULL) == ERROR_SUCCESS)isFound = true;
 	else isFound = false;
+	
 	this->hKey = hKey;
 	ValueName = Valuename;
 }
@@ -159,7 +174,6 @@ char* cRegistryEntry::GetValue(DWORD &len)
 {
 	
 	if (RegQueryValueEx(hKey,ValueName,NULL,NULL,NULL,&len) != ERROR_SUCCESS) return NULL;
-	
 	char* buff = (char*)malloc(len+1);
 	memset(buff,0,len);
 	if (RegQueryValueEx(hKey,ValueName,NULL,NULL,(LPBYTE)buff,&len) != ERROR_SUCCESS) return NULL;
@@ -179,3 +193,4 @@ cString cRegistryEntry::GetEntryName()
 {
 	return ValueName;
 }
+
