@@ -2,9 +2,9 @@
  *
  *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet@student.alx.edu.eg>
  *
- *  This program is free software; you can redistribute it and/or modify
+ *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
+ *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
@@ -13,18 +13,18 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to Amr Thabet
- *  amr.thabet[at]student.alx.edu.eg
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-#include "RDF.h"
+
+#include "SRDF.h"
 
 
-using namespace RDF;
-using namespace RDF::Tdi;
-using namespace RDF::misc;
-using namespace RDF::FileManager;
+using namespace SRDF;
+using namespace SRDF::Tdi;
+using namespace SRDF::misc;
+using namespace SRDF::FileManager;
 #include <tdi.h>
 #include <tdikrnl.h>
 #define HTONS(a) (((0xFF&a)<<8) + ((0xFF00&a)>>8))
@@ -40,15 +40,15 @@ NTSTATUS ClientEventReceiveDispatch(IN PVOID TdiEventContext,IN CONNECTION_CONTE
 NTSTATUS ClientEventChainedReceiveDispatch(IN PVOID  TdiEventContext,IN CONNECTION_CONTEXT ConnectionContext,IN ULONG  ReceiveFlags,IN ULONG  ReceiveLength,IN ULONG  StartingOffset,IN PMDL Tsdu,IN PVOID  TsduDescriptor);
 
 
-NTSTATUS TdiSniffer::BeginHooking(bool OnlyThroughFirewall)
+NTSTATUS cTdiFirewall::BeginHooking(bool OnlyThroughFirewall)
 {
          AttachToDevice(L"\\Device\\Tcp");
          this->OnlyThroughFirewall = OnlyThroughFirewall;
-         SetValue(FilteredMajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL].PreModification,TdiSniffer::MJInternalIOControl);
-         SetValue(FilteredMajorFunction[IRP_MJ_CREATE].PreModification,TdiSniffer::MJCreate);
-         SetValue(FilteredMajorFunction[IRP_MJ_CLOSE].PreModification,TdiSniffer::MJClose);
+         SetValue(FilteredMajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL].PreModification,cTdiFirewall::MJInternalIOControl);
+         SetValue(FilteredMajorFunction[IRP_MJ_CREATE].PreModification,cTdiFirewall::MJCreate);
+         SetValue(FilteredMajorFunction[IRP_MJ_CLOSE].PreModification,cTdiFirewall::MJClose);
 }
-int _cdecl TdiSniffer::MJCreate(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
+int _cdecl cTdiFirewall::MJCreate(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
     NTSTATUS status;
     PTRANSPORT_ADDRESS pTransportAddress;
@@ -57,7 +57,7 @@ int _cdecl TdiSniffer::MJCreate(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
     DWORD PID = 0;
 	FILE_FULL_EA_INFORMATION* pEAInfo = (FILE_FULL_EA_INFORMATION *)Irp->AssociatedIrp.SystemBuffer;
 	PFILE_OBJECT* PFileObject = NULL;
-	int FilterRet = TDISNIFFER_ALLOW;
+	int FilterRet = TDIFIREWALL_ALLOW;
 	PVOID UserContext = NULL;
 	if (pEAInfo == NULL)
     {       
@@ -75,7 +75,7 @@ int _cdecl TdiSniffer::MJCreate(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
            DbgPrint("Port %d and PID %d",port,PID);
            if (CreateConnectionEvent != NULL)FilterRet = (*CreateConnectionEvent)(this,PID,port,UserContext);
            
-           if (FilterRet == TDISNIFFER_DENY)
+           if (FilterRet == TDIFIREWALL_DENY)
            {
               DbgPrint("Access Denied");           
               Irp->IoStatus.Status = STATUS_ACCESS_DENIED;
@@ -97,7 +97,7 @@ int _cdecl TdiSniffer::MJCreate(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
     return FILTER_SKIP;
 }
 
-int _cdecl TdiSniffer::MJClose(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
+int _cdecl cTdiFirewall::MJClose(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
     PIO_STACK_LOCATION StackLoc = IoGetCurrentIrpStackLocation(Irp);
     DWORD PID = (DWORD)PsGetCurrentProcessId();
@@ -110,7 +110,7 @@ int _cdecl TdiSniffer::MJClose(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
     }
     return FILTER_SKIP;
 }
-int _cdecl TdiSniffer::MJInternalIOControl(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
+int _cdecl cTdiFirewall::MJInternalIOControl(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
     PIO_STACK_LOCATION StackLoc = IoGetCurrentIrpStackLocation(Irp);
     PVOID UserContext = NULL; 
@@ -143,7 +143,7 @@ int _cdecl TdiSniffer::MJInternalIOControl(__in PDEVICE_OBJECT DeviceObject,__in
     }
 }
 
-int TdiSniffer::MNAssociateAddress(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
+int cTdiFirewall::MNAssociateAddress(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
     NTSTATUS status;
     PFILE_OBJECT TransportAddrObject = NULL;
@@ -158,10 +158,10 @@ int TdiSniffer::MNAssociateAddress(__in PDEVICE_OBJECT DeviceObject,__in PIRP Ir
     return FILTER_SKIP;
 }
 
-int TdiSniffer::MNTcpConnect(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp,PVOID UserContext)
+int cTdiFirewall::MNTcpConnect(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp,PVOID UserContext)
 {
     DWORD PID = (DWORD)PsGetCurrentProcessId();
-    int Result = TDISNIFFER_ALLOW;
+    int Result = TDIFIREWALL_ALLOW;
     DbgPrint("Connect PID %d",PID);
     PIO_STACK_LOCATION StackLoc = IoGetCurrentIrpStackLocation(Irp);
     PTDI_REQUEST_KERNEL Request = (PTDI_REQUEST_KERNEL)&StackLoc->Parameters;
@@ -171,14 +171,14 @@ int TdiSniffer::MNTcpConnect(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp,PVOI
     if (ConnectEvent != NULL)Result = (*ConnectEvent)(this,PID,TYPE_TO_CLIENT,&IPAddress,RemoteAddr->sin_port,UserContext);
     
     DbgPrint("IP = %d.%d.%d.%d and Port %d",IPAddress.ip1,IPAddress.ip2,IPAddress.ip3,IPAddress.ip4,HTONS(RemoteAddr->sin_port));
-    if (Result == TDISNIFFER_ALLOW)return FILTER_SKIP;
+    if (Result == TDIFIREWALL_ALLOW)return FILTER_SKIP;
     else{
          Irp->IoStatus.Status = STATUS_REMOTE_NOT_LISTENING;
          return FILTER_COMPLETE_REQUEST;
     }
 }
 
-int TdiSniffer::MNSend(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
+int cTdiFirewall::MNSend(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
     DWORD PID = (DWORD)PsGetCurrentProcessId();
     PIO_STACK_LOCATION StackLoc = IoGetCurrentIrpStackLocation(Irp);
@@ -193,7 +193,7 @@ int TdiSniffer::MNSend(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
     return FILTER_SKIP;
 }
 
-int TdiSniffer::MNSetEventHandler(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
+int cTdiFirewall::MNSetEventHandler(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
     PIO_STACK_LOCATION StackLoc = IoGetCurrentIrpStackLocation(Irp); 
     PTDI_REQUEST_KERNEL_SET_EVENT Request = (PTDI_REQUEST_KERNEL_SET_EVENT)&StackLoc->Parameters;
@@ -253,28 +253,28 @@ int TdiSniffer::MNSetEventHandler(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp
 
 NTSTATUS ClientEventConnectDispatch(IN PVOID TdiEventContext,IN LONG  RemoteAddressLength,IN PVOID  RemoteAddress,IN LONG  UserDataLength,IN PVOID  UserData,IN LONG  OptionsLength,IN PVOID  Options,OUT CONNECTION_CONTEXT *ConnectionContext,OUT PIRP  *AcceptIrp)
 {
-        EVENT_HANDLER_IDENTIFIER*  SnifferContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
-        TdiSniffer* Tdisniffer =  SnifferContext->TdiClass;
-        return Tdisniffer->EventConnect(SnifferContext,RemoteAddressLength,RemoteAddress,UserDataLength,UserData,OptionsLength,Options,ConnectionContext,AcceptIrp);
+        EVENT_HANDLER_IDENTIFIER*  TdiFirewallContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
+        cTdiFirewall* TdiFirewall =  TdiFirewallContext->TdiClass;
+        return TdiFirewall->EventConnect(TdiFirewallContext,RemoteAddressLength,RemoteAddress,UserDataLength,UserData,OptionsLength,Options,ConnectionContext,AcceptIrp);
 }
 
 typedef ClientEventConnect(IN PVOID TdiEventContext,IN LONG  RemoteAddressLength,IN PVOID  RemoteAddress,IN LONG  UserDataLength,IN PVOID  UserData,IN LONG  OptionsLength,IN PVOID  Options,OUT CONNECTION_CONTEXT  *ConnectionContext,OUT PIRP  *AcceptIrp);
 typedef ClientEventConnect* PClientEventConnect;
 
-NTSTATUS TdiSniffer::EventConnect(EVENT_HANDLER_IDENTIFIER* TdiSnifferContext, IN LONG  RemoteAddressLength,IN PVOID  RemoteAddress,IN LONG  UserDataLength,IN PVOID  UserData,IN LONG  OptionsLength,IN PVOID  Options,OUT CONNECTION_CONTEXT *ConnectionContext,OUT PIRP  *AcceptIrp)
+NTSTATUS cTdiFirewall::EventConnect(EVENT_HANDLER_IDENTIFIER* TdiFirewallContext, IN LONG  RemoteAddressLength,IN PVOID  RemoteAddress,IN LONG  UserDataLength,IN PVOID  UserData,IN LONG  OptionsLength,IN PVOID  Options,OUT CONNECTION_CONTEXT *ConnectionContext,OUT PIRP  *AcceptIrp)
 {
-        int Result = TDISNIFFER_ALLOW;
-        PClientEventConnect OriginalEvent = (PClientEventConnect)TdiSnifferContext->EventHandler;
+        int Result = TDIFIREWALL_ALLOW;
+        PClientEventConnect OriginalEvent = (PClientEventConnect)TdiFirewallContext->EventHandler;
         TDI_ADDRESS_IP* RemoteAddr = (TDI_ADDRESS_IP*)((TA_ADDRESS*)((TRANSPORT_ADDRESS *)RemoteAddress)->Address)->Address;
         IPADDR IPAddress;
         SEPARATEADDR(RemoteAddr->in_addr,IPAddress.ip1,IPAddress.ip2,IPAddress.ip3,IPAddress.ip4);
-        if (ConnectEvent != NULL)Result = (*ConnectEvent)(this,TdiSnifferContext->PID,TYPE_TO_SERVER,&IPAddress,RemoteAddr->sin_port,TdiSnifferContext->UserContext);
+        if (ConnectEvent != NULL)Result = (*ConnectEvent)(this,TdiFirewallContext->PID,TYPE_TO_SERVER,&IPAddress,RemoteAddr->sin_port,TdiFirewallContext->UserContext);
         
         DbgPrint("Server : IP = %d.%d.%d.%d and Port %d",IPAddress.ip1,IPAddress.ip2,IPAddress.ip3,IPAddress.ip4,HTONS(RemoteAddr->sin_port));
         
-        if (Result == TDISNIFFER_ALLOW)
+        if (Result == TDIFIREWALL_ALLOW)
         {
-           NTSTATUS status = (OriginalEvent)(TdiSnifferContext->OriginalContext,RemoteAddressLength,RemoteAddress,UserDataLength,UserData,OptionsLength,Options,ConnectionContext,AcceptIrp);
+           NTSTATUS status = (OriginalEvent)(TdiFirewallContext->OriginalContext,RemoteAddressLength,RemoteAddress,UserDataLength,UserData,OptionsLength,Options,ConnectionContext,AcceptIrp);
            return status;
         }
         else{
@@ -290,33 +290,33 @@ NTSTATUS ClientEventReceiveDispatch(IN PVOID TdiEventContext,IN CONNECTION_CONTE
         if (BytesTaken == NULL)
         {
            NTSTATUS status;           
-           EVENT_HANDLER_IDENTIFIER*  SnifferContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;  
-           PClientEventReceive OriginalEvent = (PClientEventReceive)SnifferContext->EventHandler;   
-           status = (OriginalEvent)(SnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,BytesIndicated,BytesAvailable,BytesTaken,Tsdu,IoRequestPacket);
+           EVENT_HANDLER_IDENTIFIER*  TdiFirewallContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;  
+           PClientEventReceive OriginalEvent = (PClientEventReceive)TdiFirewallContext->EventHandler;   
+           status = (OriginalEvent)(TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,BytesIndicated,BytesAvailable,BytesTaken,Tsdu,IoRequestPacket);
            return status;
         }
         DbgPrint("Receive Command");
         *BytesTaken = BytesAvailable;
         *IoRequestPacket = NULL;
-        EVENT_HANDLER_IDENTIFIER*  SnifferContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
-        TdiSniffer* Tdisniffer =  SnifferContext->TdiClass;
-        return Tdisniffer->EventReceive(SnifferContext,ConnectionContext,ReceiveFlags,BytesIndicated,BytesAvailable,BytesTaken,Tsdu,IoRequestPacket);
+        EVENT_HANDLER_IDENTIFIER*  TdiFirewallContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
+        cTdiFirewall* TdiFirewall =  TdiFirewallContext->TdiClass;
+        return TdiFirewall->EventReceive(TdiFirewallContext,ConnectionContext,ReceiveFlags,BytesIndicated,BytesAvailable,BytesTaken,Tsdu,IoRequestPacket);
 }
 
-NTSTATUS TdiSniffer::EventReceive(EVENT_HANDLER_IDENTIFIER* TdiSnifferContext,IN CONNECTION_CONTEXT ConnectionContext,IN ULONG ReceiveFlags,IN ULONG BytesIndicated,IN ULONG BytesAvailable,OUT ULONG *BytesTaken,IN PVOID Tsdu,OUT PIRP *IoRequestPacket)
+NTSTATUS cTdiFirewall::EventReceive(EVENT_HANDLER_IDENTIFIER* TdiFirewallContext,IN CONNECTION_CONTEXT ConnectionContext,IN ULONG ReceiveFlags,IN ULONG BytesIndicated,IN ULONG BytesAvailable,OUT ULONG *BytesTaken,IN PVOID Tsdu,OUT PIRP *IoRequestPacket)
 {
-        int Result = TDISNIFFER_ALLOW;
-        PClientEventReceive OriginalEvent = (PClientEventReceive)TdiSnifferContext->EventHandler;
-        DbgPrint("TdiSniffer : Bytes Received");
+        int Result = TDIFIREWALL_ALLOW;
+        PClientEventReceive OriginalEvent = (PClientEventReceive)TdiFirewallContext->EventHandler;
+        DbgPrint("TdiFirewall : Bytes Received");
         char* Buffer = (char*)malloc(BytesAvailable+1);
         memset(Buffer,0,BytesAvailable+1);
         memcpy(Buffer, Tsdu, BytesAvailable);
         DWORD size = BytesAvailable;
-        if (ReceiveEvent != NULL)Result = (*ReceiveEvent)(this,TdiSnifferContext->PID,Buffer,&size, TdiSnifferContext->UserContext);
+        if (ReceiveEvent != NULL)Result = (*ReceiveEvent)(this,TdiFirewallContext->PID,Buffer,&size, TdiFirewallContext->UserContext);
         
-        if (Result == TDISNIFFER_ALLOW)
+        if (Result == TDIFIREWALL_ALLOW)
         {
-           return (OriginalEvent)(TdiSnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,BytesIndicated,size,BytesTaken,Buffer,IoRequestPacket);
+           return (OriginalEvent)(TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,BytesIndicated,size,BytesTaken,Buffer,IoRequestPacket);
         }
         else{
              return STATUS_DATA_NOT_ACCEPTED;
@@ -334,21 +334,21 @@ NTSTATUS ClientEventChainedReceiveDispatch(IN PVOID TdiEventContext,IN CONNECTIO
            DbgPrint("NULL Tsdu or TdiEventContext !!!");               
            return STATUS_DATA_NOT_ACCEPTED;
         }
-        EVENT_HANDLER_IDENTIFIER*  SnifferContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
-        PClientEventChainedReceive OriginalEvent = (PClientEventChainedReceive)SnifferContext->EventHandler;
+        EVENT_HANDLER_IDENTIFIER*  TdiFirewallContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
+        PClientEventChainedReceive OriginalEvent = (PClientEventChainedReceive)TdiFirewallContext->EventHandler;
         if (OriginalEvent == NULL)
         {
            DbgPrint("NULL OriginalEvent !!!");               
            return STATUS_DATA_NOT_ACCEPTED;
         }
         //return STATUS_SUCCESS;
-        DbgPrint("Context : 0x%x ConnectionContext : 0x%x ReceiveFlags : 0x%x ReceiveLength : 0x%x StartingOffset : 0x%x TsduDescriptor : 0x%x",SnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
-        status = (OriginalEvent)(SnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
+        DbgPrint("Context : 0x%x ConnectionContext : 0x%x ReceiveFlags : 0x%x ReceiveLength : 0x%x StartingOffset : 0x%x TsduDescriptor : 0x%x",TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
+        status = (OriginalEvent)(TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
         return status;
         
         /*
         DbgPrint("Acquire Spinlock");
-        //KeAcquireSpinLockAtDpcLevel(&SnifferContext->SpinLock);
+        //KeAcquireSpinLockAtDpcLevel(&TdiFirewallContext->SpinLock);
         
         char* TsduBuffer = (char*)MmGetSystemAddressForMdlSafe(Tsdu, NormalPagePriority);
         if (TsduBuffer == NULL)
@@ -365,20 +365,20 @@ NTSTATUS ClientEventChainedReceiveDispatch(IN PVOID TdiEventContext,IN CONNECTIO
         if (AllocateMDL(newTsdu,Buffer,ReceiveLength))
         {
             DbgPrint("Calling OriginalEvent");
-            //(OriginalEvent)(SnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength-StartingOffset-1,0,newTsdu,TsduDescriptor);
+            //(OriginalEvent)(TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength-StartingOffset-1,0,newTsdu,TsduDescriptor);
         }
         
         
         
-        //KeReleaseSpinLockFromDpcLevel(&SnifferContext->SpinLock);
+        //KeReleaseSpinLockFromDpcLevel(&TdiFirewallContext->SpinLock);
         DbgPrint("Release Spinlock");
         return status;
         return STATUS_SUCCESS;
-        return (OriginalEvent)(SnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
+        return (OriginalEvent)(TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
         
-        //EVENT_HANDLER_IDENTIFIER*  SnifferContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
-        //PClientEventChainedReceive OriginalEvent = (PClientEventChainedReceive)SnifferContext->EventHandler;
-        //status = (OriginalEvent)(SnifferContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
+        //EVENT_HANDLER_IDENTIFIER*  TdiFirewallContext = (EVENT_HANDLER_IDENTIFIER*)TdiEventContext;
+        //PClientEventChainedReceive OriginalEvent = (PClientEventChainedReceive)TdiFirewallContext->EventHandler;
+        //status = (OriginalEvent)(TdiFirewallContext->OriginalContext,ConnectionContext,ReceiveFlags,ReceiveLength,StartingOffset,Tsdu,TsduDescriptor);
         //return status;
         //*/
 }
@@ -386,7 +386,7 @@ NTSTATUS ClientEventChainedReceiveDispatch(IN PVOID TdiEventContext,IN CONNECTIO
 //--------------------------------------------------------------------------------------------
 //Connection Dynamic Array Functions:
 //--------------------------------------
-VOID TdiSniffer::AddToConnectionContext(CONNECTION_CONTEXT ConnectionContext,PVOID UserContext)
+VOID cTdiFirewall::AddToConnectionContext(CONNECTION_CONTEXT ConnectionContext,PVOID UserContext)
 {
      CONNECTION_CONTEXT_ARRAY* ConnectionObj = (CONNECTION_CONTEXT_ARRAY*)malloc(sizeof(CONNECTION_CONTEXT_ARRAY));
      memset(ConnectionObj,0,sizeof(CONNECTION_CONTEXT_ARRAY));
@@ -401,7 +401,7 @@ VOID TdiSniffer::AddToConnectionContext(CONNECTION_CONTEXT ConnectionContext,PVO
      ObjArray->UserContext = UserContext;
      ObjArray->FLink = ConnectionObj;
 }
-VOID TdiSniffer::AssociateConnectionContext(PVOID ConnectionContext,PVOID AssociatedObject)
+VOID cTdiFirewall::AssociateConnectionContext(PVOID ConnectionContext,PVOID AssociatedObject)
 {
      CONNECTION_CONTEXT_ARRAY* ObjArray = &ConnObjs;
      if (ObjArray->ConnectionContext == ConnectionContext)return;
@@ -415,7 +415,7 @@ VOID TdiSniffer::AssociateConnectionContext(PVOID ConnectionContext,PVOID Associ
            }
      }
 }
-bool TdiSniffer::IsConnectionObjectFound(CONNECTION_CONTEXT ConnectionContext,OUT PVOID &UserContext)
+bool cTdiFirewall::IsConnectionObjectFound(CONNECTION_CONTEXT ConnectionContext,OUT PVOID &UserContext)
 {
      CONNECTION_CONTEXT_ARRAY* ObjArray = &ConnObjs;
      if (ObjArray->ConnectionContext == ConnectionContext)return true;
@@ -432,7 +432,7 @@ bool TdiSniffer::IsConnectionObjectFound(CONNECTION_CONTEXT ConnectionContext,OU
      return false;
 }
 
-bool TdiSniffer::RemoveFromConnectionContext(CONNECTION_CONTEXT ConnectionContext,OUT PVOID &UserContext)
+bool cTdiFirewall::RemoveFromConnectionContext(CONNECTION_CONTEXT ConnectionContext,OUT PVOID &UserContext)
 {
      CONNECTION_CONTEXT_ARRAY* ObjArray = &ConnObjs;
      CONNECTION_CONTEXT_ARRAY* OldObjArray;

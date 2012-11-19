@@ -1,5 +1,5 @@
-#include "RDF.h"
-using namespace RDF;
+#include "SRDF.h"
+using namespace SRDF;
 /////////////////////////////////////////////////////////////////////////////
 // Fast-IO Handlers
 

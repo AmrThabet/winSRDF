@@ -118,7 +118,6 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
 				{
 					nDirectories++;
 					FindFiles(wrkdir + "\\" + file_data.cFileName);
-					//cout << "Exiting The FindFiles\n\n";
 				}
 		}
 		else 
@@ -166,6 +165,5 @@ bool cRecursiveScanner::DirectoryCallback(cString DirName,cString FullName,int L
 
 void cRecursiveScanner::FileCallback(cString Filename,cString FullName,int Level)
 {
-	//cout << Filename << "\n";
-	
+
 }

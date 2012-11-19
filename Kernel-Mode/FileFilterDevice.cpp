@@ -18,8 +18,8 @@
  *
  */
 
-#include "RDF.h"
-using namespace RDF;
+#include "SRDF.h"
+using namespace SRDF;
 
 //Variables For the File System Notification Routine
 
@@ -79,14 +79,20 @@ int _cdecl FileFilterDevice::MountNewVolumesPre(__in PDEVICE_OBJECT DeviceObject
             
             if (NT_SUCCESS(Irp->IoStatus.Status))
             {                         
-                 DbgPrint("Will Attach ... ");
-                 for (i = 0;i<8; i++){
-                     if (AttachToDevice(TargetDevice) == STATUS_SUCCESS) break;
-                     DbgPrint("Try Again :(");
-                     Interval.QuadPart = -5000000;
-                     KeDelayExecutionThread(0,FALSE,&Interval);
+                 bool Attach = true;
+                 if (AskAttachFunc != NULL) Attach = (*AskAttachFunc)(this,TargetDevice);
+                 
+                 if (Attach == true) 
+                 {
+                     DbgPrint("Will Attach ... ");
+                     for (i = 0;i<8; i++){
+                         if (AttachToDevice(TargetDevice) == STATUS_SUCCESS) break;
+                         DbgPrint("Try Again :(");
+                         Interval.QuadPart = -5000000;
+                         KeDelayExecutionThread(0,FALSE,&Interval);
+                     }
+                     if (i != 8)DbgPrint("Device Attached");
                  }
-                 if (i != 8)DbgPrint("Device Attached");
             }
             else DbgPrint("Mount Chancelled ... "); 
             
@@ -152,9 +158,13 @@ NTSTATUS FileFilterDevice::EnumerateVolumes(PDEVICE_OBJECT FileSystemDevice)
            continue;
         }
         TargetDevice = VolumeDeviceObjects[i];
-        
-        AttachToDevice(TargetDevice);
-        DbgPrint("Enumerate : Device Attached");
+        bool Attach = true;
+        if (AskAttachFunc != NULL) Attach = (*AskAttachFunc)(this,TargetDevice);
+        if (Attach == true) 
+        {
+            AttachToDevice(TargetDevice);
+            DbgPrint("Enumerate : Device Attached");
+        }
         ObDereferenceObject( VolumeDeviceObjects[i] );
     }
     

@@ -21,6 +21,24 @@
 #include "x86emu.h"
 #include "cYaraScanner.h"
 using namespace Security::Elements::String;
+
+//PokasAsm
+//---------
+class DLLIMPORT Security::Libraries::Malware::Assembly::x86::CPokasAsm
+{
+	DWORD PokasAsmObj;
+	System*  m_objSystem;
+    EnviromentVariables *m_objEnvVar;
+public:
+	CPokasAsm();
+	~CPokasAsm();
+	char* Assemble(char* InstructionString, DWORD &Length);
+	char* Assemble(DISASM_INSTRUCTION* ins, DWORD &Length);
+	char* Disassemble(char* Buffer, DWORD &InstructionLength);
+	DISASM_INSTRUCTION* Disassemble(char* Buffer,DISASM_INSTRUCTION* ins);
+};
+
+
 //PokasEmu
 //---------
 
@@ -82,19 +100,6 @@ public:
 	   cString GetDisassembly(char* ptr,DWORD &InsLength);
 	   DWORD DefineDLL(char* DLLName,char* DLLPath, DWORD VirtualAddress);	//The Desired Virtual Address
 	   DWORD DefineAPI(DWORD DLLBase,char* APIName,int nArgs,DWORD APIFunc);
-};
-
-class DLLIMPORT Security::Libraries::Malware::Assembly::x86::CPokasAsm
-{
-	DWORD PokasAsmObj;
-	System*  m_objSystem;
-    EnviromentVariables *m_objEnvVar;
-public:
-	CPokasAsm();
-	~CPokasAsm();
-	char* Assemble(char* InstructionString, DWORD &Length);
-	char* Disassemble(char* Buffer, DWORD &InstructionLength);
-	DISASM_INSTRUCTION* Disassemble(char* Buffer,DISASM_INSTRUCTION* ins);
 };
 
 
@@ -170,13 +175,12 @@ struct DBG_MEMORY_BREAKPOINT
 	CHAR cReserved;				//they are written for padding
 	WORD wReserved;
 };
+
 class DLLIMPORT Security::Libraries::Malware::OS::Win32::Debugging::cDebugger
 {
 protected:
 	Security::Storage::Files::cLog* Log;
-	BOOL IsDebugging;
 	BOOL bContinueDebugging;
-	
 	cString Filename;
 	cString Commandline;
 	cList* Breakpoints;
@@ -184,9 +188,10 @@ protected:
 	DBG_HARDWARE_BREAKPOINT HardwareBreakpoints[4];
 	
 	void RefreshRegisters();		//Get The Registers from the context
-	void UpdateRegisters();			//Save the updates of the registers to the context
+			//Save the updates of the registers to the context
 	void RefreshDebugRegisters();
 public:
+	BOOL IsDebugging;
 	Security::Targets::cProcess* DebuggeeProcess;
 	Security::Targets::Files::cPEFile* DebuggeePE;
 	DEBUG_EVENT debug_event;
@@ -202,6 +207,8 @@ public:
 	DWORD LastBreakpoint;
 	DWORD LastMemoryBreakpoint;
 
+	//Functions
+	void UpdateRegisters();	
 	cDebugger(cString Filename, cString Commandline = cString(""));
 	cDebugger(Security::Targets::cProcess* Process);
 	int Run();
@@ -238,4 +245,23 @@ public:
 	static int ScanBuffer(const unsigned char *buf,  DWORD  buf_len, char  *result);
 	static int ScanHandle(FILE *handle,char *result);
 	static int ScanFileName(const char * filename,char * result);
+};
+
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Hooking::cAPIHook
+{
+public:
+
+	static const int  SIZE = 6;
+
+	BYTE oldBytes[SIZE] ; 
+	BYTE JMP[SIZE];	
+	DWORD oldProtect, myProtect; 
+	char debugBuffer[128]; 
+	DWORD pOrigMBAddress;
+	DWORD pNewFunc;
+
+	cAPIHook( DWORD pOrigMBAddress , DWORD pNewFunc);
+	BYTE* myHook();
+	void myUnHook();
+
 };

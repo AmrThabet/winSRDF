@@ -199,6 +199,7 @@ class DLLIMPORT System{
           unsigned long GetDllIndex(char* s);
           char* GetTiggeredAPI(Thread& thread);
           void init_apis(char* path);
+		  bytes * System::assembl(DISASM_INSTRUCTION* instruction);
 };
 extern "C"
 class DLLIMPORT Debugger{
@@ -570,7 +571,6 @@ struct hde32sexport{
 #define MOVXZ_SRC8  0x01000000
 #define EIP_UPDATED 0x02000000
 #define API_CALL    0x04000000
-
 //ModRM states
 #define RM_REG      0x00000001
 #define RM_DISP8    0x00000002
@@ -600,24 +600,22 @@ struct hde32sexport{
 
 struct DISASM_INSTRUCTION
 {
-      hde32sexport hde;
-      int entry;                 //the index of this opcode in the FlagTable
-      string* opcode;
-      int ndest;
-      int nsrc;
-      int other;      //used for mul to save the imm and used for any call to api to save the index of the api(it's num in APITable)
-      struct
-	  {
-             int length;
-             int items[3];
-             int flags[3];
-      } modrm;
-      int (*emu_func)(Thread&,DISASM_INSTRUCTION*);
-      int flags;
-};
+          hde32sexport hde;
+          int entry;                 //the index of this opcode in the FlagTable
+          string* opcode;
+          int ndest;
+          int nsrc;
+          int other;      //used for mul to save the imm and used for any call to api to save the index of the api(it's num in APITable)
+          struct {
+                 int length;
+                 int items[3];
+                 int flags[3];
+          } modrm;
+          int (*emu_func)(Thread&,DISASM_INSTRUCTION*);
+          int flags;
+    };
   //assembler & disassembler
-   struct bytes
-   {
+   struct bytes {
            int length;
            unsigned char s[16];
    };

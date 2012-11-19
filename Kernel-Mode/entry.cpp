@@ -18,12 +18,12 @@
  *
  */
 
-#include "RDF.h"
+#include "SRDF.h"
 //#include <ntddk.h>
 
-using namespace RDF;
-using namespace RDF::misc;
-using namespace RDF::FileManager;
+using namespace SRDF;
+using namespace SRDF::misc;
+using namespace SRDF::FileManager;
 
 VOID SetFastIoDispatch(IN PDRIVER_OBJECT pDriverObject);
 
@@ -180,14 +180,14 @@ NTSTATUS IrpDispatcherToDriver(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp){
     return driver->MultiDeviceIrpDispatcher(DeviceObject,Irp);
 };
 
-PVOID RDF::misc::CreateClass(unsigned long nLength)
+PVOID SRDF::misc::CreateClass(unsigned long nLength)
 {
     PVOID x = malloc(nLength);
     memset(x,0,nLength);
     return x;
 }
 
-bool RDF::misc::AllocateMDL(PMDL &Mdl,char* Buffer, DWORD size)
+bool SRDF::misc::AllocateMDL(PMDL &Mdl,char* Buffer, DWORD size)
 {
     Mdl = IoAllocateMdl(Buffer, size, FALSE, FALSE, NULL);
     if(Mdl)

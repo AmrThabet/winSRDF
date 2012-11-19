@@ -391,7 +391,6 @@ void cString::Substr(cString Str, DWORD offset,DWORD length)
 		m_pString = buff;
 		m_nLength = length;
 	}
-	//cout << strlen(Str) << "   " <<length << "   " << offset << "\n";
 }
 char cString::operator [](int i)
 {

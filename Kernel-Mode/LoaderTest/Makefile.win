@@ -1,0 +1,33 @@
+# Project: Project2
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = main.o UserComm.o $(RES)
+LINKOBJ  = main.o UserComm.o $(RES)
+LIBS =  -L"C:/wxDev-Cpp/Lib"  
+INCS =  -I"C:/wxDev-Cpp/Include" 
+CXXINCS =  -I"C:/wxDev-Cpp/lib/gcc/mingw32/3.4.5/include"  -I"C:/wxDev-Cpp/include/c++/3.4.5/backward"  -I"C:/wxDev-Cpp/include/c++/3.4.5/mingw32"  -I"C:/wxDev-Cpp/include/c++/3.4.5"  -I"C:/wxDev-Cpp/include"  -I"C:/wxDev-Cpp/"  -I"C:/wxDev-Cpp/include/common/wx/msw"  -I"C:/wxDev-Cpp/include/common/wx/generic"  -I"C:/wxDev-Cpp/include/common/wx/html"  -I"C:/wxDev-Cpp/include/common/wx/protocol"  -I"C:/wxDev-Cpp/include/common/wx/xml"  -I"C:/wxDev-Cpp/include/common/wx/xrc"  -I"C:/wxDev-Cpp/include/common/wx"  -I"C:/wxDev-Cpp/include/common" 
+BIN  = Loader.exe
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS)  
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Loader.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "Loader.exe" $(LIBS)
+
+main.o: main.cpp
+	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)
+
+UserComm.o: UserComm.cpp
+	$(CPP) -c UserComm.cpp -o UserComm.o $(CXXFLAGS)

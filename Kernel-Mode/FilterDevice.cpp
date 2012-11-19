@@ -18,9 +18,9 @@
  *
  */
 
-#include "RDF.h"
+#include "SRDF.h"
 
-using namespace RDF;
+using namespace SRDF;
 
 extern POBJECT_TYPE* IoDriverObjectType;
 
@@ -99,7 +99,7 @@ VOID FilterDevice::Pending(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
        ntStatus = Irp->IoStatus.Status;
     }
 }
-NTSTATUS RDF::FDCompletionRoutine(PDEVICE_OBJECT DeviceObject, PIRP Irp, PVOID Context)
+NTSTATUS SRDF::FDCompletionRoutine(PDEVICE_OBJECT DeviceObject, PIRP Irp, PVOID Context)
 {
          
     NTSTATUS status;
@@ -153,7 +153,6 @@ int FilterDevice::AddDeviceObject(PDEVICE_OBJECT DeviceObject){
     
     inheritedDeviceObject[nDeviceObjects] = DeviceObject;
     nDeviceObjects++;
-    DbgPrint("Added Device No.%x",nDeviceObjects);
     return (nDeviceObjects-1);
 }
 
@@ -171,7 +170,6 @@ int FilterDevice::RemoveDeviceObject(PDEVICE_OBJECT DeviceObject){
 };
 NTSTATUS FilterDevice::AttachToDevice(__in WCHAR* DeviceName)
 {
-        DbgPrint("Attach to Device (with Name)"); 
         NTSTATUS ntStatus;
         PDEVICE_OBJECT DeviceObject = NULL;
         PFILE_OBJECT fileObject;

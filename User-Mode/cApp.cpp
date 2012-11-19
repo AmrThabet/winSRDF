@@ -37,6 +37,7 @@ cApp::cApp(cString AppName)
 	optind = 0;
 	optarg = NULL;
 	SetDefaultSettings();
+
 }
 cApp::~cApp()
 {
@@ -149,8 +150,8 @@ int cApp::getopt(int argc, char *argv[], char *optstring)
 //////////////////////////////////////////////////////////////////////////////////////
 void cApp::SetDefaultSettings()
 {
-	Flags |= (APP_NOANOTHERINSTANCE | APP_ADDLOG | APP_REGISTRYSETTINGS | APP_DEFINEDATABASE);
-	Options = "a:bcCdef";
+	//Flags |= (APP_NOANOTHERINSTANCE | APP_ADDLOG | APP_REGISTRYSETTINGS | APP_DEFINEDATABASE);
+	Options = "";
 	LogFilename = AppPath;
 	LogFilename += "\\LogFile.txt";
 	RegistryPath = "Software\\";
@@ -198,4 +199,5 @@ void cApp::GetRequest(int argc, char *argv[])
 			optind++;
 		}
 	}
+	Request.AddItem(cString("default"),LastArg);
 }

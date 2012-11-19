@@ -62,7 +62,7 @@ int cDriver::LoadDriver()
 							NULL );
 	if ( !sh2 )
 	{
-             cout << "Service Exists\n";
+             //Service Exists
              return -1;
 	}
 	CloseServiceHandle(sh2);
@@ -126,7 +126,11 @@ cDevice::cDevice(char* devicename)
                 OPEN_EXISTING,
                 FILE_ATTRIBUTE_NORMAL,
                 NULL );
-    if(DeviceHandle == INVALID_HANDLE_VALUE)cout << "Error Handle\n";
+    if(DeviceHandle == INVALID_HANDLE_VALUE)
+	{
+		//Error Handle
+		return;
+	}
     DWORD ThreadID = 0;
     hThread = CreateThread(NULL,NULL,(LPTHREAD_START_ROUTINE)&ReadThread,this,0,&ThreadID);
 }

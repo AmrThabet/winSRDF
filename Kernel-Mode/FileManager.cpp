@@ -18,10 +18,10 @@
  *
  */
 
-#include "RDF.h"
+#include "SRDF.h"
 
-using namespace RDF;
-using namespace RDF::FileManager;
+using namespace SRDF;
+using namespace SRDF::FileManager;
 
 //File Management
 

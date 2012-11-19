@@ -1,4 +1,4 @@
-TARGETNAME=rootkit01
+TARGETNAME=SRDFKernel
 TARGETPATH=OBJ
 TARGETTYPE=DRIVER
 
@@ -21,6 +21,7 @@ SOURCES=entry.cpp            \
         RegistryManager.cpp  \
         FastIoDispatch.cpp   \
         TdiTcpSocket.cpp     \
-        TdiSniffer.cpp       \
-        02.cpp
+        cTdiFirewall.cpp     \
+        ProcessDevice.cpp    \
+        main.cpp
         

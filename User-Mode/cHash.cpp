@@ -161,13 +161,10 @@ void cHash::SetSerialize(cXMLHash& XMLParams)
 }
 void cHash::GetSerialize(cXMLHash& XMLParams)
 {
-	cout << XMLParams.GetText(0) << "\n";
 	for(DWORD i = 0;i< XMLParams.GetNumberOfItems();i++)
 	{
-		cout << "The New Value : " << XMLParams.GetText(i) << "\n";
 		AddItem(XMLParams.GetKey(i),XMLParams.GetText(i));
 	}
-	cout << "Here :)\n";
 }
 
 void cXMLHash::AddXML(cString Name,cString XMLItem)

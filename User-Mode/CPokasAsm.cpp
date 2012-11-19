@@ -61,3 +61,9 @@ char* CPokasAsm::Assemble(char* InstructionString, DWORD &Length)
       Length = Data->length;
       return (char*)Data->s;
 }
+char* CPokasAsm::Assemble(DISASM_INSTRUCTION* ins, DWORD &Length)
+{
+    bytes* Data = m_objSystem->assembl(ins);
+    Length = Data->length;
+    return (char*)Data->s;
+}

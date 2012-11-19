@@ -10,19 +10,31 @@
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+/*
+ *
+ *  Copyright (C) 2011-2012 Amr Thabet
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to Amr Thabet
- *  amr.thabet[at]student.alx.edu.eg
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-#include "RDF.h"
 
-using namespace RDF;
-using namespace RDF::FileManager;
-using namespace RDF::RegistryManager;
+#include "SRDF.h"
+
+using namespace SRDF;
+using namespace SRDF::FileManager;
+using namespace SRDF::RegistryManager;
 
 int UserComm_DeviceIO(Device* device,__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp);
 
@@ -34,40 +46,34 @@ Device::Device(){
 
 NTSTATUS Device::CreateDevice(WCHAR* DeviceName,WCHAR* SymbolicName){
     
-    DbgPrint("New Device Created at %x",this);
     RtlInitUnicodeString(&this->DeviceName, DeviceName);
     RtlInitUnicodeString(&this->SymbolicName, SymbolicName); 
-    DbgPrint("DriverObject : %x",(DWORD)pDriver->pDriverObject);
 	NTSTATUS ntStatus = IoCreateDevice(pDriver->pDriverObject,0, &this->DeviceName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &this->pDeviceObject);
-	if(NT_SUCCESS(ntStatus)){
-		
+	if(NT_SUCCESS(ntStatus))
+    {
 		pDeviceObject->Flags |= DO_DIRECT_IO;
 		pDeviceObject->Flags &= (~DO_DEVICE_INITIALIZING);
 		IoCreateSymbolicLink(&this->SymbolicName, &this->DeviceName);
-		DbgPrint("Created The Device Sucessfully\n");
 		DeviceCreated = true;
 		SetValue(MajorFunction[IRP_MJ_DEVICE_CONTROL],Device::UserComm_DeviceIO);
-		//MajorFunction[IRP_MJ_DEVICE_CONTROL] = &UserComm_DeviceIO;
 		
 	}else {
-	      DbgPrint("Failed To create The Device\n");
 	      DeviceCreated = false;
     }
     return ntStatus;
 }
 VOID Device::Unload()
 {
-    if (DeviceCreated){
+    if (DeviceCreated)
+    {
         IoDeleteSymbolicLink(&SymbolicName);
     	IoDeleteDevice(pDeviceObject); 
-    	DbgPrint("Device Unloaded");
     }
 }
 NTSTATUS Device::IrpDispatcher(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp){
     UCHAR MJ = Irp->Tail.Overlay.CurrentStackLocation->MajorFunction;
     NTSTATUS status = STATUS_SUCCESS;
     if (MajorFunction[MJ] != NULL)status = (*MajorFunction[MJ])(this,DeviceObject,Irp);
-    DbgPrint("Device : MJ Called : %x",MJ);
     Irp->IoStatus.Status = status;   
     IoCompleteRequest(Irp, IO_NO_INCREMENT);   
     return STATUS_SUCCESS;   
@@ -106,7 +112,6 @@ VOID Device::UserCommunication::RegisterFastMsgFunction(PFastMsgFunc fastmsgfunc
 
 int _cdecl Device::UserComm_DeviceIO(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp)
 {
-    DbgPrint("DeviceIO");
     _IO_STACK_LOCATION* IrpStack = Irp->Tail.Overlay.CurrentStackLocation;
     UserCommunication::CommChannel* pInputBuffer = (UserCommunication::CommChannel*)Irp->AssociatedIrp.SystemBuffer;
     UserCommunication::CommChannel* pOutputBuffer = (UserCommunication::CommChannel*)Irp->AssociatedIrp.SystemBuffer;

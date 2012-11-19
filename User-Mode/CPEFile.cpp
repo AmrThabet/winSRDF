@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2011-2012 Amr Thabet <amr.thabet[at]student.alx.edu.eg>
+ *  Copyright (C) 2011-2012 Amr Thabet and Anwar Mohamed
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,12 @@
 #include <cstdlib>
 #include "SRDF.h"
 #include <iostream>
+
+#ifdef UNICODE
+#define DefWindowProc  DefWindowProcW
+#else
+#define DefWindowProc  DefWindowProcA
+#endif // !UNICODE
 
 using namespace std;
 using namespace Security::Targets::Files;
@@ -62,46 +68,38 @@ bool cPEFile::ParsePE()
 	SizeOfImage = PEHeader->optional.size_of_image;
 	initDataDirectory();
 	initSections();
+	initExportTable();	// export table
 	initImportTable();
+	
 	return true;
 }
-cPEFile::~cPEFile()
-{
-	free(Section);
-}
-VOID cPEFile::initDataDirectory()
-{
-	DataDirectories = 0;
-	for (unsigned int i =0; i< PEHeader->optional.number_of_rva_and_sizes;i++)
-	{
-		if (PEHeader->optional.data_directory[i].virtual_address !=0 && PEHeader->optional.data_directory[i].size != 0)
-							DataDirectories |= (1 << i);
+void cPEFile::initExportTable() {
+
+	DWORD ExportRVA = PEHeader->optional.data_directory[0].virtual_address;
+	image_export_directory* Exports = (image_export_directory*)(RVAToOffset(ExportRVA)+BaseAddress);
+
+	ExportTable.nNames = Exports->number_of_names;
+	ExportTable.nFunctions = Exports->number_of_functions;
+	ExportTable.Base = Exports->base;
+	ExportTable.pFunctions = (PDWORD)(RVAToOffset(Exports->address_of_functions)+BaseAddress); 
+	ExportTable.pNames = (PDWORD)(RVAToOffset(Exports->address_of_names)+BaseAddress); 
+	ExportTable.pNamesOrdinals = (PWORD)(RVAToOffset(Exports->address_of_name_ordinals)+BaseAddress);
+
+	ExportTable.Functions = (EXPORTFUNCTION*)malloc(sizeof(EXPORTFUNCTION) * ExportTable.nFunctions);
+
+	for (DWORD i =0;i<ExportTable.nFunctions;i++) {
+		ExportTable.Functions[i].funcName = (char*)(DWORD*)RVAToOffset(ExportTable.pNames[i]) + BaseAddress;
+		ExportTable.Functions[i].funcOrdinal = ExportTable.pNamesOrdinals[i];
+		ExportTable.Functions[i].funcRVA = ExportTable.pFunctions[ExportTable.Functions[i].funcOrdinal];
+		ExportTable.Functions[i].funcOrdinal++;
 	}
 }
-
-VOID cPEFile::initSections()
-{
-	nSections = PEHeader->header.number_of_sections;
-
-	Section = (SECTION_STRUCT*)malloc(nSections * sizeof(SECTION_STRUCT));
-	for (int i = 0;i < nSections;i++)
-	{
-		Section[i].SectionName = PEHeader->sections[i].name;
-		Section[i].VirtualAddress = PEHeader->sections[i].virtual_address;
-		Section[i].VirtualSize = PEHeader->sections[i].virtual_size;
-		Section[i].PointerToRawData = PEHeader->sections[i].pointer_to_raw_data;
-		Section[i].SizeOfRawData = PEHeader->sections[i].size_of_raw_data;
-		Section[i].RealAddr = BaseAddress + PEHeader->sections[i].pointer_to_raw_data;
-	};
-}
-
 VOID cPEFile::initImportTable()
 {
 	DWORD ImportRVA = PEHeader->optional.data_directory[1].virtual_address;
 	image_import_descriptor* Imports = (image_import_descriptor*)(RVAToOffset(ImportRVA)+BaseAddress);
 	
 	//Getting The Number of DLLs inside
-	
 	ImportTable.nDLLs = 0;
 	while (Imports->original_first_thunk != 0 || Imports->first_thunk != 0 || Imports->name != 0)
 	{
@@ -156,11 +154,40 @@ VOID cPEFile::initImportTable()
         Imports = (image_import_descriptor*)((DWORD)Imports + (DWORD)sizeof(image_import_descriptor));  
     };
 };
+cPEFile::~cPEFile()
+{
+	free(Section);
+}
+VOID cPEFile::initDataDirectory()
+{
+	DataDirectories = 0;
+	for (unsigned int i =0; i< PEHeader->optional.number_of_rva_and_sizes;i++)
+	{
+		if (PEHeader->optional.data_directory[i].virtual_address !=0 && PEHeader->optional.data_directory[i].size != 0)
+							DataDirectories |= (1 << i);
+	}
+}
+
+VOID cPEFile::initSections()
+{
+	nSections = PEHeader->header.number_of_sections;
+
+	Section = (SECTION_STRUCT*)malloc(nSections * sizeof(SECTION_STRUCT));
+	for (DWORD i = 0;i < nSections;i++)
+	{
+		Section[i].SectionName = PEHeader->sections[i].name;
+		Section[i].VirtualAddress = PEHeader->sections[i].virtual_address;
+		Section[i].VirtualSize = PEHeader->sections[i].virtual_size;
+		Section[i].PointerToRawData = PEHeader->sections[i].pointer_to_raw_data;
+		Section[i].SizeOfRawData = PEHeader->sections[i].size_of_raw_data;
+		Section[i].RealAddr = BaseAddress + PEHeader->sections[i].pointer_to_raw_data;
+	};
+}
 DWORD cPEFile::RVAToOffset(DWORD RVA)
 {
 	if (RVA > SizeOfImage)return 0;
 
-	for (int i = 0; i < nSections;i++)
+	for (DWORD i = 0; i < nSections;i++)
 	{
 		if (RVA > Section[i].VirtualAddress && RVA < (Section[i].VirtualAddress + Section[i].VirtualSize))
 						return (RVA - Section[i].VirtualAddress + Section[i].PointerToRawData);
@@ -172,7 +199,7 @@ DWORD cPEFile::OffsetToRVA(DWORD RawOffset)
 {
 	if (RawOffset > FileLength)return 0;
 
-	for (int i = 0; i < nSections;i++)
+	for (DWORD i = 0; i < nSections;i++)
 	{
 		if (RawOffset > Section[i].PointerToRawData && RawOffset < (Section[i].PointerToRawData + Section[i].SizeOfRawData))
 						return (RawOffset + Section[i].VirtualAddress - Section[i].PointerToRawData);

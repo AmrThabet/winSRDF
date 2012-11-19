@@ -1,0 +1,66 @@
+# Project: Rootkit02
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = 02.o Device.o DKOMDevice.o Driver.o FilterDevice.o SSDTDevice.o FileManager.o entry.o RegistryManager.o FileFilterDevice.o FastIoDispatch.o TdiTcpSocket.o TdiSniffer.o $(RES)
+LINKOBJ  = 02.o Device.o DKOMDevice.o Driver.o FilterDevice.o SSDTDevice.o FileManager.o entry.o RegistryManager.o FileFilterDevice.o FastIoDispatch.o TdiTcpSocket.o TdiSniffer.o $(RES)
+LIBS =  -L"C:/wxDev-Cpp/Lib"  
+INCS =  -I"C:/wxDev-Cpp/Include" 
+CXXINCS =  -I"C:/wxDev-Cpp/lib/gcc/mingw32/3.4.5/include"  -I"C:/wxDev-Cpp/include/c++/3.4.5/backward"  -I"C:/wxDev-Cpp/include/c++/3.4.5/mingw32"  -I"C:/wxDev-Cpp/include/c++/3.4.5"  -I"C:/wxDev-Cpp/include"  -I"C:/wxDev-Cpp/"  -I"C:/wxDev-Cpp/include/common/wx/msw"  -I"C:/wxDev-Cpp/include/common/wx/generic"  -I"C:/wxDev-Cpp/include/common/wx/html"  -I"C:/wxDev-Cpp/include/common/wx/protocol"  -I"C:/wxDev-Cpp/include/common/wx/xml"  -I"C:/wxDev-Cpp/include/common/wx/xrc"  -I"C:/wxDev-Cpp/include/common/wx"  -I"C:/wxDev-Cpp/include/common" 
+BIN  = Rootkit02.exe
+CXXFLAGS = $(CXXINCS)   -fexceptions
+CFLAGS = $(INCS)   -fexceptions
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Rootkit02.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "Rootkit02.exe" $(LIBS)
+
+02.o: 02.cpp
+	$(CPP) -c 02.cpp -o 02.o $(CXXFLAGS)
+
+Device.o: Device.cpp
+	$(CPP) -c Device.cpp -o Device.o $(CXXFLAGS)
+
+DKOMDevice.o: DKOMDevice.cpp
+	$(CPP) -c DKOMDevice.cpp -o DKOMDevice.o $(CXXFLAGS)
+
+Driver.o: Driver.cpp
+	$(CPP) -c Driver.cpp -o Driver.o $(CXXFLAGS)
+
+FilterDevice.o: FilterDevice.cpp
+	$(CPP) -c FilterDevice.cpp -o FilterDevice.o $(CXXFLAGS)
+
+SSDTDevice.o: SSDTDevice.cpp
+	$(CPP) -c SSDTDevice.cpp -o SSDTDevice.o $(CXXFLAGS)
+
+FileManager.o: FileManager.cpp
+	$(CPP) -c FileManager.cpp -o FileManager.o $(CXXFLAGS)
+
+entry.o: entry.cpp
+	$(CPP) -c entry.cpp -o entry.o $(CXXFLAGS)
+
+RegistryManager.o: RegistryManager.cpp
+	$(CPP) -c RegistryManager.cpp -o RegistryManager.o $(CXXFLAGS)
+
+FileFilterDevice.o: FileFilterDevice.cpp
+	$(CPP) -c FileFilterDevice.cpp -o FileFilterDevice.o $(CXXFLAGS)
+
+FastIoDispatch.o: FastIoDispatch.cpp
+	$(CPP) -c FastIoDispatch.cpp -o FastIoDispatch.o $(CXXFLAGS)
+
+TdiTcpSocket.o: TdiTcpSocket.cpp
+	$(CPP) -c TdiTcpSocket.cpp -o TdiTcpSocket.o $(CXXFLAGS)
+
+TdiSniffer.o: TdiSniffer.cpp
+	$(CPP) -c TdiSniffer.cpp -o TdiSniffer.o $(CXXFLAGS)

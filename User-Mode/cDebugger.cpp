@@ -46,10 +46,8 @@ cDebugger::cDebugger(cString Filename,cString Commandline)
 	HardwareBreakpoints[2].Address = 0;
 	HardwareBreakpoints[3].Address = 0;
 	//Creating The Process For Debugging
-	cout << Filename.GetChar() << "\n";
 	if (!CreateProcess(Filename.GetChar(), Commandline.GetChar(), NULL, NULL, false, DEBUG_ONLY_THIS_PROCESS,NULL,NULL, &si, &pi))
 	{
-		 cout << "Error in Creating The Process\n";
 		 IsDebugging = FALSE;
 		 return;
 	}
@@ -115,10 +113,10 @@ cDebugger::cDebugger(cProcess* Process)
 	HardwareBreakpoints[2].Address = 0;
 	HardwareBreakpoints[3].Address = 0;
 	//Creating The Process For Debugging
-	cout << Filename.GetChar() << "\n";
+	////cout << Filename.GetChar() << "\n";
 	if (!DebugActiveProcess(Process->ProcessId))
 	{
-		 cout << "Error in Creating The Process\n";
+		 ////cout << "Error in Creating The Process\n";
 		 IsDebugging = FALSE;
 		 return;
 	}
@@ -201,12 +199,12 @@ int cDebugger::Step()
 			}
 			else
 			{
-				cout << "Here3\n";
 				VirtualProtectEx((HANDLE)hProcess,(LPVOID)bp->Address,bp->Size,PAGE_READONLY,&OldProtection);
 			}
 			
 		}
 	}
+	if (x == DBG_STATUS_HARDWARE_BP) return DBG_STATUS_STEP;
 	return x;
 }
 
@@ -253,7 +251,6 @@ int cDebugger::Run()
 				{
 				case STATUS_BREAKPOINT:
 					{
-						cout << "a Breakpoint !!!\n";
 						DBG_BREAKPOINT* bp = GetBreakpoint((DWORD)exception.ExceptionRecord.ExceptionAddress);
 						LastBreakpoint = (DWORD)exception.ExceptionRecord.ExceptionAddress;
 						if (bp == NULL)LastBreakpoint = 0;
@@ -267,11 +264,9 @@ int cDebugger::Run()
 							 */
 
 							LastBreakpoint = (DWORD)exception.ExceptionRecord.ExceptionAddress;
-							cout << "Last Breakpoint From Run: " << LastBreakpoint << "\n";
 							lcContext.ContextFlags = CONTEXT_ALL;
 							GetThreadContext((HANDLE)hThread, &lcContext);
 							lcContext.Eip--;
-							cout << "Eip From Run: " << (int*)lcContext.Eip << "\n";
 							DebuggeeProcess->Write(LastBreakpoint,(DWORD)&bp->OriginalByte,1);
 							lcContext.EFlags |= 0x100; // Set trap flag, which raises "single-step" exception
 							SetThreadContext((HANDLE)hThread,&lcContext);
@@ -282,7 +277,6 @@ int cDebugger::Run()
 				case STATUS_SINGLE_STEP:
 					
 					// Set the Breakpoint Again
-					cout << "DR7: " << DebugStatus << "\n";
 					if (LastBreakpoint != 0)
 					{
 						if (GetBreakpoint((DWORD)LastBreakpoint) != NULL )
@@ -294,15 +288,13 @@ int cDebugger::Run()
 							LastBreakpoint = 0;
 							break;
 						}
-						else return DBG_STATUS_STEP;
+						else return DBG_STATUS_HARDWARE_BP;
 					}
 					else if (LastMemoryBreakpoint != 0)
 					{
-						cout << "SINGLE STEP MEMORY BREAKPOINT !!!\n";
 						DBG_MEMORY_BREAKPOINT* bp = GetMemoryBreakpoint(LastMemoryBreakpoint);
 						if (bp == NULL)return DBG_STATUS_STEP;
 						if (bp->IsActive == FALSE) break;
-						cout << bp->Address << "\n";
 						DWORD OldProtection;
 						if (bp->NewProtection == PAGE_GUARD)
 						{
@@ -315,30 +307,23 @@ int cDebugger::Run()
 						LastMemoryBreakpoint = 0;
 						break;
 					}
-					else return DBG_STATUS_STEP;
+					else return DBG_STATUS_HARDWARE_BP;
 					
 				default:
-					cout << "ExceptionCode: " << (int*)ExceptionCode << "\n";
-					cout << "Exception Write Data: " << (int*) exception.ExceptionRecord.ExceptionInformation[1]<< "\n";
 					ExceptionCode = exception.ExceptionRecord.ExceptionCode;
 					if ((ExceptionCode == EXCEPTION_ACCESS_VIOLATION) && (GetMemoryBreakpoint((DWORD)exception.ExceptionRecord.ExceptionInformation[1]) != NULL))
 					{
 						DWORD OldProtection;
 						LastMemoryBreakpoint = (DWORD)exception.ExceptionRecord.ExceptionInformation[1];
 						DBG_MEMORY_BREAKPOINT* bp = GetMemoryBreakpoint(LastMemoryBreakpoint);
-						cout << "bp: " << (int*)bp << "\n";
 						if (bp->NewProtection == PAGE_READONLY)
 						{
-							cout << hex << bp->Size << "\n";
 							VirtualProtectEx((HANDLE)hProcess,(LPVOID)bp->Address,bp->Size,bp->OldProtection,&OldProtection); //bp->OldProtection
-							cout << "SET TO TRUE\n";
 						}
 						lcContext.ContextFlags = CONTEXT_ALL;
 						GetThreadContext((HANDLE)hThread, &lcContext);
-						cout << "Eip Memory From Run: " << (int*)lcContext.Eip << "\n";
 						lcContext.EFlags |= 0x100; // Set trap flag, which raises "single-step" exception
 						SetThreadContext((HANDLE)hThread,&lcContext);
-						cout << "a Memory Breakpoint !!!\n";
 						return DBG_STATUS_MEM_BREAKPOINT;
 					}
 					Eip = (DWORD)exception.ExceptionRecord.ExceptionAddress;
@@ -372,7 +357,6 @@ void cDebugger::RefreshRegisters()
 	Eip		= lcContext.Eip;
 	EFlags	= lcContext.EFlags;
 	DebugStatus = lcContext.Dr6;
-	cout << "DebugStatus: " << lcContext.Dr6 << "\n";
 }
 
 void cDebugger::UpdateRegisters()
@@ -390,7 +374,6 @@ void cDebugger::UpdateRegisters()
 	lcContext.Edi = Reg[7];
 	lcContext.Eip = Eip;
 	lcContext.Dr6 = 0;
-	cout << "DebugStatus Set To Zero\n";
 	lcContext.EFlags = EFlags;
 	SetThreadContext((HANDLE)hThread,&lcContext);
 }
@@ -448,20 +431,16 @@ void cDebugger::RefreshDebugRegisters()
 		if (HardwareBreakpoints[i].Address != 0)
 		{
 			DWORD x = (1 << (2*i));
-			cout << hex << x << "\n";
 			lcContext.Dr7 |= x;
 			x = HardwareBreakpoints[i].Type;
 			x = (x << (15+(2*i)));
-			cout << hex << x << "\n";
 			lcContext.Dr7 |= x;
 			x = HardwareBreakpoints[i].Size;
 			x = (x << (23+(2*i)));
-			cout << hex << x << "\n";
 			lcContext.Dr7 |= x;	
 		}
 	}
 	lcContext.Dr0 = HardwareBreakpoints[0].Address;
-	//cout << "HardwareBreakpoints: " << HardwareBreakpoints[2].Address << "\n";
 	lcContext.Dr1 = HardwareBreakpoints[1].Address;
 	lcContext.Dr2 = HardwareBreakpoints[2].Address;
 	lcContext.Dr3 = HardwareBreakpoints[3].Address;
@@ -511,6 +490,7 @@ BOOL cDebugger::SetMemoryBreakpoint(DWORD Address,DWORD Size , DWORD Type)
 	bool ShouldBeAdded = false;
 	//Already found?
 	DBG_MEMORY_BREAKPOINT* bp = GetMemoryBreakpoint(Address);
+	if ((Size % 1000) != 0) Size = Size - (Size %1000) + 1000;
 
 	if (bp == NULL)
 	{
@@ -550,7 +530,6 @@ void cDebugger::RemoveMemoryBreakpoint(DWORD Address)
 	DBG_MEMORY_BREAKPOINT* bp = GetMemoryBreakpoint(Address);
 	if (bp == NULL)return;
 	DWORD OldProtection;
-	cout << (int*)bp->Size << "\n" << bp->Address << "\n";
 	VirtualProtectEx((HANDLE)hProcess,(LPVOID)bp->Address,bp->Size,bp->OldProtection,&OldProtection);
 	bp->IsActive = FALSE;
 }

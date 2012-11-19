@@ -18,6 +18,6 @@
  *
  */
 
-#include "RDF.h"
+#include "SRDF.h"
 
-using namespace RDF;
+using namespace SRDF;

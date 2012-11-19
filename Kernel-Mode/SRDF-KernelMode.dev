@@ -1,7 +1,7 @@
 [Project]
-FileName=Rootkit02.dev
-Name=Rootkit02
-UnitCount=14
+FileName=SRDF-KernelMode.dev
+Name=SRDF-KernelMode
+UnitCount=19
 Type=1
 Ver=1
 IsCpp=1
@@ -25,7 +25,7 @@ Icon=
 ExeOutput=
 ObjectOutput=
 OverrideOutput=0
-OverrideOutputName=
+OverrideOutputName=SRDF-KernelMode.exe
 HostApplication=
 UseCustomMakefile=0
 CustomMakefile=
@@ -34,9 +34,9 @@ SupportXPThemes=0
 CompilerSet=0
 
 [Unit1]
-FileName=RDF.h
+FileName=Device.cpp
 CompileCpp=1
-Folder=
+Folder=Rootkit02
 Compile=1
 Link=1
 Priority=1000
@@ -64,26 +64,6 @@ AutoIncBuildNrOnCompile=0
 AutoIncBuildNr=0
 
 [Unit2]
-FileName=02.cpp
-CompileCpp=1
-Folder=Rootkit02
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit3]
-FileName=Device.cpp
-CompileCpp=1
-Folder=Rootkit02
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit4]
 FileName=DKOMDevice.cpp
 CompileCpp=1
 Folder=Rootkit02
@@ -93,7 +73,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit5]
+[Unit3]
 FileName=Driver.cpp
 CompileCpp=1
 Folder=Rootkit02
@@ -103,7 +83,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit6]
+[Unit4]
 FileName=FilterDevice.cpp
 CompileCpp=1
 Folder=Rootkit02
@@ -113,7 +93,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit7]
+[Unit5]
 FileName=SSDTDevice.cpp
 CompileCpp=1
 Folder=Rootkit02
@@ -123,8 +103,28 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit8]
+[Unit6]
 FileName=FileManager.cpp
+CompileCpp=1
+Folder=Rootkit02
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit7]
+FileName=entry.cpp
+CompileCpp=1
+Folder=Rootkit02
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit8]
+FileName=RegistryManager.cpp
 CompileCpp=1
 Folder=Rootkit02
 Compile=1
@@ -161,26 +161,6 @@ CompilerSet=0
 CompilerType=0
 
 [Unit9]
-FileName=entry.cpp
-CompileCpp=1
-Folder=Rootkit02
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit10]
-FileName=RegistryManager.cpp
-CompileCpp=1
-Folder=Rootkit02
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit11]
 FileName=FileFilterDevice.cpp
 CompileCpp=1
 Folder=Rootkit02
@@ -190,7 +170,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit12]
+[Unit10]
 FileName=FastIoDispatch.cpp
 CompileCpp=1
 Folder=Rootkit02
@@ -200,7 +180,7 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit13]
+[Unit11]
 FileName=TdiTcpSocket.cpp
 CompileCpp=1
 Folder=
@@ -210,10 +190,90 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
-[Unit14]
-FileName=TdiSniffer.cpp
+[Unit12]
+FileName=cTdiFirewall.cpp
 CompileCpp=1
 Folder=Rootkit02
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit13]
+FileName=SRDF.h
+CompileCpp=1
+Folder=SRDF-KernelMode
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit14]
+FileName=ProcessDevice.cpp
+CompileCpp=1
+Folder=SRDF-KernelMode
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit15]
+FileName=Examples\Process Injection\01.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit16]
+FileName=Examples\SSDT Hooking - Registry\01.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit17]
+FileName=Examples\Tdi Sockets\01.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit18]
+FileName=Examples\Tdi Firewall\01.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit19]
+FileName=Examples\Files and Registry Entries\01.cpp
+CompileCpp=1
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit20]
+FileName=Examples\Files and Registry Entries\01.cpp
+CompileCpp=1
+Folder=
 Compile=1
 Link=1
 Priority=1000

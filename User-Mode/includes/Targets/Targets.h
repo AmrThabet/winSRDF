@@ -20,6 +20,7 @@
 
 #include "cThread.h"
 #include "pe.h"
+#include "elf.h"
 //#include "tib.h"
 
 using namespace Security::Elements::String;
@@ -46,6 +47,27 @@ public:
 	~cFile();
 };
 
+//--------------------------------------------------------------
+// PE Parser
+//----------
+
+/*export table */
+struct EXPORTFUNCTION {
+	char* funcName;
+	WORD funcOrdinal;
+	DWORD funcRVA;
+};
+struct EXPORTTABLE 
+{
+	DWORD nFunctions;
+	DWORD nNames;
+	DWORD Base;
+	PDWORD pFunctions;
+	PDWORD pNames;
+	PWORD pNamesOrdinals;
+	EXPORTFUNCTION *Functions;
+};
+/****       ****/
 struct IMPORTTABLE_DLL;
 struct IMPORTTABLE_API;
 
@@ -102,6 +124,7 @@ private:
 	VOID initDataDirectory();
 	VOID initSections();
 	VOID initImportTable();
+	void initExportTable();	//export table
 public:
 	//Variables
 	bool FileLoaded;
@@ -114,14 +137,107 @@ public:
 	DWORD FileAlignment;
 	DWORD SectionAlignment;
 	WORD DataDirectories;
-	short nSections;
+	unsigned long nSections;
 	SECTION_STRUCT* Section;
 	IMPORTTABLE ImportTable;
+
+	/* for exports */
+	EXPORTTABLE ExportTable;
 
 	//Functions
 	cPEFile(char* szFilename);
 	cPEFile(char* buffer,DWORD size);
 	~cPEFile();
+	static bool identify(cFile* File);
+	DWORD RVAToOffset(DWORD RVA);
+	DWORD OffsetToRVA(DWORD RawOffset);
+
+};
+
+//--------------------------------------------------------------
+// ELF Parser
+//----------
+
+/* elf parser */
+struct SECTIONS 
+{
+	char* Name;
+	DWORD Address;
+	DWORD Offset;
+	DWORD Size;
+};
+
+struct SYMBOLS 
+{
+	char* Name;
+	DWORD Address;
+	DWORD Offset;
+	//DWORD Size;
+};
+
+struct DYNAMICS
+{
+	DWORD Address;
+	DWORD Offset;
+	DWORD Value;
+	DWORD Tag;
+	char* Name;
+};
+
+struct IMPORTS
+{
+	//DWORD Address;
+	//DWORD Offset;
+	DWORD Value;
+	char* Name;
+};
+
+class DLLIMPORT Security::Targets::Files::cELFFile : public Security::Targets::Files::cFile
+{
+private:
+
+	//Functions:
+	bool ParseELF();
+	void initSections();
+	void initDynSymbols();
+	void initImports();
+	void initDynamics();
+
+	char* sStringTable;
+	char* dStringTable;
+	unsigned int DynSymArray;
+	unsigned int DynArray;
+	Elf32_Sym* SymbolsTable;
+	Elf32_Dyn* DynamicTable;
+	
+public:
+	//Variables
+	bool FileLoaded;
+	elf32_header* ExeHeader;
+	elf32_program_header* PHeader;
+	elf32_section_header* SHeader;
+
+	unsigned int nSections;
+	unsigned int nDynamics;
+	unsigned int nImports;
+	unsigned int nSymbols;
+	SECTIONS* Sections;
+	SYMBOLS* Symbols;
+	DYNAMICS* Dynamics;
+	IMPORTS* Imports;
+	
+	DWORD Magic;
+	DWORD Subsystem;
+	DWORD SizeOfImage;
+	DWORD SizeOfHeader;
+	DWORD SizeOfProgramHeader;
+	DWORD Entrypoint;
+	unsigned short int Type;
+
+	//Functions
+	cELFFile(char* szFilename);
+	cELFFile(char* buffer,DWORD size);
+	~cELFFile();
 	static bool identify(cFile* File);
 	DWORD RVAToOffset(DWORD RVA);
 	DWORD OffsetToRVA(DWORD RawOffset);
@@ -174,7 +290,7 @@ public:
 	DWORD Read(DWORD startAddress,DWORD size);
 	DWORD Allocate (DWORD preferedAddress,DWORD size);
 	DWORD Write(DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite);
-	DWORD DllInject(DWORD pointerToDll);
+	DWORD DllInject(cString DLLFilename);
 	DWORD CreateThread(DWORD addressToFunction , DWORD addressToParameter);
 	bool IsFound();
 };

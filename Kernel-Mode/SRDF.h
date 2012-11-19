@@ -90,7 +90,7 @@ typedef struct _DEVICE_EXTENSION
     PDEVICE_OBJECT AttachedToDeviceObject;
 } _DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
-namespace RDF 
+namespace SRDF 
 {
     //Prototypes
           
@@ -160,7 +160,8 @@ namespace RDF
     typedef NTSTATUS FUNC(SSDTDevice* device,int Args[]);
     typedef FUNC *PFUNC;
     
-    class SSDTDevice : public Device {
+    class SSDTDevice : public Device
+    {
           public:
            //Variables
           bool Attached; 
@@ -208,7 +209,8 @@ namespace RDF
     
     } *PFILTERDEVICE_EXTENSION;
 
-    class FilterDevice : public Device {
+    class FilterDevice : public Device
+    {
         public:
         //Variables
         FilteredMajorFunctionStruct FilteredMajorFunction[IRP_MJ_MAXIMUM_FUNCTION+1];
@@ -236,7 +238,7 @@ namespace RDF
     #define FIELD_NOT_FOUND -1
     
     class FileFilterDevice;
-    typedef int AskAttach(FileFilterDevice* device,__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp);
+    typedef bool AskAttach(FileFilterDevice* device,__in PDEVICE_OBJECT DeviceObject);
     typedef AskAttach* PAskAttach;
     struct FileInformationOffsets
     {
@@ -260,7 +262,8 @@ namespace RDF
         DWORD NextEntryOffset;
     };
     
-    class FileFilterDevice : public FilterDevice {
+    class FileFilterDevice : public FilterDevice
+    {
           private:
           //Variables             
           BOOLEAN HookNewlyMountedVolumes;
@@ -270,12 +273,55 @@ namespace RDF
           int _cdecl MountNewVolumesPre(__in PDEVICE_OBJECT DeviceObject,__in PIRP Irp);
           public: 
           //Variables
-          
+          PAskAttach AskAttachFunc;
           //Functions
           VOID FileFilterNotificationRoutine(PDEVICE_OBJECT TargetDevice,int command);          
           NTSTATUS BeginHooking(BOOLEAN HookNewlyMountedVolumes);
           FileInformationOffsets* GetFileInformationOffsets(__in PIRP Irp);
     };
+    //-------------------------------------------------------------------------------------------
+    // Process Device - Process Analysis and APC Injection
+    
+    //__declspec(naked) void ApcUserRoutine(PVOID NormalContext, PVOID  SystemArgument1, PVOID SystemArgument2)	
+    typedef struct _THREAD_BASIC_INFORMATION
+    {
+        NTSTATUS ExitStatus; 
+        PVOID TebBaseAddress; 
+        CLIENT_ID ClientId; 
+        KAFFINITY AffinityMask; 
+        KPRIORITY Priority; 
+        KPRIORITY BasePriority;
+
+    } THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
+    
+    //That's what I need right now
+    typedef struct _EPROCESS
+    {
+          ULONG Pcb;
+    } EPROCESS;
+    class ProcessDevice : public Device
+    {
+          public:
+          //Variables
+          DWORD Pid;
+          DWORD Tid;             //If avariable or NULL instead
+          HANDLE ProcessHandle;
+          PPEB   Peb;           //Process Environmenr Block
+          EPROCESS* EProcess;
+          PROCESS_BASIC_INFORMATION ProcessBasicInfo;
+          KAPC_STATE* KPCState;
+          BOOLEAN IsFound;     //True if you call to Analyze Process and everything works fine
+          BOOLEAN IsAttached;
+          //Functions
+          BOOLEAN AnalyzeProcess(DWORD ProcessId,DWORD ThreadId = NULL);
+          BOOLEAN AttachProcess();
+          VOID DetachProcess(); 
+          char* Read(DWORD BufferPtr,DWORD Size);
+          DWORD Allocate(DWORD Size,DWORD Protect);
+          BOOLEAN Write(DWORD Dest, char* Src, DWORD Size);
+          BOOLEAN Execute (DWORD Entrypoint, PVOID Context);
+    };
+    
     //-------------------------------------------------------------------------------------------
     //TDI
     
@@ -322,33 +368,33 @@ namespace RDF
          {
                
          };
-         class TdiSniffer;
+         class cTdiFirewall;
          
-         #define TDISNIFFER_ALLOW 0
-         #define TDISNIFFER_DENY  1
+         #define TDIFIREWALL_ALLOW 0
+         #define TDIFIREWALL_DENY  1
          
-         typedef int CreateConnectionEventFunc(TdiSniffer* Sock,DWORD PID,USHORT Port,OUT PVOID &UserContext);
+         typedef int CreateConnectionEventFunc(cTdiFirewall* Sock,DWORD PID,USHORT Port,OUT PVOID &UserContext);
          typedef CreateConnectionEventFunc* PCreateConnectionEventFunc;
          
-         typedef int CloseConnectionEventFunc(TdiSniffer* Sock,DWORD PID,PVOID UserContext);
+         typedef int CloseConnectionEventFunc(cTdiFirewall* Sock,DWORD PID,PVOID UserContext);
          typedef CloseConnectionEventFunc* PCloseConnectionEventFunc;
          
          #define TYPE_TO_CLIENT 0
          #define TYPE_TO_SERVER 1
          struct IPADDR;
          
-         typedef int ConnectEventFunc(TdiSniffer* Sock,DWORD PID,DWORD ConnectionType,IPADDR* IPAddress,DWORD Port,PVOID UserContext);
+         typedef int ConnectEventFunc(cTdiFirewall* Sock,DWORD PID,DWORD ConnectionType,IPADDR* IPAddress,DWORD Port,PVOID UserContext);
          typedef ConnectEventFunc* PConnectEventFunc;
          
-         typedef int SendEventFunc(TdiSniffer* Sock,DWORD PID,char* Buffer,DWORD* Size,PVOID UserContext);
+         typedef int SendEventFunc(cTdiFirewall* Sock,DWORD PID,char* Buffer,DWORD* Size,PVOID UserContext);
          typedef SendEventFunc* PSendEventFunc;
           
-         typedef int ReceiveEventFunc(TdiSniffer* Sock,DWORD PID,char* Buffer,DWORD* Size,PVOID UserContext);
+         typedef int ReceiveEventFunc(cTdiFirewall* Sock,DWORD PID,char* Buffer,DWORD* Size,PVOID UserContext);
          typedef ReceiveEventFunc* PReceiveEventFunc;
          
          struct EVENT_HANDLER_IDENTIFIER
          {
-                TdiSniffer* TdiClass;
+                cTdiFirewall* TdiClass;
                 DWORD PID;
                 PVOID OriginalContext;
                 PVOID EventHandler;
@@ -369,7 +415,7 @@ namespace RDF
                 DWORD ip3;
                 DWORD ip4;
          };
-         class TdiSniffer : public FilterDevice
+         class cTdiFirewall : public FilterDevice
          {
                public:
                //Varaibles
@@ -396,8 +442,8 @@ namespace RDF
                VOID AssociateConnectionContext(PVOID ConnectionContext,PVOID AssociatedObject);
                bool IsConnectionObjectFound(CONNECTION_CONTEXT ConnectionContext,OUT PVOID &UserContext);
                bool RemoveFromConnectionContext(CONNECTION_CONTEXT ConnectionContext,OUT PVOID &UserContext);
-               NTSTATUS EventConnect(EVENT_HANDLER_IDENTIFIER* TdiSnifferContext, IN LONG  RemoteAddressLength,IN PVOID  RemoteAddress,IN LONG  UserDataLength,IN PVOID  UserData,IN LONG  OptionsLength,IN PVOID  Options,OUT CONNECTION_CONTEXT *ConnectionContext,OUT PIRP  *AcceptIrp);
-               NTSTATUS EventReceive(EVENT_HANDLER_IDENTIFIER* TdiSnifferContext,IN CONNECTION_CONTEXT ConnectionContext,IN ULONG ReceiveFlags,IN ULONG BytesIndicated,IN ULONG BytesAvailable,OUT ULONG *BytesTaken,IN PVOID Tsdu,OUT PIRP *IoRequestPacket);
+               NTSTATUS EventConnect(EVENT_HANDLER_IDENTIFIER* TdiFirewallContext, IN LONG  RemoteAddressLength,IN PVOID  RemoteAddress,IN LONG  UserDataLength,IN PVOID  UserData,IN LONG  OptionsLength,IN PVOID  Options,OUT CONNECTION_CONTEXT *ConnectionContext,OUT PIRP  *AcceptIrp);
+               NTSTATUS EventReceive(EVENT_HANDLER_IDENTIFIER* TdiFirewallContext,IN CONNECTION_CONTEXT ConnectionContext,IN ULONG ReceiveFlags,IN ULONG BytesIndicated,IN ULONG BytesAvailable,OUT ULONG *BytesTaken,IN PVOID Tsdu,OUT PIRP *IoRequestPacket);
          };
     };
     //==========================================================================

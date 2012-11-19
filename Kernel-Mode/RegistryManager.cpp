@@ -18,10 +18,10 @@
  *
  */
 
-#include "RDF.h"
+#include "SRDF.h"
 
-using namespace RDF;
-using namespace RDF::RegistryManager;
+using namespace SRDF;
+using namespace SRDF::RegistryManager;
 
 //Registry Manager
 

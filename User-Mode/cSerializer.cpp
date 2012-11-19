@@ -37,7 +37,6 @@ cString _cdecl cSerializer::Serialize()
 		XML<< XMLParams[i];
 		XML<< "</" << (char*)XMLParams.GetKey(i) << ">";
 	}
-	//cout << (char*)XML << "\n";
 	return XML;
 }
 

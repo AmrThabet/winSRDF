@@ -12,7 +12,8 @@
  $(OBJ_PATH)\$O\registrymanager.obj \
  $(OBJ_PATH)\$O\fastiodispatch.obj \
  $(OBJ_PATH)\$O\tditcpsocket.obj \
- $(OBJ_PATH)\$O\tdisniffer.obj \
+ $(OBJ_PATH)\$O\ctdifirewall.obj \
+ $(OBJ_PATH)\$O\processdevice.obj \
  $(OBJ_PATH)\$O\02.obj \
 
 
@@ -22,7 +23,7 @@
 # lowercased
 BASEDIR=e:\winddk\7600.16385.1
 OBJECT_ROOT=e:\winddk\7600.16385.1
-MAKEDIR_LOWERCASE=d:\amr\c\rootkits\02
-OBJ_PATH=d:\amr\c\rootkits\02
+MAKEDIR_LOWERCASE=d:\amr\c\srdf\srdf\kernel-mode
+OBJ_PATH=d:\amr\c\srdf\srdf\kernel-mode
 CONCURRENT_MIDL=0
 CONCURRENT_MANIFEST_BUILD=0

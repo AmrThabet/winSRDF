@@ -73,9 +73,7 @@ cString cProcess::Unicode2Ansi(LPWSTR unicodeString_,int stringLength)
 		y[i/2]=x[i];
 		
 	}
-	//cout << x <<endl << y<<endl;
 	cString ansiString(y);
-	//cout << ansiString  <<endl;
 
 	return ansiString;
 	
@@ -316,17 +314,17 @@ DWORD cProcess::Write (DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrit
 
 
 
-DWORD cProcess::DllInject(DWORD pointerToDll)
+DWORD cProcess::DllInject(cString DLLFilename)
 {
 	DWORD remoteAddress;
 	DWORD threadId = NULL;
 	
 	
-	remoteAddress = Allocate(NULL ,(DWORD)strlen((char*) pointerToDll));
+	remoteAddress = Allocate(NULL ,(DWORD)strlen((char*) DLLFilename));
 
 	HMODULE handleToKernel32 = GetModuleHandle("KERNEL32");
 
-	if (Write(remoteAddress , pointerToDll ,(DWORD)strlen( (char*) pointerToDll)))
+	if (Write(remoteAddress , (DWORD)DLLFilename.GetChar() ,(DWORD)strlen( (char*) DLLFilename)))
 	{
 		CreateRemoteThread((HANDLE)procHandle ,NULL , 0 , ( LPTHREAD_START_ROUTINE)GetProcAddress(handleToKernel32 , "LoadLibraryA") , (LPVOID)remoteAddress , 0 , & threadId);
 	

@@ -2,5 +2,5 @@
 <DEFECTS>
 <OACRDEFECTCOUNT>1</OACRDEFECTCOUNT>
 <OACRERRORCOUNT>0</OACRERRORCOUNT>
-<DEFECT _seq="1"><SFA><LINE>490</LINE><COLUMN>26</COLUMN><FILENAME>tditcpsocket.cpp</FILENAME><FILEPATH>d:\amr\c\rootkits\02\</FILEPATH></SFA><DEFECTCODE>28159</DEFECTCODE><DESCRIPTION>Consider using 'ExAllocatePoolWithTag' instead of 'ExAllocatePool'. Reason: No tag interferes with debugging..</DESCRIPTION><FUNCTION>RDF::Tdi::TdiTcpSocket::Receive</FUNCTION><FUNCLINE>484</FUNCLINE><PATH/></DEFECT>
+<DEFECT _seq="1"><SFA><LINE>509</LINE><COLUMN>26</COLUMN><FILENAME>tditcpsocket.cpp</FILENAME><FILEPATH>d:\amr\c\srdf\srdf\kernel-mode\</FILEPATH></SFA><DEFECTCODE>28159</DEFECTCODE><DESCRIPTION>Consider using 'ExAllocatePoolWithTag' instead of 'ExAllocatePool'. Reason: No tag interferes with debugging..</DESCRIPTION><FUNCTION>SRDF::Tdi::TdiTcpSocket::Receive</FUNCTION><FUNCLINE>503</FUNCLINE><PATH/></DEFECT>
 </DEFECTS>

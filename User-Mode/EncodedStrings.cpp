@@ -50,7 +50,6 @@ cString cMD5String::Encrypt(char* buff,DWORD length)
                 rgbDigits[rgbHash[i] & 0xf]);
         }
 		MD5Hash = buff;
-		//cout << "MD5Hash = "<< (char*)MD5Hash << "\n";
     }
 	CryptDestroyHash(hHash);
     CryptReleaseContext(hProv, 0);

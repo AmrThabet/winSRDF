@@ -91,3 +91,31 @@ class Security::Connections::KernelMode::cDriver
    int UnloadDriver();
    
 };
+
+#define EVENT_IPC_CLIENT 0
+#define EVENT_IPC_SERVER 1
+#define WAIT_TIME_OUT 300
+typedef void ReadNotifyFunc(char* buffer,DWORD size);
+typedef ReadNotifyFunc *PReadNotifyFunc;
+
+
+class DLLIMPORT Security::Connections::InterProcess::cEventIPC
+{
+	HANDLE ReadEvent[2];
+	HANDLE WriteEvent[2];
+	HANDLE SharedMemory[2];
+	char* Buffer[2];
+	DWORD SrcType;		// it's the type of you ... you are a server or client
+	DWORD DestType;		// it will be the type of the destination ... the opposite of SrcType ... just to make it easier
+	HANDLE hThread;
+	PReadNotifyFunc ReadNotify;
+	DWORD Size;
+	bool Continue;
+public:
+	VOID Read();
+	bool IsCreatedSuccessfully;
+	DWORD Write(char* Data,DWORD DataSize);
+	VOID SetReadNotifyFunction(PReadNotifyFunc NotifyRoutine);
+	cEventIPC(cString Name,DWORD Type, DWORD MaxSize);
+	~cEventIPC();
+};
