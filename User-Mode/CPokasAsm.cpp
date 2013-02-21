@@ -37,7 +37,7 @@ CPokasAsm::~CPokasAsm()
 
 char* CPokasAsm::Disassemble(char* Buffer,DWORD &InstructionLength)
 {
-    string strInst;
+    string strInst = "";
     DISASM_INSTRUCTION* ins;
     ins = (DISASM_INSTRUCTION*)malloc(sizeof(DISASM_INSTRUCTION));
     ins = m_objSystem->disasm(ins, Buffer, strInst);

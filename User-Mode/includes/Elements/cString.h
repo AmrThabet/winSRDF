@@ -45,6 +45,7 @@ public:
 	bool ScanWildcard(const char* WildCards)	{ return Match((char*)WildCards, m_pString); }
 	int Search(const char* str);
 	int Search(const char c);
+	void Replace(char src, char dest);
 	// format string
 	int Format(const char* format, ...);
 	void Substr(cString Str, DWORD offset,DWORD length);

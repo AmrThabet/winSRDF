@@ -24,7 +24,7 @@
 
 using namespace std;
 using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Scanning;
+using namespace Security::Libraries::Malware::OS::Win32::Enumeration;
 
 cRecursiveScanner::cRecursiveScanner()
 {

@@ -54,6 +54,7 @@ void cConsoleApp::StartConsole()
 			if (strcmp(cmd,cmdstruct->Name->GetChar()) == 0)
 			{
 				char** argv = (char**)malloc(sizeof(char*) * cmdstruct->nArgs);
+				memset(argv,0,sizeof(char*) * cmdstruct->nArgs);
 				DWORD WrittenArgs = 0;
 				if (input.size() != 0)
 				for (DWORD l = 0;l< cmdstruct->nArgs;l++)
@@ -64,14 +65,18 @@ void cConsoleApp::StartConsole()
 					{
 						Arg = input.substr(0,next).c_str();
 						input = input.substr(next+1,input.size());
-						argv[l] = Arg;
+						argv[l] = (char*)malloc(Arg.GetLength()+1);
+						memset(argv[l],0,Arg.GetLength()+1);
+						memcpy(argv[l],Arg.GetChar(),Arg.GetLength());
 						WrittenArgs++;
 					}
 					else
 					{
 						Arg = input.c_str();
 						input = "";
-						argv[l] = Arg;
+						argv[l] = (char*)malloc(Arg.GetLength()+1);
+						memset(argv[l],0,Arg.GetLength()+1);
+						memcpy(argv[l],Arg.GetChar(),Arg.GetLength());
 						WrittenArgs++;
 						break;
 					}

@@ -5,9 +5,12 @@
 #include "../../SRDF.h"
 
 using namespace Security::Core;
-using namespace Security::Libraries::Malware::OS::Win32::Debugging;
+using namespace Security::Libraries::Malware::OS::Win32::Enumeration;
+using namespace Security::Libraries::Malware::OS::Win32::Dynamic;
 using namespace Security::Libraries::Malware::Assembly::x86;
-
+using namespace Security::Targets::Memory;
+using namespace Security::Targets::Files;
+using namespace Security::Libraries::Malware::OS::Win32::Static;
 class cDebuggerApp : public cConsoleApp
 {
 	cDebugger*	Debugger;
@@ -19,12 +22,18 @@ public:
 	virtual int Run();
 	virtual int Exit();
 	void Step();
+	void Info();
+	void PEInfo();
+	void MemoryMap();
+	void Search(int argc,char* argv[]);
 	void DebugRun();
 	void ShowRegisters();
+	void Getaddr(int argc,char* argv[]);
 	void SetBreakpoint(int argc,char* argv[]);
 	void SetHardBreakpoint(int argc,char* argv[]);
 	void SetMemoryBreakpoint(int argc,char* argv[]);
 	void Dump(int argc,char* argv[]);
+	void Procdump(int argc,char* argv[]);
 	void Disassemble(int argc,char* argv[]);
 	void String(int argc,char* argv[]);
 	void RemoveBreakpoint(int argc,char* argv[]);
@@ -33,17 +42,23 @@ public:
 };
 
 void StepFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Step();};
+void InfoFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Info();};
+void PEInfoFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->PEInfo();};
+void MemoryMapFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->MemoryMap();};
+void SearchFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Search(argc,argv);};
 void RunFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->DebugRun();};
 void RegsFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->ShowRegisters();};
 void BpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->SetBreakpoint(argc,argv);}; 
 void HardbpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->SetHardBreakpoint(argc,argv);}; 
 void MembpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->SetMemoryBreakpoint(argc,argv);}; 
 void DumpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Dump(argc,argv);}; 
+void ProcdumpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Procdump(argc,argv);}; 
 void DisasmFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Disassemble(argc,argv);}; 
 void StringFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->String(argc,argv);}; 
 void RemovebpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->RemoveBreakpoint(argc,argv);}; 
 void RemovehardbpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->RemoveHardBreakpoint(argc,argv);};
 void RemovemembpFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->RemoveMemoryBreakpoint(argc,argv);};
+void GetaddrFunc(cConsoleApp* App,int argc,char* argv[]){((cDebuggerApp*)App)->Getaddr(argc,argv);};
 
 int _tmain(int argc, char* argv[])
 {
@@ -70,12 +85,18 @@ void cDebuggerApp::SetCustomSettings()
 	**       Win32 Debugger          **\n\
 	***********************************\n";
 	AddCommand("step","one Step through code","step",0,&StepFunc);
+	AddCommand("info","Get detailed information about the process","info",0,&InfoFunc);
+	AddCommand("memory","Get the memory map of the process","memory",0,&MemoryMapFunc);
+	AddCommand("peinfo","Get detailed information about the process pe file","peinfo",0,&PEInfoFunc);
+	AddCommand("search","search for a string or hex string in memory using yara","search [string or hex eg. \"string\" or {EF:AD:FF:D4}]",1,&SearchFunc);
 	AddCommand("run","Run the application until the first breakpoint","run",0,&RunFunc);
 	AddCommand("regs","Show Registers","regs",0,&RegsFunc);
+	AddCommand("getaddr","gets the address of an API","getaddr [dll-name] [api-name]",2,&GetaddrFunc);
 	AddCommand("bp","Set an Int3 Breakpoint","bp [address]",1,&BpFunc);
 	AddCommand("hardbp","Set a Hardware Breakpoint","hardbp [address] [size (1,2,4)] [type .. 0 = access .. 1 = write .. 2 = execute]",3,&HardbpFunc);
 	AddCommand("membp","Set Memory Breakpoint","membp [address] [size] [type .. 0 = access .. 1 = write]",3,&MembpFunc);
 	AddCommand("dump","Dump a place in memory in hex","dump [address] [size]",2,&DumpFunc);
+	AddCommand("procdump","Dump the process and unload its import table","procdump [filename] [new entrypoint]",2,&ProcdumpFunc);
 	AddCommand("disasm","Disassemble a place in memory","disasm [address] [size]",2,&DisasmFunc);
 	AddCommand("string","Print string at a specific address","string [address] [max size]",2,&StringFunc);
 	AddCommand("removebp","Remove an Int3 Breakpoint","removebp [address]",1,&RemovebpFunc);
@@ -85,12 +106,13 @@ void cDebuggerApp::SetCustomSettings()
 int cDebuggerApp::Run()
 {
 	//Get the commandline argument .. default is the normal argument for no command 
-	//not like Debug.exe -o:444 .. but like Debug.exe xxx.exe
-
+	//like Debug.exe xxx.exe
 	Debugger = new cDebugger(Request.GetValue("default"));
 	Asm = new CPokasAsm();
 	if (Debugger->IsDebugging)
 	{
+		//Set Breakpoint on The Entrypoint (Avoid ASLR-based Applications)
+		Debugger->SetBreakpoint(Debugger->DebuggeePE->Entrypoint - Debugger->DebuggeePE->Imagebase + Debugger->DebuggeeProcess->ImageBase);
 		Debugger->Run();
 		Prefix = Debugger->DebuggeeProcess->processName;
 		if (Debugger->IsDebugging)StartConsole();
@@ -234,6 +256,7 @@ void cDebuggerApp::Dump(int argc,char* argv[])
 	sscanf(argv[0], "%x", &Address);
 	sscanf(argv[1], "%x", &Size);
 	unsigned char* Buffer = (unsigned char*)Debugger->DebuggeeProcess->Read(Address,Size);
+	if (Buffer != NULL)
 	for (DWORD i =0; i< Size;i++)
 	{
 		if((i % 10) == 0)cout << "\n" << (int*)Address << ": ";
@@ -251,7 +274,7 @@ void cDebuggerApp::String(int argc,char* argv[])
 	sscanf(argv[0], "%x", &Address);
 	sscanf(argv[1], "%x", &Size);
 	unsigned char* Buffer = (unsigned char*)Debugger->DebuggeeProcess->Read(Address,Size);
-	cout << (int*)Address << ": " << Buffer << "\n";
+	if (Buffer != NULL)cout << (int*)Address << ": " << Buffer << "\n";
 }
 void cDebuggerApp::Disassemble(int argc,char* argv[])
 {
@@ -260,6 +283,7 @@ void cDebuggerApp::Disassemble(int argc,char* argv[])
 	sscanf(argv[0], "%x", &Address);
 	sscanf(argv[1], "%x", &Size);
 	DWORD Buffer = Debugger->DebuggeeProcess->Read(Address,Size+16);
+	if (Buffer == NULL)return;
 	DWORD InsLength = 0;
 	
 	for (DWORD InsBuff = Buffer;InsBuff < Buffer+ Size ;InsBuff+=InsLength)
@@ -288,4 +312,152 @@ void cDebuggerApp::RemoveMemoryBreakpoint(int argc,char* argv[])
 	sscanf(argv[0], "%x", &Address);
 	Debugger->RemoveMemoryBreakpoint(Address);
 	cout << "Breakpoint Removed\n";
+}
+
+void cDebuggerApp::Info()
+{
+	cProcess* ScannedProcess = Debugger->DebuggeeProcess;
+
+	cout << "Process: "<<ScannedProcess->processName<<endl;
+	cout << "Process Parent ID: "<< ScannedProcess->ParentID <<endl;
+	cout << "Process Command Line: "<< ScannedProcess->CommandLine << endl;
+	cout << "Process Filename: "<< ScannedProcess->processPath << endl;
+	cout << "Process PEB:\t"<<ScannedProcess->ppeb<<endl;
+	cout << "Process ImageBase:\t"<<hex<<ScannedProcess->ImageBase<<endl;
+	cout << "Process SizeOfImageBase:\t"<<dec<<ScannedProcess->SizeOfImage<<" bytes"<<endl;
+	cout << "Process MD5:\t"<<ScannedProcess->processMD5<<endl;
+	cout << "\nProcess Modules:\n----------------\n";
+	
+	for (int i=0 ; i<(int)(ScannedProcess->modulesList.GetNumberOfItems()) ;i++)
+	{
+		cout << "\nModule "<< ((MODULE_INFO*)ScannedProcess->modulesList.GetItem(i))->moduleName->GetChar();
+		cout << "\nModule MD5: " << ((MODULE_INFO*)ScannedProcess->modulesList.GetItem(i))->moduleMD5->GetChar();
+		cout << "\nImageBase:  "<<hex<<((MODULE_INFO*)ScannedProcess->modulesList.GetItem(i))->moduleImageBase<<endl;
+	
+	}
+}
+
+void cDebuggerApp::MemoryMap()
+{
+	cProcess* ScannedProcess = Debugger->DebuggeeProcess;
+	for (int i=0 ; i<(int)(ScannedProcess->MemoryMap.GetNumberOfItems()) ;i++)
+	{
+		cout << "Memory Address "<< ((MEMORY_MAP*)ScannedProcess->MemoryMap.GetItem(i))->Address;
+		cout << "\tAllocationBase "<< ((MEMORY_MAP*)ScannedProcess->MemoryMap.GetItem(i))->AllocationBase;
+		cout << "\tSize:  "<<hex<<((MEMORY_MAP*)ScannedProcess->MemoryMap.GetItem(i))->Size <<endl;
+	}
+}
+void cDebuggerApp::PEInfo()
+{
+	cPEFile* PEFile = Debugger->DebuggeePE;
+
+	cout << "Filename: " << Debugger->DebuggeeProcess->processName << "\n";
+	cout << "MD5Hash: " << Debugger->DebuggeeProcess->processMD5 << "\n";
+	cout << "Magic: " << hex << PEFile->Magic << "\n";
+	cout << "Subsystem: " << hex << PEFile->Subsystem << "\n";
+	cout << "Imagebase: " << hex << PEFile->Imagebase << "\n";
+	cout << "SizeOfImage: " << hex << PEFile->SizeOfImage << "\n";
+	cout << "Entrypoint: " << hex << PEFile->Entrypoint << "\n";
+	cout << "FileAlignment: " << hex << PEFile->FileAlignment << "\n";
+	cout << "SectionAlignment: " << hex << PEFile->SectionAlignment << "\n";
+	cout << "NumberOfSections: " << PEFile->nSections << "\n";
+	if (PEFile->DataDirectories & DATADIRECTORY_IMPORT)
+	{
+		cout << "\nImport Table:\n------------\n";
+		for (int i = 0;i < PEFile->ImportTable.nDLLs;i++)
+		{
+			cString DLLName = PEFile->ImportTable.DLL[i].DLLName;
+			for (int l = 0; l < PEFile->ImportTable.DLL[i].nAPIs;l++)
+			{
+				cout << DLLName << ": " << PEFile->ImportTable.DLL[i].API[l].APIName << "\n";
+			}
+			cout << "\n";
+		}
+	}
+	if (PEFile->DataDirectories & DATADIRECTORY_EXPORT)
+	{
+		cout << "\nExport Table:\n------------\n";
+		for (int i = 0;i < PEFile->ExportTable.nNames;i++)
+		{
+			cout << hex << PEFile->ExportTable.Functions[i].funcRVA << ": " << PEFile->ExportTable.Functions[i].funcName << "\n";
+		}
+	}
+	cout << "\nSection Table:\n------------\n";
+	for (int i = 0; i < PEFile->nSections;i++)
+	{
+		cout << "Name: " << PEFile->Section[i].SectionName << "\n";
+		cout << "PointerToRawData: " << hex << PEFile->Section[i].PointerToRawData << "\n";
+		cout << "SizeOfRawData: " << hex << PEFile->Section[i].SizeOfRawData << "\n";
+		cout << "VirtualAddress: " << hex << PEFile->Section[i].VirtualAddress << "\n";
+		cout << "VirtualSize: " << hex << PEFile->Section[i].VirtualSize << "\n";
+		cout << "\n";
+	}
+}
+
+void cDebuggerApp::Search(int argc,char* argv[])
+{
+	cString Signature = argv[0];
+	Signature.Replace(':',' ');
+	cYaraScanner* YaraScan = new cYaraScanner();
+	
+	cString Rule = YaraScan->CreatRule("DebuggerSearch",Signature,RULE_ANY_OF_THEM);
+	int x = YaraScan->AddRule(Rule);
+	cProcess* ScannedProcess = Debugger->DebuggeeProcess;
+	int nResults = 0;
+	for (int i=0 ; i<(int)(ScannedProcess->MemoryMap.GetNumberOfItems()) ;i++)
+	{
+		MEMORY_MAP* MemMap =  (MEMORY_MAP*)ScannedProcess->MemoryMap.GetItem(i);
+		unsigned char* Address = (unsigned char*)ScannedProcess->Read(MemMap->Address,MemMap->Size);
+		if (Address == NULL)continue;
+		cList* Results = YaraScan->Scan(Address,MemMap->Size);
+		if (Results == NULL)continue;
+		_YARA_RESULT* Result = (_YARA_RESULT*)Results->GetItem(0);
+		if (Result == NULL)continue;
+		//cout << Result->Matches->GetNumberOfItems() << "\n";
+		for (int l = 0; l < Result->Matches->GetNumberOfItems();l++)
+		{
+			MSTRING* Match = (MSTRING*)Result->Matches->GetItem(l);
+			cout << "FOUND: " << (int*)(MemMap->Address + Match->offset) << "\n";
+			nResults++;
+		}
+		
+	}
+	cout << nResults << " Found\n";
+}
+void cDebuggerApp::Getaddr(int argc,char* argv[])
+{
+	cString DLLName = argv[0];
+	cString APIName = argv[1];
+
+	HMODULE DLLAddress = LoadLibraryA(DLLName);
+	if (DLLAddress == NULL)
+	{
+		cout << "Error: Unvalid DLL name\n";
+		return;
+	}
+	DWORD APIAddress = (DWORD)GetProcAddress(DLLAddress,APIName);
+	if (APIAddress == NULL)
+	{
+		cout << "Error: Unvalid API name\n";
+		return;
+	}
+	cout << "API Address: " << (int*)APIAddress << "\n";
+}
+
+void cDebuggerApp::Procdump(int argc,char* argv[])
+{
+	cString Filename = argv[0];
+	DWORD Address = 0;
+	sscanf(argv[1], "%x", &Address);
+	Address -= Debugger->DebuggeePE->Imagebase;
+	cout << (int*)Address << "\n";
+	cProcess* ScannedProcess = Debugger->DebuggeeProcess;
+	if ( ScannedProcess->DumpProcess(Filename,Address,PROC_DUMP_UNLOADIMPORTTABLE) == true)
+	{
+		cout << "File Dumped Successfully\n";
+	}
+	else
+	{
+		"Error: Wrong Filename\n";
+	}
 }

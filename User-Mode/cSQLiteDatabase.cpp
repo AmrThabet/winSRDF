@@ -32,7 +32,6 @@ cSQLiteDatabase::~cSQLiteDatabase()
 }
 bool cSQLiteDatabase::OpenDatabase(cString Filename)
 {
-	int x = 0;
 	EnterCriticalSection(&CriticalSection);
 	if(sqlite3_open(Filename, &DB) != SQLITE_OK)return false;
 	IsDatabaseOpened = true;

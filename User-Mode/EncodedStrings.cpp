@@ -38,12 +38,13 @@ cString cMD5String::Encrypt(char* buff,DWORD length)
 
 	if (!CryptAcquireContext(&hProv,NULL,NULL,PROV_RSA_FULL,CRYPT_VERIFYCONTEXT))return "";
 	if (!CryptCreateHash(hProv, CALG_MD5, 0, 0, &hHash))return "";
+	if (buff == NULL || length == 0)return "";
 	if (!CryptHashData(hHash, (BYTE*)buff, length, 0))return "";
 	cbHash = 16;
     if (CryptGetHashParam(hHash, HP_HASHVAL, rgbHash, &cbHash, 0))
     {
-		char* buff = (char*)malloc(33);
-		memset(buff,0,33);
+		char* buff = (char*)malloc(cbHash*2+2);
+		memset(buff,0,cbHash*2+2);
         for (DWORD i = 0; i < cbHash; i++)
         {
             sprintf(&buff[i*2],"%c%c", rgbDigits[rgbHash[i] >> 4],
@@ -89,7 +90,8 @@ cString base64_chars =
              "0123456789+/";
 
 
-static inline bool is_base64(unsigned char c) {
+static inline bool is_base64(unsigned char c)
+{
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
@@ -242,7 +244,9 @@ cString cXMLEncodedString::Encode(char* buff,DWORD length)
 
 char* cXMLEncodedString::Decode(DWORD &len)
 {
-	char* buff = (char*)malloc(EncodedString.GetLength());
+	char* buff = (char*)malloc(EncodedString.GetLength()+1);
+	memset(buff,0, EncodedString.GetLength()+1);
+	if (EncodedString.GetLength() < 4)return EncodedString;
 	memset(buff,0,EncodedString.GetLength());
 	char* str = EncodedString;
 	char c;
@@ -308,6 +312,5 @@ char* cXMLEncodedString::Decode(DWORD &len)
 			j++;
 		}
 	}while(c != 0);
-
 	return buff;
 }

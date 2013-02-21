@@ -39,6 +39,7 @@ void cHash::AddItem(cString Name,cString Value)
 	if (nItems == 0)
 	{
 		HashArray = (HASH_STRUCT*)malloc(sizeof(HASH_STRUCT)+1);
+		memset(HashArray,0,sizeof(HASH_STRUCT)+1);
 		HashArray[0].Name = new cString(Name);
 		HashArray[0].Value = new cString(Value);
 		nItems = 1;
@@ -101,7 +102,10 @@ cString cHash::GetValue(cString Name,int id)
 	{
 		if (*HashArray[i].Name == Name)
 		{
-			if (id == 0)return *HashArray[i].Value;
+			if (id == 0)
+			{
+				return *HashArray[i].Value;
+			}
 			id--;
 		}
 	}
@@ -190,7 +194,8 @@ cString cXMLHash::GetText(cString Name,int id)
 {
 	DWORD len = 0;
 	cXMLEncodedString EncodedStr;
-	EncodedStr.SetEncoded(GetValue(Name,id));
+	cString EncodedString = GetValue(Name,id);
+	EncodedStr.SetEncoded(EncodedString);
 	return EncodedStr.Decode(len);
 }
 cString cXMLHash::GetBinary(cString Name,DWORD &len,int id)

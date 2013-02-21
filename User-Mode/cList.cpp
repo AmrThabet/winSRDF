@@ -47,10 +47,9 @@ cList::~cList()
 
       
 void cList::AddItem(char* item)
-	{
+{
 	if (nItems == 0)
 	{
-
 		head = (char*)malloc(Ssize+1);
         memset(head,0,Ssize);
 		memcpy(head,item,Ssize);

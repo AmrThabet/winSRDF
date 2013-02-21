@@ -24,8 +24,11 @@
 #include <iostream>
 
 using namespace std;
+using namespace Security::Elements::String;
 using namespace Security::Targets;
-
+using namespace Security::Libraries::Malware::OS::Win32::Enumeration;
+using namespace Security::Targets::Memory;
+using namespace Security::Libraries::Malware::OS::Win32::Static;
 int callback(RULE* rule, void* data);
 
 TAG* specified_tags_list = NULL;
@@ -41,19 +44,10 @@ typedef struct _IDENTIFIER
 
 IDENTIFIER* specified_rules_list = NULL;
 
-using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Scanning;
-
-
 cYaraScanner::cYaraScanner(void)
 {
 	yr_init();
 	Results = new cList(sizeof(YARA_RESULT));
-	YContext = yr_create_context();
-}
-cYaraScanner::cYaraScanner(cString filepath,cString signature)
-{
-    Results = new cList(sizeof(YARA_RESULT));
 	YContext = yr_create_context();
 }
 
@@ -62,9 +56,16 @@ cYaraScanner::~cYaraScanner(void)
 	  yr_destroy_context( YContext);
 }
 
-void cYaraScanner::AddRule(cString rule)
+char* cYaraScanner::GetLastError()
 {
-	yr_compile_string(rule.GetChar(),YContext);
+	char* msg = (char*)malloc(1000);
+	memset(msg,0,1000);
+	yr_get_error_message(YContext,msg,1000);
+	return msg;
+}
+int cYaraScanner::AddRule(cString rule)
+{
+	return yr_compile_string(rule.GetChar(),YContext);
 }
 
 void cYaraScanner::FreeResults()
@@ -79,8 +80,9 @@ void cYaraScanner::FreeResults()
 
 cList* cYaraScanner::Scan(unsigned char* buffer,DWORD buffer_size)
 {
-	FreeResults();
-	yr_scan_mem( buffer, buffer_size, YContext,callback, this);
+	Results = new cList(sizeof(YARA_RESULT));
+	if (yr_scan_mem( buffer, buffer_size, YContext,callback, this) != 0)cout << this->GetLastError() << "\n";
+	
     return Results;
 }
 
@@ -91,6 +93,7 @@ cList* cYaraScanner::Scan(cProcess* Process)
     return Results;
 }
 
+//strings = {XX XX XX XX} or *SFEGEGE*
 char* cYaraScanner::CreatRule(cString name,cList strings,cString condition)
 {
 
@@ -125,7 +128,7 @@ char* cYaraScanner::CreatRule(cString name,cList strings,cString condition)
 	int size = strlen(name) + strlen(SStrings) + strlen(condition) + 100;
     char* buffer = (char*)malloc(size);
 	memset(buffer,0,size);
-	_snprintf(buffer,size-1,"rule %s{ strings:%s condition:%s}",name.GetChar(),SStrings.GetChar(),condition.GetChar());
+	_snprintf(buffer,size-1,"rule %s { strings:%s condition:%s of them }",name.GetChar(),SStrings.GetChar(),condition.GetChar());
 
 	return buffer;
 
@@ -134,10 +137,11 @@ char* cYaraScanner::CreatRule(cString name,cList strings,cString condition)
 char* cYaraScanner::CreatRule(cString name,cList strings,int condition)
 {
 	cString conditions;
-	if(condition==RULE_ANY_OF_THEM)
-		conditions = "any";
+
+	if (condition == RULE_ALL_OF_THEM)
+		conditions=" all of them";
 	else
-		conditions = "all";
+		conditions=" 1 of them";
 
 char id[2]={'a',0};
 	
@@ -172,15 +176,14 @@ char id[2]={'a',0};
 	return buffer;
 }
 
-
+//For searching for bytes ... write {XX XX XX XX} to search .. although .. it will search for it as a string
 char* cYaraScanner::CreatRule(cString name,cString wildcard,int condition)
-
 {
 	cString conditions;
-	if(condition==1)
-		conditions="any";
+	if(condition==RULE_ALL_OF_THEM)
+		conditions=" all of them";
 	else
-		conditions="all";
+		conditions=" 1 of them";
 
 
 	char id[2]={'a',0};
@@ -211,7 +214,7 @@ char* cYaraScanner::CreatRule(cString name,cString wildcard,int condition)
 		int size = strlen(name) + strlen(SStrings.GetChar()) + strlen(conditions.GetChar()) + 100;
     char* buffer=(char*)malloc(size);
 	memset(buffer,0,size);
-	_snprintf(buffer,size-1,"rule %s{ strings:%s condition:%s}",name.GetChar(),SStrings.GetChar(),conditions.GetChar());
+	_snprintf(buffer,size-1,"rule %s { strings: %s condition:%s}",name.GetChar(),SStrings.GetChar(),conditions.GetChar());
 
 	return buffer;
 
@@ -228,7 +231,6 @@ int callback(RULE* rule, void* data)
 
 int cYaraScanner::ScannerCallback(RULE* rule)
 {
-
 	YARA_RESULT TResult;
 	cYaraScanner* data = this;
     int rule_match;
@@ -236,7 +238,7 @@ int cYaraScanner::ScannerCallback(RULE* rule)
 	
     rule_match = (rule->flags & RULE_FLAGS_MATCH);
 
-	if (rule_match)
+	if (rule->flags & RULE_FLAGS_MATCH)
 	{
 		YSTRING* gh=rule->string_list_head;
 		TResult.RuleIdentifier=rule->identifier;
@@ -255,6 +257,7 @@ int cYaraScanner::ScannerCallback(RULE* rule)
 				TResult.Matches->AddItem((char*)ms);
 			}
 			gh=gh->next;
+			//cout << "Here\n";
 	
 		}
 		//count++;

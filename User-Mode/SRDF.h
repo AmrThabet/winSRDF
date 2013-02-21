@@ -44,11 +44,16 @@ namespace Security
 			class cPEFile;
 			class cELFFile;
 		}
+		namespace Memory
+		{
+			class cProcess;
+			class MemoryDump;
+			class MemoryRegion;
+		}
 		namespace Packets
 		{
-			class cPacket;
+
 		}
-		class cProcess;
 	}
 
 	namespace Elements
@@ -119,24 +124,24 @@ namespace Security
 			{
 				namespace Win32
 				{
-					namespace Scanning
+					namespace Enumeration
 					{
 						class cRecursiveScanner;
 						class cProcessScanner;
+					}
+					namespace Static
+					{
 						class cYaraScanner;
 						class SSDeep;
 					}
-					namespace Hooking
-					{
-						class cAPIHook;
-					}
-					namespace Emulation
+					namespace Dynamic
 					{
 						class CPokasEmu;
-					}
-					namespace Debugging
-					{
 						class cDebugger;
+					}
+					namespace Behavioral
+					{
+						class cAPIHook;
 					}
 				}
 			}

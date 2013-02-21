@@ -104,7 +104,7 @@ cEventIPC::cEventIPC(cString Name,DWORD Type, DWORD MaxSize)
 }
 DWORD cEventIPC::Write(char* Data,DWORD DataSize)
 {
-	if (DataSize > Size) return -1;		//is too big
+	if (DataSize > Size) return 0xFFFFFFFF;		//is too big
 	if (DataSize == 0) return 0;
 	//There's no other write?
 	DWORD dwWaitResult = WaitForSingleObject(WriteEvent[SrcType], WAIT_TIME_OUT);
@@ -124,7 +124,7 @@ DWORD cEventIPC::Write(char* Data,DWORD DataSize)
 			return DataSize;
 		 }
 	}
-	return -1;
+	return 0xFFFFFFFF;
 }
 VOID cEventIPC::SetReadNotifyFunction(PReadNotifyFunc NotifyRoutine)
 {

@@ -25,7 +25,7 @@
 #include <iostream>
 
 
-using namespace Security::Libraries::Malware::OS::Win32::Emulation;
+using namespace Security::Libraries::Malware::OS::Win32::Dynamic;
 using namespace Security::Targets::Files;
 using namespace std;
  
@@ -201,12 +201,12 @@ void CPokasEmu::SetReg(int index,DWORD value)
 
 void CPokasEmu::SetEip(DWORD value)
 {
-	process->GetThread(0)->EFlags = value;
+	process->GetThread(0)->Eip = value;
 }
 
 void CPokasEmu::SetEFLAGS(DWORD value)
 {
-	process->GetThread(0)->Eip = value;
+	process->GetThread(0)->EFlags = value;
 }
 
 DWORD CPokasEmu::GetTIB()

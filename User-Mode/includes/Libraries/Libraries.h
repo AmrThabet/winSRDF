@@ -62,7 +62,7 @@ struct DIRTYPAGES_STRUCT         //the changes in the memory during the emulatio
        DWORD Flags;
 }; 
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Emulation::CPokasEmu
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Dynamic::CPokasEmu
 {
 	System*  m_objSystem;
      int     nSystemObjUses;
@@ -103,7 +103,7 @@ public:
 };
 
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cRecursiveScanner
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Enumeration::cRecursiveScanner
 {
 	DWORD Level;
 	WIN32_FIND_DATA file_data;
@@ -119,7 +119,7 @@ public:
 	virtual void FileCallback(cString Filename,cString FullName,int Level);
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cProcessScanner
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Enumeration::cProcessScanner
 {
 	bool isSuccess;
 public:
@@ -176,7 +176,7 @@ struct DBG_MEMORY_BREAKPOINT
 	WORD wReserved;
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Debugging::cDebugger
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Dynamic::cDebugger
 {
 protected:
 	Security::Storage::Files::cLog* Log;
@@ -192,7 +192,7 @@ protected:
 	void RefreshDebugRegisters();
 public:
 	BOOL IsDebugging;
-	Security::Targets::cProcess* DebuggeeProcess;
+	Security::Targets::Memory::cProcess* DebuggeeProcess;
 	Security::Targets::Files::cPEFile* DebuggeePE;
 	DEBUG_EVENT debug_event;
 	DWORD Reg[8];
@@ -210,7 +210,7 @@ public:
 	//Functions
 	void UpdateRegisters();	
 	cDebugger(cString Filename, cString Commandline = cString(""));
-	cDebugger(Security::Targets::cProcess* Process);
+	cDebugger(Security::Targets::Memory::cProcess* Process);
 	int Run();
 	int Step();
 	void Pause();
@@ -234,7 +234,7 @@ public:
 	virtual void ProcessExitNotifyRoutine(){};
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::SSDeep
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Static::SSDeep
 {
 	int count;
 public:
@@ -242,12 +242,11 @@ public:
 	SSDeep(void);
 	~SSDeep(void);
 	static int Compare(const char *sig1, const char *sig2);
-	static int ScanBuffer(const unsigned char *buf,  DWORD  buf_len, char  *result);
-	static int ScanHandle(FILE *handle,char *result);
-	static int ScanFileName(const char * filename,char * result);
+	cString Hash(const unsigned char *buf,  DWORD  buf_len);
+	cString Hash(const char * filename);
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Hooking::cAPIHook
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Behavioral::cAPIHook
 {
 public:
 

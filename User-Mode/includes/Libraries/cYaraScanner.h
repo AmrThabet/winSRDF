@@ -44,9 +44,9 @@ typedef struct _YARA_RESULT
 } YARA_RESULT;
 
 using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Scanning;
+using namespace Security::Libraries::Malware::OS::Win32::Static;
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Scanning::cYaraScanner
+class DLLIMPORT Security::Libraries::Malware::OS::Win32::Static::cYaraScanner
 {
 	YARA_CONTEXT* YContext;
 	
@@ -55,13 +55,13 @@ public:
 	cList* Results;
 	cYaraScanner(void);
 	void FreeResults(void);
-	cYaraScanner(cString,cString);
-	void AddRule(cString rule);
+	int AddRule(cString rule);
 	cList* Scan(unsigned char* buffer,DWORD buffer_size);
-	cList* Scan(Security::Targets::cProcess* Process);
+	cList* Scan(Security::Targets::Memory::cProcess* Process);
 	int ScannerCallback(RULE* rule);
 	char* CreatRule(cString name,cList strings,cString condition);
 	char* CreatRule(cString name,cList strings,int condition);
 	char* CreatRule(cString name,cString strings,int condition);
+	char* GetLastError();
 	~cYaraScanner(void);
 };

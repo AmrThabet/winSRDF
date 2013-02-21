@@ -119,9 +119,9 @@ public:
 
 class DLLIMPORT Security::Elements::String::cEncryptedString
 {
-protected:
-	cString EncryptedString;
+
 public:
+	cString EncryptedString;
 	cEncryptedString(){};
 	cEncryptedString(char* buff,DWORD length){EncryptedString = Encrypt(buff,length);}
 	virtual cString Encrypt(char* buff,DWORD length){return "";};

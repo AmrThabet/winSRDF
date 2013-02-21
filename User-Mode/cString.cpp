@@ -88,8 +88,9 @@ cString& cString::operator =(const cString& str)
 
 void cString::VarToString(const double var)
 {
-	char str[32];
+	char str[33];
 
+	memset (&str,0,33);
 	gcvt(var, 16, str);
 	m_nLength = strlen(str);
 	if (str[m_nLength - 1] == '.')
@@ -233,6 +234,16 @@ int cString::Search(const char c)
 	return -1;
 }
 
+void cString::Replace(char src, char dest)
+{
+	for (DWORD i = 0;i < (DWORD)m_nLength; i++)
+	{
+		if (m_pString[i] == src)
+		{
+			m_pString[i] = dest;
+		}
+	}
+}
 bool cString::NumericParse(void* pvar, char flag)
 {
 	char* pTmpStr = m_pString;

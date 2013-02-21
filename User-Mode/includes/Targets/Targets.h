@@ -36,6 +36,7 @@ class DLLIMPORT Security::Targets::Files::cFile
 	HANDLE        hFile;
     HANDLE        hMapping;
 	BOOL		  IsFile;
+	BOOL		  isFound;
 public:
     DWORD        BaseAddress;
     DWORD        FileLength;
@@ -44,6 +45,7 @@ public:
 	cFile(char* szFilename);
 	cFile(char* buffer,DWORD size);
 	int OpenFile(char* szFilename);
+	BOOL IsFound();
 	~cFile();
 };
 
@@ -97,6 +99,17 @@ struct IMPORTTABLE_API
 	char* APIName;
 	DWORD APIAddressPlace;
 };
+struct RELOCATION_ENTRIES
+{
+	DWORD Offset;
+	char* Type;
+};
+struct RELOCATIONS
+{
+	DWORD VirtualAddress;
+	unsigned int nEntries;
+	RELOCATION_ENTRIES* Entries;
+};
 
 #define DATADIRECTORY_EXPORT		0x0001
 #define DATADIRECTORY_IMPORT		0x0002
@@ -125,6 +138,7 @@ private:
 	VOID initSections();
 	VOID initImportTable();
 	void initExportTable();	//export table
+	void initRelocations();
 public:
 	//Variables
 	bool FileLoaded;
@@ -138,8 +152,10 @@ public:
 	DWORD SectionAlignment;
 	WORD DataDirectories;
 	unsigned long nSections;
+	unsigned int nRelocations;
 	SECTION_STRUCT* Section;
 	IMPORTTABLE ImportTable;
+	RELOCATIONS* Relocations;
 
 	/* for exports */
 	EXPORTTABLE ExportTable;
@@ -255,6 +271,7 @@ struct MODULE_INFO
 	DWORD moduleSizeOfImage;
 	cString* moduleName;
 	cString* modulePath;
+	cString* moduleMD5;
 };
 
 struct MEMORY_MAP
@@ -262,13 +279,63 @@ struct MEMORY_MAP
 	DWORD Address;
 	DWORD Size;
 	DWORD Protection;
+	DWORD AllocationBase;
 };
 
-class DLLIMPORT Security::Targets::cProcess
+struct THREAD_INFO
+{
+	DWORD ThreadId;
+	HANDLE Handle;
+	CONTEXT Context;
+	DWORD TEB;
+	DWORD StackBase;
+	DWORD StackLimit;
+	DWORD SEH;
+};
+
+class DLLIMPORT Security::Targets::Memory::MemoryRegion : public Security::Elements::XML::cSerializer
+{
+public:
+	char* Buffer;
+	DWORD Address;
+	DWORD Size;
+	bool IsFound;
+	cString Filename;
+	MemoryRegion(char* buffer, DWORD size, DWORD RealAddress,cString filename);
+	MemoryRegion();
+	virtual void SetSerialize(cXMLHash& XMLParams);
+	virtual void GetSerialize(cXMLHash& XMLParams);
+};
+class DLLIMPORT Security::Targets::Memory::MemoryDump : public Security::Elements::XML::cSerializer
+{
+	cProcess* Process;
+	DWORD ImageBase;
+	ULONG SizeOfImage;
+	cString processName;
+	cString processPath;
+	cString processMD5;
+	DWORD ParentID;
+	DWORD ProcessId;
+	cString CommandLine;
+	DWORD nMemoryRegions;
+	cList* modulesList;
+	MemoryRegion** MemoryMap;
+public:
+	MemoryDump(cProcess* Process,bool DumpFullMemory);
+	MemoryDump();
+	virtual void SetSerialize(cXMLHash& XMLParams);
+	virtual void GetSerialize(cXMLHash& XMLParams);
+};
+
+
+#define PROC_DUMP_ZEROIMPORTTABLE 0
+#define PROC_DUMP_UNLOADIMPORTTABLE 1
+class DLLIMPORT Security::Targets::Memory::cProcess
 {
 	void AnalyzeProcess();
 	cString Unicode2Ansi(LPWSTR,int);
 	BOOL GetMemoryMap();
+	void EnumerateThread(THREAD_INFO* ti);
 public:
 	// parameters
 	DWORD procHandle;
@@ -277,13 +344,14 @@ public:
 	ULONG SizeOfImage;
 	cString processName;
 	cString processPath;
+	cString processMD5;
 	DWORD ParentID;
 	DWORD ProcessId;
 	cString CommandLine;
 	cList modulesList;
 	cList MemoryMap;
 	bool isFound;
-	
+	cList* Threads;
 	//methods
 	cProcess(int processId);
 	
@@ -293,4 +361,7 @@ public:
 	DWORD DllInject(cString DLLFilename);
 	DWORD CreateThread(DWORD addressToFunction , DWORD addressToParameter);
 	bool IsFound();
+	void RefreshThreads();
+	bool DumpProcess(cString Filename, DWORD Entrypoint, DWORD ImportUnloadingType); // Entrypoint == 0 means the same Entrypoint, ImportUnloadingType == PROC_DUMP_ZEROIMPORTTABLE or PROC_DUMP_UNLOADIMPORTTABLE
+	DWORD UnloadImportTable(DWORD NewImagebase);
 };

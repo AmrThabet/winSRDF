@@ -27,15 +27,15 @@
 } UNICODE_STRING, *PUNICODE_STRING;
 */
 
-struct PEXCEPTION_REGISTRATION_RECORD
+struct _PEXCEPTION_REGISTRATION_RECORD
 {
-     PEXCEPTION_REGISTRATION_RECORD* Next;
+     _PEXCEPTION_REGISTRATION_RECORD* Next;
      DWORD Handler;
 };
 
 struct TIB
 {
-     PEXCEPTION_REGISTRATION_RECORD* ExceptionList;  //FS:[0x00]
+     _PEXCEPTION_REGISTRATION_RECORD* ExceptionList; //FS:[0x00]
      DWORD StackBase;                               //FS:[0x04]
      DWORD StackLimit;                              //FS:[0x08]
      DWORD SubSystemTib;                            //FS:[0x0C]
@@ -111,7 +111,7 @@ struct __LIST_ENTRY{
         DWORD              Blink;       // Ptr32 _LIST_ENTRY
 };
 
-struct _LDR_DATA_TABLE_ENTRY{
+struct _LDR_DATA_TABLE_ENTRY2{
   __LIST_ENTRY               InLoadOrderLinks;              //+00
   __LIST_ENTRY               InMemoryOrderLinks;            //+08
   __LIST_ENTRY               InInitializationOrderLinks;    //+10
@@ -141,7 +141,7 @@ struct _LDR_DATA_TABLE_ENTRY{
   __LIST_ENTRY               StaticLinks;
 };
 
-struct _PEB_LDR_DATA {
+struct _PEB_LDR_DATA2 {
     DWORD                 Length_;                      //+00
     DWORD                 Initialized;                  //+04
     DWORD                 SsHandle;                     //+08
@@ -162,7 +162,7 @@ struct __PEB {
   char                    Spare;
   DWORD                   Mutant;												//+04
   DWORD                   ImageBaseAddress;							//+08
-  _PEB_LDR_DATA*          LoaderData;										//+0C
+  _PEB_LDR_DATA2*          LoaderData;										//+0C
   __RTl_USER_PROCESS_PARAMETERS*            ProcessParameters;						//+10
   DWORD                   SubSystemData;								//+14
   DWORD                   ProcessHeap;									//+18

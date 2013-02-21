@@ -183,6 +183,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\cAPIHook.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cApp.cpp"
 				>
 			</File>
@@ -191,7 +195,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cConsoleApp.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cDebugger.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cELFFile.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cEventIPC.cpp"
 				>
 			</File>
 			<File
@@ -293,10 +309,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MemMgr.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Registry.cpp"
 				>
 			</File>
@@ -360,6 +372,10 @@
 			</File>
 			<File
 				RelativePath=".\includes\Elements\Elements.h"
+				>
+			</File>
+			<File
+				RelativePath=".\includes\Targets\elf.h"
 				>
 			</File>
 			<File

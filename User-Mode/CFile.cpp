@@ -26,10 +26,12 @@ using namespace Security::Targets::Files;
 
 cFile::cFile(char* szFilename)
 {
+	isFound = FALSE;
 	Attributes = GetFileAttributes(szFilename);
+	if (Attributes == INVALID_FILE_ATTRIBUTES)return;
     hFile = CreateFileA(szFilename,
                         GENERIC_READ,
-                        FILE_SHARE_READ | FILE_SHARE_WRITE,
+                        FILE_SHARE_READ,
                         NULL,
                         OPEN_EXISTING,
                         FILE_ATTRIBUTE_NORMAL,
@@ -68,6 +70,7 @@ cFile::cFile(char* szFilename)
     }
     FileLength  = (DWORD) GetFileSize(hFile,NULL);
 	IsFile = TRUE;
+	isFound = TRUE;
 	return;
 }
 cFile::cFile(char* buffer,DWORD size)
@@ -77,6 +80,7 @@ cFile::cFile(char* buffer,DWORD size)
 	Attributes = NULL;
 	Filename = NULL;
 	IsFile = FALSE;
+	isFound = TRUE;
 }
 cFile::~cFile()
 {
@@ -86,4 +90,9 @@ cFile::~cFile()
 		CloseHandle(hMapping);
 		CloseHandle(hFile);
 	}
+}
+
+BOOL cFile::IsFound()
+{
+	return isFound;
 }

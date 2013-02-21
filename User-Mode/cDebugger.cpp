@@ -23,9 +23,10 @@
 #include <iostream>
 
 using namespace std;
-using namespace Security::Libraries::Malware::OS::Win32::Debugging;
+using namespace Security::Libraries::Malware::OS::Win32::Dynamic;
 using namespace Security::Targets;
 using namespace Security::Targets::Files;
+using namespace Security::Targets::Memory;
 
 cDebugger::cDebugger(cString Filename,cString Commandline)
 {
@@ -262,7 +263,7 @@ int cDebugger::Run()
 							 * on this instruction ... and rewrite again the "int3" for the next
 							 * break on this breakpoint
 							 */
-
+							
 							LastBreakpoint = (DWORD)exception.ExceptionRecord.ExceptionAddress;
 							lcContext.ContextFlags = CONTEXT_ALL;
 							GetThreadContext((HANDLE)hThread, &lcContext);
@@ -270,6 +271,7 @@ int cDebugger::Run()
 							DebuggeeProcess->Write(LastBreakpoint,(DWORD)&bp->OriginalByte,1);
 							lcContext.EFlags |= 0x100; // Set trap flag, which raises "single-step" exception
 							SetThreadContext((HANDLE)hThread,&lcContext);
+							RefreshRegisters();
 						}
 						return DBG_STATUS_BREAKPOINT;
 					}

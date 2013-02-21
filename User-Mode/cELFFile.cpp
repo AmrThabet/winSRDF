@@ -51,16 +51,17 @@ bool cELFFile::ParseELF()
 	initSections();
 	initDynSymbols();
 	initImports();
-
+	return true;
 }
 void cELFFile::initSections()
 {
 	SHeader = (elf32_section_header*)malloc(ExeHeader->e_shnum * ExeHeader->e_shentsize);
+	memset(SHeader,0,ExeHeader->e_shnum * ExeHeader->e_shentsize);
 	SHeader = (elf32_section_header*)(BaseAddress + ExeHeader->e_shoff);
 
 	nSections = ExeHeader->e_shnum;
 	Sections = (SECTIONS*)malloc(nSections * sizeof(SECTIONS));
-
+	memset(Sections,0,nSections * sizeof(SECTIONS));
 	sStringTable = (char*)malloc(SHeader[ExeHeader->e_shstrndx].sh_size);
 	sStringTable = (char*)(SHeader[ExeHeader->e_shstrndx].sh_offset + BaseAddress);
 

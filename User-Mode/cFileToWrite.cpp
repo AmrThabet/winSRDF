@@ -52,7 +52,10 @@ cFileToWrite::~cFileToWrite()
 
 void cFileToWrite::write(char *buffer, DWORD length)
 {
-	hFile.write( buffer, length );
+	if (isFound)
+	{
+		hFile.write( buffer, length );
+	}
 }
 
 bool cFileToWrite::IsFound()

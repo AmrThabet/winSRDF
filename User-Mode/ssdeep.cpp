@@ -5,8 +5,7 @@
 #include "SRDF.h"
 #include <iostream>
 using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Scanning;
-
+using namespace Security::Libraries::Malware::OS::Win32::Static;
 
 
 SSDeep::SSDeep(void)
@@ -25,20 +24,24 @@ int SSDeep::Compare(const char *sig1, const char *sig2)
 	return fuzzy_compare(sig1,sig2);
 }
 
-//return zero if succsed and non-zero if error
-int SSDeep::ScanBuffer(const unsigned char *buf,  DWORD  buf_len, char  *result)
+cString SSDeep::Hash(const unsigned char *buffer,  DWORD  size)
 {
-	 return fuzzy_hash_buf(buf,buf_len,result);
+	char* result = (char*)malloc(Max_Result);
+	memset(result,0,Max_Result);
+	if (fuzzy_hash_buf(buffer,size,result) ==0 )
+	{
+		return result;
+	}
+	return "";
 }
 
-//return zero if succsed and non-zero if error
-int SSDeep::ScanHandle(FILE *handle,char *result)
+cString SSDeep::Hash(const char * filename)
 {
-	return fuzzy_hash_file(handle,result);
-}
-
-//return zero if succsed and non-zero if error
-int SSDeep::ScanFileName(const char * filename,char * result)
-{
-	return fuzzy_hash_filename(filename,result);
+	char* result = (char*)malloc(Max_Result);
+	memset(result,0,Max_Result);
+	if (fuzzy_hash_filename(filename,result) ==0 )
+	{
+		return result;
+	}
+	return "";
 }

@@ -32,6 +32,8 @@
 using namespace std;
 using namespace Security::Targets::Files;
 
+#define MakePtr(cast, ptr, addValue) (cast)( (DWORD)(ptr) + (DWORD)(addValue))
+
 cPEFile::cPEFile(char* szFilename) : cFile(szFilename)
 {
 	FileLoaded = ParsePE();
@@ -43,6 +45,14 @@ cPEFile::cPEFile(char* buffer,DWORD size) : cFile(buffer,size)
 }
 bool cPEFile::identify(cFile* File)
 {
+	if (File->IsFound() == false) return false;
+	dos_header* DosHeader = (dos_header*)File->BaseAddress;
+	
+	if (DosHeader->e_magic != 'ZM') return false;
+	
+	image_header* PEHeader = (image_header*)(File->BaseAddress + DosHeader->e_lfanew);
+	if (DosHeader->e_lfanew > File->FileLength)return false;
+	if(PEHeader->signature != 'EP') return false;
 	return true;
 }
 bool cPEFile::ParsePE()
@@ -56,13 +66,14 @@ bool cPEFile::ParsePE()
 	if (DosHeader->e_magic != 'ZM') return false;
 	
 	PEHeader = (image_header*)(BaseAddress + DosHeader->e_lfanew);
-	
+
+	if (DosHeader->e_lfanew > FileLength)return false;
 	if(PEHeader->signature != 'EP') return false;
 
 	Magic = PEHeader->optional.magic;
 	Subsystem = PEHeader->optional.subsystem;
 	Imagebase = PEHeader->optional.image_base;
-	Entrypoint = PEHeader->optional.address_of_entry_point;
+	Entrypoint = PEHeader->optional.address_of_entry_point + PEHeader->optional.image_base;
 	FileAlignment = PEHeader->optional.file_alignment;
 	SectionAlignment = PEHeader->optional.section_alignment;
 	SizeOfImage = PEHeader->optional.size_of_image;
@@ -70,12 +81,13 @@ bool cPEFile::ParsePE()
 	initSections();
 	initExportTable();	// export table
 	initImportTable();
-	
 	return true;
 }
-void cPEFile::initExportTable() {
-
+void cPEFile::initExportTable()
+{
+	ExportTable.Functions = NULL;
 	DWORD ExportRVA = PEHeader->optional.data_directory[0].virtual_address;
+	if (ExportRVA == NULL)return;
 	image_export_directory* Exports = (image_export_directory*)(RVAToOffset(ExportRVA)+BaseAddress);
 
 	ExportTable.nNames = Exports->number_of_names;
@@ -87,7 +99,8 @@ void cPEFile::initExportTable() {
 
 	ExportTable.Functions = (EXPORTFUNCTION*)malloc(sizeof(EXPORTFUNCTION) * ExportTable.nFunctions);
 
-	for (DWORD i =0;i<ExportTable.nFunctions;i++) {
+	for (DWORD i =0;i<ExportTable.nFunctions;i++)
+	{
 		ExportTable.Functions[i].funcName = (char*)(DWORD*)RVAToOffset(ExportTable.pNames[i]) + BaseAddress;
 		ExportTable.Functions[i].funcOrdinal = ExportTable.pNamesOrdinals[i];
 		ExportTable.Functions[i].funcRVA = ExportTable.pFunctions[ExportTable.Functions[i].funcOrdinal];
@@ -96,12 +109,14 @@ void cPEFile::initExportTable() {
 }
 VOID cPEFile::initImportTable()
 {
+	ImportTable.DLL = NULL;
 	DWORD ImportRVA = PEHeader->optional.data_directory[1].virtual_address;
+	if (ImportRVA == NULL)return;
 	image_import_descriptor* Imports = (image_import_descriptor*)(RVAToOffset(ImportRVA)+BaseAddress);
 	
 	//Getting The Number of DLLs inside
 	ImportTable.nDLLs = 0;
-	while (Imports->original_first_thunk != 0 || Imports->first_thunk != 0 || Imports->name != 0)
+	while ((Imports->original_first_thunk != 0 && Imports->first_thunk != 0) || Imports->name != 0)
 	{
 		Imports = (image_import_descriptor*)((DWORD)Imports + (DWORD)sizeof(image_import_descriptor));
 		ImportTable.nDLLs++;
@@ -140,13 +155,11 @@ VOID cPEFile::initImportTable()
 		//Getting APIs
         for (DWORD i = 0; i < ImportTable.DLL[l].nAPIs; i++)
 		{
-            if(!((RVAToOffset((DWORD)APINames[i]->name) + BaseAddress) & 0x80000000))
+            if(!(*(DWORD*)(RVAToOffset((DWORD)APINames[i]->name) + BaseAddress) & 0x80000000))
 			{
 				ImportTable.DLL[l].API[i].APIName = (char*)(RVAToOffset((DWORD)APINames[i]->name) + BaseAddress);
 
 				if (APIAddresses != (DWORD*)Imagebase) ImportTable.DLL[l].API[i].APIAddressPlace = (DWORD)(&APIAddresses[i]);
-
-                //else ImportHeader_ptr[index]=(dword)&names[i]-BaseAddress+process->GetImagebase();
             }
         };
 
@@ -154,9 +167,76 @@ VOID cPEFile::initImportTable()
         Imports = (image_import_descriptor*)((DWORD)Imports + (DWORD)sizeof(image_import_descriptor));  
     };
 };
+
+void cPEFile::initRelocations()
+{
+	/*find reloc section*/
+	unsigned short int RelocSection;
+	for (unsigned int i = 0; i < nSections;i++)
+	{
+		if (strcmp(Section[i].SectionName,".reloc") ==0) 
+			RelocSection = i;
+	}
+
+	char *RelocTypes[] = {"ABSOLUTE","HIGH","LOW","HIGHLOW","HIGHADJ","MIPS_JMPADDR","I860_BRADDR","I860_SPLIT" };
+
+	char *RelocType;
+	WORD relocType;
+
+	DWORD RelocRVA = PEHeader->optional.data_directory[5].virtual_address;
+	if (RelocRVA == NULL) return;
+
+	PIMAGE_BASE_RELOCATION baseReloc;
+	baseReloc = (PIMAGE_BASE_RELOCATION)(BaseAddress+RelocRVA-(Section[RelocSection].VirtualAddress - Section[RelocSection].PointerToRawData));
+	while ( baseReloc->SizeOfBlock != 0 )
+	{
+		nRelocations++;
+		baseReloc = (PIMAGE_BASE_RELOCATION)((DWORD)(baseReloc) + (DWORD)(baseReloc->SizeOfBlock));
+	}
+
+
+	Relocations = (RELOCATIONS*)malloc(sizeof(RELOCATIONS) * nRelocations);
+
+	baseReloc = (PIMAGE_BASE_RELOCATION)(BaseAddress+RelocRVA-(Section[4].VirtualAddress - Section[4].PointerToRawData));
+	for (unsigned int i = 0; i < nRelocations;i++)
+	{
+		unsigned int nEntries = (baseReloc->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
+		Relocations[i].nEntries = nEntries;
+		Relocations[i].VirtualAddress = baseReloc->VirtualAddress;
+		DWORD* pEntry = MakePtr( DWORD*, baseReloc, sizeof(*baseReloc) );
+
+		Relocations[i].Entries = (RELOCATION_ENTRIES*)malloc(sizeof(RELOCATION_ENTRIES) * nEntries);
+		for (unsigned int j = 0; j<nEntries ;j++)
+		{
+			relocType = (*pEntry & 0xF000) >> 12;
+			RelocType = (relocType < 8) ? RelocTypes[relocType] : "unknown";
+
+			Relocations[i].Entries[j].Offset = (DWORD)(*pEntry & 0x0FFF)+baseReloc->VirtualAddress;
+			Relocations[i].Entries[j].Type = (char *)RelocType;
+
+			pEntry++;
+		}
+
+		baseReloc = (PIMAGE_BASE_RELOCATION)((DWORD)(baseReloc) + (DWORD)(baseReloc->SizeOfBlock));
+	}
+};
 cPEFile::~cPEFile()
 {
+	//Free Section Table
 	free(Section);
+
+	//Free Export Table
+	if (ExportTable.Functions != NULL)free(ExportTable.Functions);
+
+	//Free Import Table
+	if (ImportTable.DLL != NULL)
+	{
+		for (DWORD i = 0;i < ImportTable.nDLLs;i++)
+		{
+			free(ImportTable.DLL[i].API);
+		}
+		free(ImportTable.DLL);
+	}
 }
 VOID cPEFile::initDataDirectory()
 {
@@ -189,7 +269,7 @@ DWORD cPEFile::RVAToOffset(DWORD RVA)
 
 	for (DWORD i = 0; i < nSections;i++)
 	{
-		if (RVA > Section[i].VirtualAddress && RVA < (Section[i].VirtualAddress + Section[i].VirtualSize))
+		if (RVA >= Section[i].VirtualAddress && RVA < (Section[i].VirtualAddress + Section[i].VirtualSize))
 						return (RVA - Section[i].VirtualAddress + Section[i].PointerToRawData);
 	}
 	return 0;

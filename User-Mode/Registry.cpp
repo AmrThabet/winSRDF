@@ -182,7 +182,7 @@ char* cRegistryEntry::GetValue(DWORD &len)
 }
 void cRegistryEntry::SetValue(char* buff,DWORD Len,DWORD Type)
 {
-	int ret = (int)RegSetValueEx(hKey,ValueName,NULL,Type,(BYTE*)buff,Len);
+	RegSetValueEx(hKey,ValueName,NULL,Type,(BYTE*)buff,Len);
    
 }
 cRegistryEntry::~cRegistryEntry()
