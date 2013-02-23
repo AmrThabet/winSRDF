@@ -42,28 +42,29 @@ Before talking about SRDF Design and structure, I want to give you what you will
 In User-Mode part, SRDF gives you many helpful tools … and they are:
 --------------------------------------------------------------------
 
-Assembler and Disassembler
-x86 Emulator
-Debugger
-PE Analyzer
-Process Analyzer (Loaded DLLs, Memory Maps … etc)
-MD5, SSDeep and Wildlist Scanner (YARA)
-API Hooker and Process Injection
-Backend Database, XML Serializer
+- [x] Assembler and Disassembler
+- [x] x86 Emulator
+- [x] Debugger
+- [x] PE Analyzer
+- [x] Process Analyzer (Loaded DLLs, Memory Maps … etc)
+- [x] MD5, SSDeep and Wildlist Scanner (YARA)
+- [x] API Hooker and Process Injection
+- [x] Backend Database, XML Serializer
+
 And many more
 
 --------------------------------------------------------------------
 In the Kernel-Mode part, it tries to make it easy to write your own filter device driver (not with WDF and callbacks) and gives an easy, object oriented (as much as we can) development framework with these features:
 --------------------------------------------------------------------
 
-Object-oriented and easy to use development framework
-Easy IRP dispatching mechanism
-SSDT Hooker
-Layered Devices Filtering
-TDI Firewall
-File and Registry Manager
-Kernel Mode easy to use internet sockets
-Filesystem Filter
+- [x] Object-oriented and easy to use development framework
+- [x] Easy IRP dispatching mechanism
+- [x] SSDT Hooker
+- [x] Layered Devices Filtering
+- [x] TDI Firewall
+- [x] File and Registry Manager
+- [x] Kernel Mode easy to use internet sockets
+- [x] Filesystem Filter
 
 Still the Kernel-Mode in progress and many features will be added in the near future.
 
