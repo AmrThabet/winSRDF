@@ -170,9 +170,9 @@ public:
 
 };
 
-//--------------------------------------------------------------
-// ELF Parser
-//----------
+//---------------------------------------------//
+//--				ELF Parser				 --//
+//---------------------------------------------//
 
 /* elf parser */
 struct SECTIONS 
@@ -181,6 +181,14 @@ struct SECTIONS
 	DWORD Address;
 	DWORD Offset;
 	DWORD Size;
+};
+
+struct DYNAMICSYMBOLS 
+{
+	char* Name;
+	DWORD Address;
+	DWORD Offset;
+	//DWORD Size;
 };
 
 struct SYMBOLS 
@@ -197,34 +205,37 @@ struct DYNAMICS
 	DWORD Offset;
 	DWORD Value;
 	DWORD Tag;
-	char* Name;
+	//char* Name;
 };
 
 struct IMPORTS
 {
-	//DWORD Address;
-	//DWORD Offset;
+	DWORD Tag;
 	DWORD Value;
 	char* Name;
 };
 
-class DLLIMPORT Security::Targets::Files::cELFFile : public Security::Targets::Files::cFile
-{
+class DLLIMPORT Security::Targets::Files::cELFFile : public Security::Targets::Files::cFile {
 private:
 
 	//Functions:
 	bool ParseELF();
 	void initSections();
 	void initDynSymbols();
-	void initImports();
-	void initDynamics();
+	void initSharedLibraries();
+	void initSymbols();
+	void initImportedFunctions();
 
 	char* sStringTable;
 	char* dStringTable;
 	unsigned int DynSymArray;
+	unsigned int SymArray;
 	unsigned int DynArray;
+	unsigned int nDynamics;
+	Elf32_Sym* DynamicSymbolsTable;
 	Elf32_Sym* SymbolsTable;
 	Elf32_Dyn* DynamicTable;
+	elf32_rel* PLTRelocationsTable;
 	
 public:
 	//Variables
@@ -234,13 +245,18 @@ public:
 	elf32_section_header* SHeader;
 
 	unsigned int nSections;
-	unsigned int nDynamics;
-	unsigned int nImports;
 	unsigned int nSymbols;
+	unsigned int nSharedLibraries;
+
+	unsigned int nDynamicSymbols;
+	unsigned int nImportedFunctions;
+
 	SECTIONS* Sections;
+	DYNAMICSYMBOLS* DynamicSymbols;
+	DYNAMICSYMBOLS* ImportedFunctions;
 	SYMBOLS* Symbols;
+	IMPORTS* SharedLibraries;
 	DYNAMICS* Dynamics;
-	IMPORTS* Imports;
 	
 	DWORD Magic;
 	DWORD Subsystem;
@@ -259,6 +275,7 @@ public:
 	DWORD OffsetToRVA(DWORD RawOffset);
 
 };
+
 
 //--------------------------------------//
 //--          Process Class           --//
@@ -364,4 +381,124 @@ public:
 	void RefreshThreads();
 	bool DumpProcess(cString Filename, DWORD Entrypoint, DWORD ImportUnloadingType); // Entrypoint == 0 means the same Entrypoint, ImportUnloadingType == PROC_DUMP_ZEROIMPORTTABLE or PROC_DUMP_UNLOADIMPORTTABLE
 	DWORD UnloadImportTable(DWORD NewImagebase);
+};
+
+
+
+#define PACKET_NOERROR			0x0
+#define PACKET_IP_CHECKSUM		0x1
+#define PACKET_TCP_CHECKSUM		0x2
+#define PACKET_UDP_CHECKSUM		0x3
+#define PACKET_ICMP_CHECKSUM		0x4
+#define PACKET_IP_TTL			0x5
+
+class DLLIMPORT Security::Targets::Packets::cPacket
+{
+	void CheckIfMalformed();
+	UINT sHeader;
+	UINT eType;
+	void ResetIs();
+	USHORT GlobalChecksum(USHORT *buffer, UINT length);
+	BOOL ProcessPacket();
+
+public:
+	cPacket(string filename);
+	cPacket(UCHAR* buffer, UINT size);
+	~cPacket();
+
+	BOOL FixIPChecksum();
+	BOOL FixTCPChecksum();
+	BOOL FixUDPChecksum();
+	BOOL FixICMPChecksum();
+
+	DWORD BaseAddress;
+	UINT Size;
+
+	PETHER_HEADER*	EthernetHeader;
+	PIP_HEADER*		IPHeader;
+	PTCP_HEADER*	TCPHeader;
+	PARP_HEADER*	ARPHeader;
+	PUDP_HEADER*	UDPHeader;
+	PICMP_HEADER*	ICMPHeader;
+	PIGMP_HEADER*	IGMPHeader;
+
+	UINT PacketSize;
+	BOOL isParsed;
+	WORD PacketError;
+
+	BOOL isTCPPacket;
+	BOOL isUDPPacket;
+	BOOL isICMPPacket;
+	BOOL isIGMPPacket;
+	BOOL isARPPacket;
+	BOOL isIPPacket;
+	BOOL isMalformed;
+
+	UCHAR* TCPData;
+	UINT TCPDataSize;
+	UCHAR* TCPOptions;
+	UINT TCPOptionsSize;
+
+	UCHAR* UDPData;
+	UINT UDPDataSize;
+
+	UCHAR* ICMPData;
+	UINT ICMPDataSize;
+};
+
+
+class DLLIMPORT Security::Targets::Packets::cConStream
+{
+	BOOL	AnalyzePackets();
+public:
+	cConStream();
+	~cConStream();
+
+	UINT	ClientIP;
+	UINT	ServerIP; 
+	USHORT	ServerPort;
+	USHORT	ClientPort;
+
+	cPacket**	Packets;
+	UINT		nPackets;
+	UINT		nActivePackets;
+
+	BOOL	AddPacket(cPacket* packet);
+	BOOL	ClearActivePackets(UINT keeped);
+
+	BOOL	isTCPPacket;
+	BOOL	isUDPPacket;
+	BOOL	isIPPacket;
+
+};
+
+
+struct FOLLOW_STREAM
+{
+	UCHAR	ether_dhost[ETHER_ADDR_LEN];
+	UCHAR	ether_shost[ETHER_ADDR_LEN];
+	UINT	ip_srcaddr;
+	UINT	ip_destaddr;
+	UCHAR	ip_protocol;
+	USHORT	source_port;
+	USHORT	dest_port;
+};
+
+class DLLIMPORT Security::Targets::Packets::cPcapFile : public Security::Targets::Files::cFile
+{
+	PCAP_GENERAL_HEADER* PCAP_General_Header;
+	PCAP_PACKET_HEADER* PCAP_Packet_Header;
+
+	BOOL ProcessPCAP();
+	cPacket* Packet;
+	void GetStreams();
+public:
+	UINT nPackets;
+	cPacket** Packets;
+	BOOL FileLoaded;
+	cPcapFile(char* szFilename);
+	~cPcapFile(void);
+	void DetectMalformedPackets();
+	UINT nConStreams;
+	cConStream** ConStreams;
 };

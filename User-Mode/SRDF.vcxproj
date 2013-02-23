@@ -106,6 +106,7 @@
     <ClCompile Include="cApp.cpp" />
     <ClCompile Include="cCode.cpp" />
     <ClCompile Include="cConsoleApp.cpp" />
+    <ClCompile Include="cConStream.cpp" />
     <ClCompile Include="cDebugger.cpp" />
     <ClCompile Include="cELFFile.cpp" />
     <ClCompile Include="cEventIPC.cpp" />
@@ -115,6 +116,9 @@
     <ClCompile Include="cHTTPSocket.cpp" />
     <ClCompile Include="cList.cpp" />
     <ClCompile Include="cLog.cpp" />
+    <ClCompile Include="cPacket.cpp" />
+    <ClCompile Include="cPacketGen.cpp" />
+    <ClCompile Include="cPcapFile.cpp" />
     <ClCompile Include="CPEFile.cpp" />
     <ClCompile Include="CPokasAsm.cpp" />
     <ClCompile Include="CPokasEmu.cpp" />
@@ -155,6 +159,8 @@
     <ClInclude Include="includes\Elements\cThread.h" />
     <ClInclude Include="includes\Libraries\cYaraScanner.h" />
     <ClInclude Include="includes\Elements\Elements.h" />
+    <ClInclude Include="includes\Network\hPackets.h" />
+    <ClInclude Include="includes\Network\Network.h" />
     <ClInclude Include="includes\Targets\elf.h" />
     <ClInclude Include="includes\Libraries\Libraries.h" />
     <ClInclude Include="includes\Elements\pe.h" />

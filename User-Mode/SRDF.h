@@ -28,6 +28,7 @@
 #define DLLIMPORT 
 #endif
 #include <iostream>
+#include "includes\Network\hPackets.h"
 
 using namespace std;
 
@@ -52,7 +53,9 @@ namespace Security
 		}
 		namespace Packets
 		{
-
+			class cPacket;
+			class cPcapFile;
+			class cConStream;
 		}
 	}
 
@@ -165,7 +168,11 @@ namespace Security
 			}
 			namespace ProtocolAnalyzers
 			{
-				
+
+			}
+			namespace PacketGeneration
+			{
+				class cPacketGen;
 			}
 		}
 	}
@@ -192,6 +199,7 @@ class DLLIMPORT Security::Storage::Registry::cRegistryKey;
 #include "includes\Storage\Storage.h"
 #include "includes\Libraries\Libraries.h"
 #include "includes\Targets\Targets.h"
+#include "includes\Network\Network.h"
 
 
 //--------------------------------------//
