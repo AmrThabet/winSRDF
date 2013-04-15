@@ -55,7 +55,9 @@ cString cApp::GetApplicationFilename()
 			char* Filename= (char*)malloc(NewSize);
 			memset(Filename,0,NewSize);
 			GetModuleFileName(0,Filename,NewSize);
-			return cString(Filename);
+			cString sFilename = Filename;
+			free(Filename);
+			return sFilename;
 	};
 	return buff;
 }
@@ -176,7 +178,11 @@ void cApp::Initialize(int argc, char *argv[])
 	if (Flags & APP_REGISTRYSETTINGS)Settings.Initialize(RegistryType,RegistryPath,true);
 	if (Flags & APP_DEFINEDATABASE)
 	{
+		#ifdef USE_SQLITE
 		Database = new cSQLiteDatabase(AppName+".db");
+		#else
+		Database = new cDatabase(AppName+".db");
+		#endif
 	}
 }
 void cApp::GetRequest(int argc, char *argv[])

@@ -28,9 +28,13 @@
 #define DLLIMPORT 
 #endif
 #include <iostream>
-#include "includes\Network\hPackets.h"
 
 using namespace std;
+
+//you can comment them while building to remove dependencies
+
+#define USE_POKAS_EMULATOR 1
+#define USE_SQLITE 1
 
 //Development Framework Design:
 //-----------------------------
@@ -44,6 +48,7 @@ namespace Security
 			class cFile;
 			class cPEFile;
 			class cELFFile;
+			class cPcapFile;
 		}
 		namespace Memory
 		{
@@ -54,7 +59,6 @@ namespace Security
 		namespace Packets
 		{
 			class cPacket;
-			class cPcapFile;
 			class cConStream;
 		}
 	}
@@ -81,6 +85,7 @@ namespace Security
 			class cSerializer;
 			class cXMLHash;
 			class cXMLEncodedString;
+			class cXMLElement;
 		}
 			
 	}
@@ -164,7 +169,7 @@ namespace Security
 			}
 			namespace PacketCapture
 			{
-				
+
 			}
 			namespace ProtocolAnalyzers
 			{
@@ -199,7 +204,6 @@ class DLLIMPORT Security::Storage::Registry::cRegistryKey;
 #include "includes\Storage\Storage.h"
 #include "includes\Libraries\Libraries.h"
 #include "includes\Targets\Targets.h"
-#include "includes\Network\Network.h"
 
 
 //--------------------------------------//

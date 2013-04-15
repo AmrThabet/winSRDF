@@ -22,19 +22,26 @@
 #include <iostream>
 #include "SRDF.h"
 
-using namespace Security::Targets::Packets;
+using namespace Security::Targets::Files;
 using namespace std;
 
 cPcapFile::cPcapFile(char* szFilename) : cFile(szFilename)
 {
 	FileLoaded = ProcessPCAP();
 }
-
+bool cPcapFile::identify(cFile* File)
+{
+	if (File->BaseAddress == 0 || File->FileLength == 0) return false;
+	PCAP_GENERAL_HEADER* PCAP_General_Header = (PCAP_GENERAL_HEADER*)File->BaseAddress;
+	if (PCAP_General_Header->magic_number != 0xA1B2C3D4) return false;
+	return true;
+}
 BOOL cPcapFile::ProcessPCAP()
 {
 	nPackets = 0;
 	if (BaseAddress == 0 || FileLength == 0) return false;
 	PCAP_General_Header = (PCAP_GENERAL_HEADER*)BaseAddress;
+	if (PCAP_General_Header->magic_number != 0xA1B2C3D4) return false;
 	UINT psize = 0;
 
 	PCAP_Packet_Header = (PCAP_PACKET_HEADER*)(BaseAddress + sizeof(PCAP_GENERAL_HEADER));
@@ -71,6 +78,7 @@ BOOL cPcapFile::ProcessPCAP()
 
 cPcapFile::~cPcapFile(void)
 {
+
 };
 
 void cPcapFile::GetStreams()

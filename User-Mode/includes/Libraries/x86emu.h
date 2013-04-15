@@ -29,6 +29,7 @@ class Thread;
 #ifndef DWORD 
 	#define DWORD unsigned long
 #endif
+
 #if BUILDING_DLL
 #include "hde28c/hde32.h"
 #include "disasm/disassembler.h"
@@ -143,6 +144,8 @@ struct FLAGTABLE{
            int (*emu_func)(Thread&,DISASM_INSTRUCTION*);
            string mnemonics;
            int flags;
+		   DWORD category;
+		   DWORD opcode_name;
            };
 struct Exception{
        int Type;
@@ -167,12 +170,25 @@ struct Imports{
        DWORD napis;
        DWORD apis[MAX_NUM_APIS_PER_DLL];                              //Maximum Number of Apis is 300 per 1 DLL
 };
-class DLLIMPORT System{
+
+//The Maximum Numbers (we could modify it to be dynamic arrays)
+#define SYS_MAX_NO_INSTRUCTIONS 512*7
+#define SYS_MAX_NO_APIS			1000
+#define SYS_MAX_NO_DLLS			20
+
+//The Start of every type of opcodes (for fast looping)
+#define OPCODE_GROUP_START		100
+#define OPCODE_FPU_0F			500
+#define OPCODE_FPU_START		1000
+
+class DLLIMPORT System
+{
       public:
           int dis_entries;
-          FLAGTABLE FlagTable[512*7];
-          DLL DLLs[20];
-          API APITable[100];
+          FLAGTABLE FlagTable[SYS_MAX_NO_INSTRUCTIONS];
+          DLL DLLs[SYS_MAX_NO_DLLS];
+          API APITable[SYS_MAX_NO_APIS];
+
           int dll_entries;
           int api_entries;
           EnviromentVariables enVars;
@@ -185,13 +201,13 @@ class DLLIMPORT System{
           bytes* assembl(string instruction);
           DISASM_INSTRUCTION* disasm(DISASM_INSTRUCTION* bIns,char* ins_bytes);
           DISASM_INSTRUCTION* disasm(DISASM_INSTRUCTION* bIns,char* ins_bytes,string& str);
-          int define_opcodes(unsigned int opcode,int reg,int (*emu_func)(Thread&,DISASM_INSTRUCTION*),string mnemonics,int flags);
+          int define_opcodes(unsigned int opcode,int reg,int (*emu_func)(Thread&,DISASM_INSTRUCTION*),string mnemonics,int flags,DWORD category);
           int opcodes_init();
           void init_vars(EnviromentVariables* v);
           //APIs
           int define_dll(char* name,char* path,DWORD vAddr);
           int define_api(char* name,DLL* lib,DWORD args,int (*emu_func)(Thread*,DWORD*));
-          bool IsApiCall(Thread&,DISASM_INSTRUCTION*&);
+          bool IsApiCall(Thread& thread, DISASM_INSTRUCTION * s);
           int CallToAPI(Thread*,DISASM_INSTRUCTION*);
           unsigned long GetAPI(char* func,unsigned long dll);
           char* GetAPIbyAddress(unsigned long ptr,unsigned long dll);
@@ -271,7 +287,13 @@ class DLLIMPORT AsmDebugger : public Debugger{
             //---
             void add_to_buffer(bytes*);
       };
-class DLLIMPORT VirtualMemory{
+
+#define VMEM_TYPE_STACK		0
+#define VMEM_TYPE_DLL		1
+#define VMEM_TYPE_ALLOC		2
+
+class DLLIMPORT VirtualMemory
+{
       struct vMem{
              DWORD vmem;
              DWORD rmem;
@@ -285,13 +307,17 @@ class DLLIMPORT VirtualMemory{
              };
       Log* last_accessed;
       Log* last_modified;
+	  
       public:
-             DWORD CommittedPages;
+             DWORD vAllocCommittedPages;
+			 DWORD DLLCommittedPages;
+			 DWORD StackCommittedPages;
              int vmem_length;
              int cmem_length;
              vMem** vmem;
              cMem** cmem;
              VirtualMemory ();
+			 ~VirtualMemory();
              DWORD get_virtual_pointer(DWORD ptr);
              DWORD* read_virtual_mem(DWORD ptr);
              DWORD write_virtual_mem(DWORD ptr,DWORD size,unsigned char* buff); //ptr , size, buff -return-> valid or not
@@ -302,6 +328,7 @@ class DLLIMPORT VirtualMemory{
              void _cdecl add_pointer(DWORD rptr,DWORD vptr,DWORD size,int=MEM_READWRITE);
              DWORD delete_pointer(DWORD ptr);
              bool check_writeaccess(DWORD ptr,DWORD imagebase);
+			 DWORD create_memory_address(int Type);
       };
 
 class DLLIMPORT Stack{
@@ -331,6 +358,15 @@ class DLLIMPORT Thread{
              bool still_tls;
              DWORD Exx[8];
              double ST[8];
+			 //this structure need to be revised
+			 struct{
+				DWORD	FPUControlWord;
+				DWORD	FPUStatusWord;
+				DWORD	FPUTagWord;
+				DWORD	LastInstructionPointer;
+				unsigned short	LastOpcode;
+				unsigned short	FPUDataPointer;
+			 } FpuEnv;
              DWORD GetFS();
              Process* GetProcess();
              void updateflags(DWORD,DWORD,DWORD,int,DWORD);
@@ -338,16 +374,10 @@ class DLLIMPORT Thread{
              int doException(DWORD rec);
              void sehReturn();
              void TLSContinue();
+			 void FpuUpdateFlags( DISASM_INSTRUCTION * s);
              Thread(DWORD,Process&);
              Thread();
              void CreateTEB();
-             ///*
-             DWORD FPUControlWord; //(FCW)
-             DWORD FPUStatusWord; //(FST)
-             DWORD FPUTagWord;
-             DWORD FPUDataPointer;
-             DWORD FPUInstructionPointer;
-             DWORD FPULastInstructionOpcode;
              
              int SelectedReg;               //the reg that will be the next to push in 
              //*/
@@ -544,7 +574,8 @@ struct hde32sexport{
 #define OP_SRC16    0x02000000        //for movzx
 #define OP_ANY      0x04000000        //no source and no destination
 #define OP_FPU      0x08000000        //FPU Instructions
-#define OP_UNUSED   0x10000000        //ignored entry in the FlagTables
+#define OP_MMX      0x10000000        //FPU Instructions
+#define OP_UNUSED   0x20000000        //ignored entry in the FlagTables
 
 //Assembler states
 #define NO_SRCDEST  0x80000000         // no opcodes     
@@ -595,8 +626,34 @@ struct hde32sexport{
 #define FPU_MODRM       0x00002000        // destination is RM & there's a ModRM
 #define FPU_BITS32      0x00004000        
 #define FPU_BITS16      0x00008000        
+#define FPU_BITS64      0x00010000
+#define FPU_BITS80      0x00020000		  //tbyte []
 
 
+//MMX States
+
+#define MMX_NULL		0x00000100			//no source or destinaion
+
+
+//Opcode Categories
+
+#define OP_TYPE_I386	0x00000001
+#define OP_TYPE_FPU		0x00000002
+#define OP_TYPE_MMX		0x00000004
+#define OP_TYPE_SSE		0x00000008
+
+#define OP_TYPE_ARTHIMETIC1			0x00000010				//add,sub,xor,or,shl,shr,and,ror,rol and the same for fpu,mmx
+#define OP_TYPE_ARTHIMETIC2			0x00000020				//mul,div ...
+#define OP_TYPE_ARTHIMETIC3			0x00000040				//all abnormal fpu mathimatics
+#define OP_TYPE_FLOW_REDIRECTION	0x00000080				//like call,jmp,jcc, ...
+#define OP_TYPE_FLAG_TEST			0x000000C0				//cmp,test, or ... 
+#define OP_TYPE_PRIVILEDGE			0x00000100				//like in,out ...
+#define OP_TYPE_DATA_MANIPULATE		0x00000200				//movs, lods,stos,xchg, lea ... (not included xadd)
+#define OP_TYPE_FLAG_MANIPULATE		0x00000400				//like cli,sti ...
+#define OP_TYPE_NOP					0x00000800				//nop instructions
+#define OP_TYPE_ARTIMITIC1_FLAGS	0x00000C10				//it's a part of Arthimitic 1 and it's like adc ...
+#define OP_TYPE_UNKNOWN_BEHAVIOR	0x00001000				//like jp, aad,daa ... 
+#define OP_TYPE_STACK_MANIPULATE	0x00002000				//like push, pop ..
 
 struct DISASM_INSTRUCTION
 {
@@ -613,6 +670,7 @@ struct DISASM_INSTRUCTION
           } modrm;
           int (*emu_func)(Thread&,DISASM_INSTRUCTION*);
           int flags;
+		  DWORD category;
     };
   //assembler & disassembler
    struct bytes {

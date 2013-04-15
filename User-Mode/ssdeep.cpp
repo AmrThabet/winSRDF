@@ -30,8 +30,11 @@ cString SSDeep::Hash(const unsigned char *buffer,  DWORD  size)
 	memset(result,0,Max_Result);
 	if (fuzzy_hash_buf(buffer,size,result) ==0 )
 	{
-		return result;
+		cString Result = result;
+		free(result);
+		return Result;
 	}
+	free(result);
 	return "";
 }
 
@@ -41,7 +44,10 @@ cString SSDeep::Hash(const char * filename)
 	memset(result,0,Max_Result);
 	if (fuzzy_hash_filename(filename,result) ==0 )
 	{
-		return result;
+	cString Result = result;
+		free(result);
+		return Result;
 	}
+	free(result);
 	return "";
 }

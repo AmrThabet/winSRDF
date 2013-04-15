@@ -32,14 +32,16 @@ class DLLIMPORT Security::Elements::XML::cSerializer
 private:
 	DWORD SkipInside(cString XMLDocument,int offset);		//it returns the new offset of the end;
 protected:
-
+	cString RootName;
 public:
-	cSerializer(){};
+	cSerializer(){RootName = "SerializableObject";};
 	~cSerializer(){};
-	cString _cdecl Serialize();
-	void Deserialize(cString XMLDocument);
+	cString _cdecl Serialize(bool AddRoot = false);
+	void Deserialize(cString XMLDocument,bool WithRoot = false);
 	virtual void SetSerialize(cXMLHash& XMLParams);
 	virtual void GetSerialize(cXMLHash& XMLParams);
+	cString SerializeObject(cXMLHash* XMLParams);
+	cXMLHash* DeserializeObject(cString XMLDocument);
 };
 
 
@@ -57,7 +59,13 @@ protected:
 	};
 	HASH_STRUCT* HashArray;
 public:
+	//To be used in XML
+	cString ItemName;
+	cString KeyName;
+	cString ValueName;
+public:
 	cHash();
+	cHash(cString rootName,cString itemName,cString keyName,cString valueName);
 	~cHash();
 	DWORD nItems;
 	DWORD GetNumberOfItems(cString Name);
@@ -90,7 +98,7 @@ public:
 	cString GetText(int id);
 	cString GetBinary(int id,DWORD &len);
 	cXMLHash() : cHash(){};
-	~cXMLHash(){};
+	~cXMLHash();
 };
 
 
@@ -100,7 +108,7 @@ public:
 	char* head;
 	DWORD nItems;
 	int Ssize;
-	
+
 public:
 	cList();
 	cList(int size);
@@ -182,6 +190,18 @@ public:
 	cXMLEncodedString(char* buff,DWORD length){EncodedString = Encode(buff,length);}
 	virtual cString Encode(char* buff,DWORD length);
 	virtual char* Decode(DWORD &len);
+};
+
+class DLLIMPORT Security::Elements::XML::cXMLElement : public Security::Elements::XML::cSerializer
+{
+public:
+	cString Key;
+	cString Value;
+	cXMLElement(cString key,cString value){Key = key;Value = value;};
+	cXMLElement(){Key = "";Value = "";};
+	virtual void SetSerialize(cXMLHash& XMLParams);
+	virtual void GetSerialize(cXMLHash& XMLParams);
+
 };
 //--------------------------------------//
 //--         Code Namespace           --//

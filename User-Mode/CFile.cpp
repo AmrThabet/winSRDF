@@ -21,14 +21,31 @@
 
 #include "stdafx.h"
 #include "SRDF.h"
+#include < conio.h >
 
 using namespace Security::Targets::Files;
 
 cFile::cFile(char* szFilename)
 {
 	isFound = FALSE;
+	BaseAddress = NULL;
+	FILETIME ftCreation, ftLastaccess, ftLastwrite;
+    SYSTEMTIME stCreation, stLastaccess, stLastwrite;
+
+	if (szFilename == NULL)return;
+	char* buff = (char*)malloc(MAX_PATH);
+	memset(buff,0,MAX_PATH);
+	DWORD Length = 0;
+	if (Length = ExpandEnvironmentStrings(szFilename,buff,MAX_PATH) > MAX_PATH)
+	{
+		buff = (char*)realloc(buff,Length);
+		memset(buff,0,Length);
+		ExpandEnvironmentStrings(szFilename,buff,MAX_PATH);
+	}
+	szFilename = buff;
 	Attributes = GetFileAttributes(szFilename);
 	if (Attributes == INVALID_FILE_ATTRIBUTES)return;
+
     hFile = CreateFileA(szFilename,
                         GENERIC_READ,
                         FILE_SHARE_READ,
@@ -40,8 +57,45 @@ cFile::cFile(char* szFilename)
 	{
         BaseAddress = NULL;
 		FileLength = NULL;
+		free(buff);
 		return;
     }
+
+	if (GetFileTime(hFile, &ftCreation, &ftLastaccess, &ftLastwrite)
+        && FileTimeToSystemTime(&ftCreation, &stCreation)
+        && FileTimeToSystemTime(&ftLastaccess, &stLastaccess)
+        && FileTimeToSystemTime(&ftLastwrite, &stLastwrite)) 
+    {
+		CreatedTime.Year = stCreation.wYear;
+		CreatedTime.Month = stCreation.wMonth;
+		CreatedTime.Day = stCreation.wDay;
+		CreatedTime.Hour = stCreation.wHour;
+		CreatedTime.Min = stCreation.wMonth;
+		CreatedTime.Sec = stCreation.wSecond;
+
+		AccessedTime.Year = stLastaccess.wYear;
+		AccessedTime.Month = stLastaccess.wMonth;
+		AccessedTime.Day = stLastaccess.wDay;
+		AccessedTime.Hour = stLastaccess.wHour;
+		AccessedTime.Min = stLastaccess.wMonth;
+		AccessedTime.Sec = stLastaccess.wSecond;
+
+		ModifiedTime.Year = stLastwrite.wYear;
+		ModifiedTime.Month = stLastwrite.wMonth;
+		ModifiedTime.Day = stLastwrite.wDay;
+		ModifiedTime.Hour = stLastwrite.wHour;
+		ModifiedTime.Min = stLastwrite.wMonth;
+		ModifiedTime.Sec = stLastwrite.wSecond;
+
+    }
+	else
+    {
+        BaseAddress = NULL;
+		FileLength = NULL;
+		free(buff);
+		return;
+    }
+
     hMapping = CreateFileMappingW(hFile,
                                   NULL,
                                   PAGE_READONLY,
@@ -53,6 +107,7 @@ cFile::cFile(char* szFilename)
         CloseHandle(hFile);
 		BaseAddress = NULL;
 		FileLength = NULL;
+		free(buff);
         return;
     }
     BaseAddress = (unsigned long) MapViewOfFile(hMapping,
@@ -66,11 +121,14 @@ cFile::cFile(char* szFilename)
         CloseHandle(hFile);
 		BaseAddress = NULL;
 		FileLength = NULL;
+		free(buff);
         return;
     }
+
     FileLength  = (DWORD) GetFileSize(hFile,NULL);
 	IsFile = TRUE;
 	isFound = TRUE;
+	free(buff);
 	return;
 }
 cFile::cFile(char* buffer,DWORD size)
@@ -84,7 +142,7 @@ cFile::cFile(char* buffer,DWORD size)
 }
 cFile::~cFile()
 {
-	if (BaseAddress != NULL && IsFile)
+	if (BaseAddress != NULL && IsFile && isFound)
 	{
 		UnmapViewOfFile((LPVOID)BaseAddress);
 		CloseHandle(hMapping);

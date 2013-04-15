@@ -18,9 +18,22 @@
  *
  */
 
-#include "x86emu.h"
+
 #include "cYaraScanner.h"
+#include <algorithm>
+#include "../Targets/hPackets.h"
+#ifdef USE_POKAS_EMULATOR
+#include "x86emu.h"
+#else
+#include "tib.h"		//We use its structs for TEB/PEB and so on
+#endif
+
 using namespace Security::Elements::String;
+using namespace Security::Targets::Packets;
+using namespace std;
+
+#ifdef USE_POKAS_EMULATOR
+
 
 //PokasAsm
 //---------
@@ -101,6 +114,7 @@ public:
 	   DWORD DefineDLL(char* DLLName,char* DLLPath, DWORD VirtualAddress);	//The Desired Virtual Address
 	   DWORD DefineAPI(DWORD DLLBase,char* APIName,int nArgs,DWORD APIFunc);
 };
+#endif 
 
 
 class DLLIMPORT Security::Libraries::Malware::OS::Win32::Enumeration::cRecursiveScanner
@@ -246,21 +260,61 @@ public:
 	cString Hash(const char * filename);
 };
 
+
+#define APIHOOK_BYTES_SIZE	6
 class DLLIMPORT Security::Libraries::Malware::OS::Win32::Behavioral::cAPIHook
 {
 public:
 
-	static const int  SIZE = 6;
+	char oldBytes[APIHOOK_BYTES_SIZE]; 
+	char JMP[APIHOOK_BYTES_SIZE];	
+	DWORD OrgMemoryProtection; 
+	DWORD OriginalAddr;
+	DWORD HookFunc;
 
-	BYTE oldBytes[SIZE] ; 
-	BYTE JMP[SIZE];	
-	DWORD oldProtect, myProtect; 
-	char debugBuffer[128]; 
-	DWORD pOrigMBAddress;
-	DWORD pNewFunc;
+	cAPIHook( DWORD originalAddr , DWORD hookFunc);
+	char* HookAPI();
+	void UnhookAPI();
 
-	cAPIHook( DWORD pOrigMBAddress , DWORD pNewFunc);
-	BYTE* myHook();
-	void myUnHook();
+};
 
+#define GENERATE_TCP		1
+#define GENERATE_UDP		2
+#define GENERATE_ARP		3
+#define GENERATE_ICMP		4
+
+#define TCP_ACK				1
+#define TCP_SYN				2
+#define TCP_FIN				4
+#define TCP_RST				8
+#define TCP_PSH				16
+#define TCP_URG				32
+
+class DLLIMPORT Security::Libraries::Network::PacketGeneration::cPacketGen
+{
+	/* global */
+	cPacket* Packet;
+
+	UCHAR src_mac_hex[6], dest_mac_hex[6];
+	UINT src_ip_hex, dest_ip_hex;
+	UCHAR data_offset;
+	USHORT total_length;
+	UCHAR PacketType;
+
+public:
+	cPacketGen(UINT type);
+	~cPacketGen();
+
+	UINT GeneratedPacketSize;
+	UCHAR* GeneratedPacket;
+
+	UINT IPToLong(const CHAR ip[]);
+
+	BOOL SetMACAddress(string src_mac, string dest_mac);
+	BOOL SetIPAddress(string src_ip, string dest_ip);
+	BOOL SetPorts(USHORT src_port, USHORT dest_port);
+
+	BOOL CustomizeTCP(UCHAR* tcp_options, UINT tcp_options_size, UCHAR* tcp_data, UINT tcp_data_size, USHORT tcp_flags);
+	BOOL CustomizeUDP(UCHAR* udp_data, UINT udp_data_size);
+	BOOL CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_data, UINT icmp_data_size);
 };

@@ -126,9 +126,6 @@
     <ClCompile Include="SSDeep\fuzzy.cpp">
       <Filter>Header Files\SSDeep</Filter>
     </ClCompile>
-    <ClCompile Include="cConStream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="cPacket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -136,6 +133,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cPcapFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cConStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -196,12 +196,6 @@
     </ClInclude>
     <ClInclude Include="SSDeep\main.h">
       <Filter>Header Files\SSDeep</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\Network\hPackets.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\Network\Network.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -78,33 +78,36 @@ cEventIPC::cEventIPC(cString Name,DWORD Type, DWORD MaxSize)
      { 
           IsCreatedSuccessfully = false;
      }
-	 Buffer[EVENT_IPC_CLIENT] = (LPTSTR) MapViewOfFile(SharedMemory[EVENT_IPC_CLIENT],   // handle to map object
+	 
+	 Buffer[EVENT_IPC_CLIENT] = (char*) MapViewOfFile(SharedMemory[EVENT_IPC_CLIENT],   // handle to map object
           FILE_MAP_ALL_ACCESS, // read/write permission
           0,                   
           0,                   
-          Size);           
+          Size + 4);           
      
      if (NULL == Buffer[EVENT_IPC_CLIENT]) 
      { 
 		 IsCreatedSuccessfully = false;
      }
-	  Buffer[EVENT_IPC_SERVER] = (LPTSTR) MapViewOfFile(SharedMemory[EVENT_IPC_SERVER],   // handle to map object
+	 memset(Buffer[EVENT_IPC_CLIENT],0,Size + 4);
+	  Buffer[EVENT_IPC_SERVER] = (char*) MapViewOfFile(SharedMemory[EVENT_IPC_SERVER],   // handle to map object
           FILE_MAP_ALL_ACCESS, // read/write permission
           0,                   
           0,                   
-          Size);           
+          Size + 4);           
      
      if (Buffer[EVENT_IPC_SERVER] == NULL) 
      { 
           IsCreatedSuccessfully = false;
      }
+	 memset(Buffer[EVENT_IPC_SERVER],0,Size + 4);
 	 DWORD ThreadID = 0;
 	 hThread = CreateThread(NULL,NULL,(LPTHREAD_START_ROUTINE)&EventIPC_ReadThread,this,0,&ThreadID);
 	 IsCreatedSuccessfully = true;
 }
 DWORD cEventIPC::Write(char* Data,DWORD DataSize)
 {
-	if (DataSize > Size) return 0xFFFFFFFF;		//is too big
+	if (DataSize > Size) return 0;		//is too big
 	if (DataSize == 0) return 0;
 	//There's no other write?
 	DWORD dwWaitResult = WaitForSingleObject(WriteEvent[SrcType], WAIT_TIME_OUT);
@@ -115,10 +118,11 @@ DWORD cEventIPC::Write(char* Data,DWORD DataSize)
 		 if (WAIT_OBJECT_0 == dwWaitResult) 
 		 {
 			 SetEvent(ReadEvent[DestType]);
-			*((DWORD*)Buffer[SrcType]) = DataSize;
+			
 			DWORD BufferPtr = (DWORD)Buffer[SrcType];
 			char* NewBuffer = (char*)(BufferPtr + 4); //Get the next 4 bytes
 			memcpy(NewBuffer,Data,DataSize);
+			*((DWORD*)Buffer[SrcType]) = DataSize;
 			SetEvent(WriteEvent[SrcType]);
 			
 			return DataSize;
@@ -154,11 +158,13 @@ VOID cEventIPC::Read()
 				else
 				{
 					char* DataWritten = (char*)malloc(WrittenSize);
+					memset(DataWritten,0,WrittenSize);	
 					char* NewBuffer = (char*)((DWORD)Buffer[DestType] + 4); //Get the next 4 bytes
 					memcpy(DataWritten, NewBuffer,WrittenSize);
 					memset(Buffer[DestType],0,Size);			//with Maximum Size
 					SetEvent(ReadEvent[SrcType]);
 					(*ReadNotify)(DataWritten,WrittenSize);
+					free(DataWritten);
 				}
 			}
 		}

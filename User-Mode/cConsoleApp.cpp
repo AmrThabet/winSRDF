@@ -91,6 +91,11 @@ void cConsoleApp::StartConsole()
 				{
 					(*cmdstruct->CommandFunc)(this,cmdstruct->nArgs,argv);
 				}
+				for (int i = 0; i < WrittenArgs;i++)
+				{
+					free(argv[i]);
+				}
+				free(argv);
 				goto CONTINUE;
 			}
 		}

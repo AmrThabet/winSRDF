@@ -43,6 +43,7 @@ cString::cString(const cString& str)
 
 cString& cString::operator +=(const cString& str)
 {
+	if (str.m_pString == NULL || str.m_nLength == 0)return *this;
 	unsigned int OldLength = m_nLength;
 	m_nLength += str.m_nLength;
 	char* pNew = (char*)malloc(m_nLength + 1);
@@ -55,6 +56,7 @@ cString& cString::operator +=(const cString& str)
 }
 cString& cString::operator <<(const cString& str)
 {
+	if (str.m_pString == NULL || str.m_nLength == 0)return *this;
 	unsigned int OldLength = m_nLength;
 	m_nLength += str.m_nLength;
 	char* pNew = (char*)malloc(m_nLength + 1);
@@ -67,6 +69,7 @@ cString& cString::operator <<(const cString& str)
 }
 cString& cString::operator =(const char* str)
 {
+	if (str == NULL)return *this;
 	if (m_pString) free(m_pString);
 	m_nLength = strlen(str);
 	m_pString = (char*)malloc(m_nLength + 1);
@@ -77,6 +80,7 @@ cString& cString::operator =(const char* str)
 
 cString& cString::operator =(const cString& str)
 {
+	if (str.m_pString == NULL || str.m_nLength == 0)return *this;
 	if (m_pString) free(m_pString);
 	m_nLength = strlen(str.m_pString);
 	m_pString = (char*)malloc(m_nLength + 1);
@@ -209,8 +213,8 @@ int cString::Search(const char* str)
 	{
 		for (DWORD i = 0;i <= nBytes; i++)
 		{
-			if (StrCopy[i] == '\0')return -1;
 			if (str[i] == '\0') return ((int)StrCopy - (int)m_pString);
+			if (StrCopy[i] == '\0')return -1;
 			if (StrCopy[i] != str[i])
 			{
 				break;

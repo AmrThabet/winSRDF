@@ -62,7 +62,7 @@ BOOL sm_EnableTokenPrivilege()
 	return FALSE;
 }
 
-cString cProcess::Unicode2Ansi(LPWSTR unicodeString_,int stringLength)
+cString cProcess::Unicode2Ansi(const LPWSTR unicodeString_,int stringLength)
 {
 	if (unicodeString_ == NULL || stringLength == 0)return "";
 
@@ -77,7 +77,7 @@ cString cProcess::Unicode2Ansi(LPWSTR unicodeString_,int stringLength)
 		
 	}
 	cString ansiString = y;
-
+	free(y);
 	return ansiString;
 	
 }
@@ -86,7 +86,7 @@ cProcess::cProcess(int processId)
 {
 
 	ProcessId = processId;
-	Threads = 0;
+	Threads = NULL;
 	sm_EnableTokenPrivilege();
 
 	HINSTANCE hinstLib; 
@@ -141,14 +141,15 @@ void cProcess::AnalyzeProcess()
 	DWORD addressToProcessParameters , bytes1;
 	__RTl_USER_PROCESS_PARAMETERS  tmp3;
 	LPWSTR command ;
-		
+	
 	ReadProcessMemory((HANDLE)procHandle,&(ppeb->ProcessParameters),&addressToProcessParameters,sizeof(addressToProcessParameters),NULL);
 	ReadProcessMemory((HANDLE)procHandle,(LPCVOID)addressToProcessParameters,&tmp3,sizeof(tmp3),NULL);
 	command = (LPWSTR) malloc ((tmp3.Commandline.Length + 1)*2);
 	memset(command , 0 ,(tmp3.Commandline.Length + 1)*2);
 	ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp3.Commandline.Buffer),command,(tmp3.Commandline.Length + 1)*2,&bytes1);
-	CommandLine = cString (Unicode2Ansi( command ,(tmp3.Commandline.Length+1)*2));
 
+	CommandLine = Unicode2Ansi( command ,(tmp3.Commandline.Length+1)*2);
+	free(command);
 
 	//setting  processSizeOfImage , processPath , processName ,MODULE_INFO
 
@@ -170,65 +171,116 @@ void cProcess::AnalyzeProcess()
 			ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.InLoadOrderLinks.Flink),&tmp2,sizeof(tmp2),&bytesRead);
 			if (ImageBase == tmp2.DllBase)
 			{
+				//Initializing The Variables
+				mod.moduleName = new cString(" ");
+				mod.modulePath = new cString(" ");
+				mod.moduleMD5 = new cString(" ");
+				mod.moduleImageBase = 0;
+				mod.moduleSizeOfImage = 0;
+				mod.ImportedDLLs = new cHash();
+
 				SizeOfImage = tmp2.SizeOfImage;
 
 				pathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
 				memset(pathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
 				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.FullDllName.Buffer),pathBuffer,(tmp2.FullDllName.Length+1)*2,&bytesRead);
-				processPath = cString(Unicode2Ansi(pathBuffer,(tmp2.FullDllName.Length+1)*2));
-				
+				processPath = Unicode2Ansi(pathBuffer,(tmp2.FullDllName.Length+1)*2);
+				free(pathBuffer);
 				nameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
-				memset(pathBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
+				memset(nameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
 				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.BaseDllName.Buffer),nameBuffer,(tmp2.BaseDllName.Length+1)*2,&bytesRead);
-				processName = cString(Unicode2Ansi(nameBuffer , (tmp2.BaseDllName.Length+1)*2));
-
+				processName = Unicode2Ansi(nameBuffer , (tmp2.BaseDllName.Length+1)*2);
+				free(nameBuffer);
+				mod.moduleName = &processName;
 				mod.moduleImageBase = tmp2.DllBase;
 				mod.moduleSizeOfImage = tmp2.SizeOfImage;
 				mod.modulePath = &processPath;
-				cFile* ModuleFile = new cFile(mod.modulePath->GetChar());
-				cMD5String* MD5 = new cMD5String();
-				processMD5 = MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength);
-				mod.moduleMD5 = &processMD5;
+				mod.nExportedAPIs = 0;
+				cPEFile* ModuleFile = new cPEFile(mod.modulePath->GetChar());
+				if (!ModuleFile->IsFound())
+				{
+					mod.moduleMD5 = new cString("");
+					mod.ImportedDLLs = new cHash();
+				}
+				else
+				{
+					cMD5String* MD5 = new cMD5String();
+					processMD5 = MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength);
+					mod.moduleMD5 = &processMD5;
+					if (ModuleFile->IsFound())mod.ImportedDLLs = ModuleImportedDlls(ModuleFile);
+					else mod.ImportedDLLs = new cHash();
+					delete MD5;
+				}
 				delete ModuleFile;
-				mod.moduleName = &processName;
 				modulesList.AddItem((char*)&mod);
 			}
 			else
 			{
+				//Initializing The Variables
+				mod.moduleName = new cString(" ");
+				mod.modulePath = new cString(" ");
+				mod.moduleMD5 = new cString(" ");
+				mod.moduleImageBase = 0;
+				mod.moduleSizeOfImage = 0;
+				mod.ImportedDLLs = new cHash();
+
+				if (tmp2.DllBase == 0)continue;
+
 				mod.moduleImageBase = tmp2.DllBase;
 				mod.moduleSizeOfImage = tmp2.SizeOfImage;
-
 				modulePathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
 				memset(modulePathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
 				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.FullDllName.Buffer),modulePathBuffer,(tmp2.FullDllName.Length+1)*2,&bytesRead);
 				mod.modulePath = new cString(Unicode2Ansi(modulePathBuffer,(tmp2.FullDllName.Length+1)*2));
+				free(modulePathBuffer);
 				moduleNameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
 				memset(moduleNameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
 				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.BaseDllName.Buffer),moduleNameBuffer,(tmp2.BaseDllName.Length+1)*2,&bytesRead);
 				mod.moduleName = new cString(Unicode2Ansi(moduleNameBuffer , (tmp2.BaseDllName.Length+1)*2));
+				free(moduleNameBuffer);
 				if (mod.modulePath->GetLength() == 0)
 				{
 					mod.moduleMD5 = new cString("");
+					mod.ImportedDLLs = new cHash();
 					continue;
 				}
-				cFile* ModuleFile = new cFile(mod.modulePath->GetChar());
+				cPEFile* ModuleFile = new cPEFile(mod.modulePath->GetChar());
+				if (!ModuleFile->IsFound())
+				{
+					mod.moduleMD5 = new cString("");
+					mod.ImportedDLLs = new cHash();
+					mod.nExportedAPIs = 0;
+				}
 				cMD5String* MD5 = new cMD5String();
 				mod.moduleMD5 = new cString(MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength));
-				delete ModuleFile;
+				delete MD5;
 				if (mod.moduleImageBase != 0)
 				{
-					modulesList.AddItem((char*)&mod);		
+					if (ModuleFile->IsFound())mod.ImportedDLLs = ModuleImportedDlls(ModuleFile);
+					else mod.ImportedDLLs = new cHash();
+					mod.nExportedAPIs = ModuleFile->ExportTable.nFunctions;
+					modulesList.AddItem((char*)&mod);
 				}
+				delete ModuleFile;
 			}
 				
-		}while(myFlag != tmp2.DllBase);
+		} while(myFlag != tmp2.DllBase);
 		
 	}
 	GetMemoryMap();
 	RefreshThreads();
 
 }
-
+cHash* cProcess::ModuleImportedDlls(cPEFile* Module)
+{
+	cHash* hash = new cHash("ImportedDlls","DLL","DLLNo","DLLName");
+	if (Module->DataDirectories & DATADIRECTORY_IMPORT)
+		for (int i = 0;i < Module->ImportTable.nDLLs;i++)
+		{
+			hash->AddItem(cString(i),Module->ImportTable.DLL[i].DLLName);
+		}
+	return hash;
+}
 BOOL cProcess::GetMemoryMap()
 {
 	SYSTEM_INFO si;
@@ -262,16 +314,29 @@ BOOL cProcess::GetMemoryMap()
  
 	return true;
 }
-
+cProcess::~cProcess()
+{
+	if (!isFound)return;
+	for (int i = 0;i < modulesList.GetNumberOfItems();i++)
+	{
+		MODULE_INFO* mod = (MODULE_INFO*)modulesList.GetItem(i);
+		//Free by setting small buffer;
+		*mod->moduleName = " ";
+		*mod->moduleMD5 = " ";
+		*mod->modulePath = " ";
+		if (mod->ImportedDLLs)delete mod->ImportedDLLs;
+	}
+	if (Threads)delete Threads;
+	CloseHandle((HANDLE)procHandle);
+}
 //in all cases .. it return a pointer to a place in memory ... that's to avoid bugs ... but it should return null if it can\t find the address
 DWORD cProcess::Read(DWORD startAddress,DWORD size)
 {
 	LPVOID buffer;
 	DWORD bytesRead;
-	buffer = (LPVOID)malloc(size+1024);
-	memset(buffer , 0 , size+1024);
+	buffer = (LPVOID)malloc(size+1);
+	memset(buffer , 0 , size+1);
 	ReadProcessMemory((HANDLE)procHandle , (LPCVOID) startAddress ,  buffer , size , &bytesRead);
-	
 	return (DWORD)buffer;
 }
 
@@ -321,20 +386,20 @@ DWORD cProcess::Write (DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrit
 DWORD cProcess::DllInject(cString DLLFilename)
 {
 	DWORD remoteAddress;
+	DWORD hThread = NULL;
 	DWORD threadId = NULL;
-	
 	
 	remoteAddress = Allocate(NULL ,(DWORD)strlen((char*) DLLFilename));
 
 	HMODULE handleToKernel32 = GetModuleHandle("KERNEL32");
-
+	cout << (int*)remoteAddress << "\n";
 	if (Write(remoteAddress , (DWORD)DLLFilename.GetChar() ,(DWORD)strlen( (char*) DLLFilename)))
 	{
-		CreateRemoteThread((HANDLE)procHandle ,NULL , 0 , ( LPTHREAD_START_ROUTINE)GetProcAddress(handleToKernel32 , "LoadLibraryA") , (LPVOID)remoteAddress , 0 , & threadId);
+		hThread = (DWORD)CreateRemoteThread((HANDLE)procHandle ,NULL , 0 , ( LPTHREAD_START_ROUTINE)GetProcAddress(handleToKernel32 , "LoadLibraryA") , (LPVOID)remoteAddress , 0 , &threadId);
 	
 	}
 	
-	return threadId;
+	return hThread;
 	
 
 }
@@ -354,7 +419,7 @@ void cProcess::RefreshThreads()
 	HANDLE hThreadSnap;
 	THREADENTRY32 te32;
 	if (Threads != NULL)delete Threads;
-
+	Threads = NULL;
 	 hThreadSnap = CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, 0 );
 	 if (hThreadSnap == INVALID_HANDLE_VALUE )
 	 {
@@ -424,8 +489,10 @@ void cProcess::EnumerateThread(THREAD_INFO* ti)
 			ti->SEH = *SEHAddr;
 			ti->StackBase = *StackBaseAddr;
 			ti->StackLimit = *StackLimitAddr;
+			free((void*)TEB);
 		}
 	}
+	CloseHandle(ti->Handle);
 }
 
 DWORD align(DWORD src, DWORD Alignment, bool lower)
@@ -492,6 +559,7 @@ bool cProcess::DumpProcess(cString Filename, DWORD Entrypoint, DWORD ImportUnloa
 	ExeFile->write((char*)FileHandler,SizeOfImage);
 
 	delete ExeFile; // To force it to close the File
+	free((void*)FileHandler);
 	return true;
 
 }
@@ -538,13 +606,16 @@ DWORD cProcess::UnloadImportTable(DWORD NewImagebase)
         }
 		Imports = (image_import_descriptor*)((DWORD)Imports + sizeof(image_import_descriptor));
 	}
-
+	delete PEFile;
 	return 0;
 }
 
 
 MemoryDump::MemoryDump(cProcess* Process,bool DumpFullMemory)
 {
+	RootName = "Process";
+	MemoryMap = NULL;
+	nMemoryRegions = 0;
 	this->Process = Process;
 	ImageBase = Process->ImageBase;
 	SizeOfImage = Process->SizeOfImage;
@@ -570,21 +641,43 @@ MemoryDump::MemoryDump(cProcess* Process,bool DumpFullMemory)
 		Filename += "_"; 
 		Filename += cString(MemMap->Address).GetChar();
 		//cout << Filename << "\n";
-
-		if (DumpFullMemory == false)Filename = " ";		//this means no File (Don't dump the memory into file .. just the process info)
-		char* Address = (char*)Process->Read(MemMap->Address,MemMap->Size);
-		if (Address == NULL)continue;
-		MemoryMap[i] = new MemoryRegion(Address,MemMap->Size,MemMap->Address,Filename);
+		char* Address = NULL;
+		if (DumpFullMemory == false)
+		{
+			Filename = " ";		//this means no File (Don't dump the memory into file .. just the process info)
+		}
+		else
+		{
+			CreateDirectory((LPCSTR)Process->processName,NULL);
+			char* Address = (char*)Process->Read(MemMap->Address,MemMap->Size);
+			if (Address == NULL)continue;			//Not Found .. so chance
+		}
+		MemoryMap[i] = new MemoryRegion(Address,MemMap->Size,MemMap->AllocationBase,MemMap->Protection,MemMap->Address,Filename);
 	}
 }
 
 MemoryDump::MemoryDump()
 {
 	Process = NULL;
+	RootName = "Process";
+	MemoryMap = NULL;
+	nMemoryRegions = 0;
+}
+MemoryDump::~MemoryDump()
+{
+	if (MemoryMap)
+	{
+		for (DWORD i =0; i < Process->MemoryMap.GetNumberOfItems();i++)
+		{
+			if (MemoryMap[i])delete MemoryMap[i];
+		}
+		free(MemoryMap);
+	}
 }
 
 void MemoryDump::SetSerialize(cXMLHash& XMLParams)
 {
+
 	XMLParams.AddText("ImageBase",Process->ImageBase);		//Will be converted automatically to string
 	XMLParams.AddText("SizeOfImage",Process->SizeOfImage);
 	XMLParams.AddText("processName",Process->processName);
@@ -594,24 +687,31 @@ void MemoryDump::SetSerialize(cXMLHash& XMLParams)
 	XMLParams.AddText("CommandLine",Process->CommandLine);
 	XMLParams.AddText("processMD5",Process->processMD5);
 	XMLParams.AddText("nMemoryRegions",nMemoryRegions);
-	
+
 	//Saving Modules
 	for (DWORD i = 0; i < Process->modulesList.GetNumberOfItems(); i++)
 	{
+		
 		MODULE_INFO* mod = (MODULE_INFO*)Process->modulesList.GetItem(i);
-		XMLParams.AddText("moduleName",*mod->moduleName);
-		XMLParams.AddText("modulePath",*mod->modulePath);
-		XMLParams.AddText("moduleMD5",*mod->moduleMD5);
-		XMLParams.AddText("moduleImageBase",mod->moduleImageBase);
-		XMLParams.AddText("moduleSizeOfImage",mod->moduleSizeOfImage);
+		if (mod->moduleImageBase == NULL)continue;
+		cXMLHash ModHash;
+
+		ModHash.AddText("moduleName",*mod->moduleName);
+		ModHash.AddText("modulePath",*mod->modulePath);
+		ModHash.AddText("moduleMD5",*mod->moduleMD5);
+		ModHash.AddText("moduleImageBase",mod->moduleImageBase);
+		ModHash.AddText("moduleSizeOfImage",mod->moduleSizeOfImage);
+		ModHash.AddText("modulenExportedAPIs",mod->nExportedAPIs);
+		ModHash.AddItem("ImportedDLLs",mod->ImportedDLLs->Serialize());
+		cString ModXML = SerializeObject(&ModHash);
+		XMLParams.AddItem("Module",ModXML);
 	}
+
 	//Saving Memory Regions
-	CreateDirectory((LPCSTR)Process->processName,NULL);
 	for (DWORD i = 0; i < nMemoryRegions; i++)
 	{
 		XMLParams.AddItem("MemoryRegion",MemoryMap[i]->Serialize());
 	}
-	cout << "Finished\n";
 }
 
 void MemoryDump::GetSerialize(cXMLHash& XMLParams)
@@ -627,16 +727,23 @@ void MemoryDump::GetSerialize(cXMLHash& XMLParams)
 
 	//Getting Modules
 	modulesList = new cList(sizeof(MODULE_INFO)+1000);
-	for (DWORD i = 0; i < XMLParams.GetNumberOfItems("moduleName"); i++)
+	for (DWORD i = 0; i < XMLParams.GetNumberOfItems("Module"); i++)
 	{
 		MODULE_INFO mod;
-
-		mod.moduleName = new cString(XMLParams.GetText("moduleName",i));
-		mod.modulePath = new cString(XMLParams.GetText("modulePath",i));
-		mod.moduleMD5 = new cString(XMLParams.GetText("moduleMD5",i));
-		mod.moduleImageBase = atoi(XMLParams.GetText("moduleImageBase",i));
-		mod.moduleSizeOfImage = atoi(XMLParams.GetText("moduleSizeOfImage",i));
-		modulesList->AddItem((char*)&mod);
+		cXMLHash* ModHash = DeserializeObject(XMLParams.GetText("Module",i));
+		if (ModHash != NULL)
+		{
+			mod.moduleName = new cString(ModHash->GetText("moduleName",i));
+			mod.modulePath = new cString(ModHash->GetText("modulePath",i));
+			mod.moduleMD5 = new cString(ModHash->GetText("moduleMD5",i));
+			mod.moduleImageBase = atoi(ModHash->GetText("moduleImageBase",i));
+			mod.moduleSizeOfImage = atoi(ModHash->GetText("moduleSizeOfImage",i));
+			mod.nExportedAPIs = atoi(ModHash->GetText("modulenExportedAPIs",i));
+			mod.ImportedDLLs = new cHash();
+			mod.ImportedDLLs->Deserialize(ModHash->GetValue("ImportedDLLs",i));
+			modulesList->AddItem((char*)&mod);
+			delete ModHash;
+		}
 	}
 
 	//Getting Memory Regions
@@ -650,29 +757,42 @@ void MemoryDump::GetSerialize(cXMLHash& XMLParams)
 	}
 }
 
-MemoryRegion::MemoryRegion(char* buffer, DWORD size, DWORD RealAddress,cString filename)
+MemoryRegion::MemoryRegion(char* buffer, DWORD size,DWORD allocationBase, DWORD protection, DWORD RealAddress,cString filename)
 {
 	Buffer = buffer;
 	Size = size;
 	Address = RealAddress;
 	Filename = filename;
 	IsFound = true;
+	allocationBase = AllocationBase;
+	protection = Protection;
 }
 
 MemoryRegion::MemoryRegion()
 {
 	Buffer = NULL;
+	Address = NULL;
+	Filename = "";
 	Size = 0;
-	IsFound = true;
+	AllocationBase = NULL;
+	Protection = NULL;
+	IsFound = false;
 }
 
+MemoryRegion::~MemoryRegion()
+{
+	if (Buffer != NULL)free((char*)Buffer);
+}
 void MemoryRegion::SetSerialize(cXMLHash& XMLParams)
 {
 	XMLParams.AddText("Address",Address);
 	XMLParams.AddText("Size",Size);
+	XMLParams.AddText("AllocationBase",AllocationBase);
+	XMLParams.AddText("Protection",Protection);
 	XMLParams.AddText("Filename",Filename);
-	
+
 	if (Filename == cString(" ")) return;
+	if (Address == NULL) return;
 	cFileToWrite* MemoryRegionFile = new cFileToWrite(Filename,false);
 	MemoryRegionFile->write(Buffer,Size);
 	delete MemoryRegionFile;
@@ -682,7 +802,10 @@ void MemoryRegion::GetSerialize(cXMLHash& XMLParams)
 {
 	Address = atoi(XMLParams["Address"]);
 	Size = atoi(XMLParams["Size"]);
+	AllocationBase = atoi(XMLParams["AllocationBase"]);
+	Protection = atoi(XMLParams["Protection"]);
 	Filename = XMLParams["Filename"];
+
 	if (Filename == cString(" ")) return;
 
 	cFile* File = new cFile(Filename);
@@ -692,7 +815,6 @@ void MemoryRegion::GetSerialize(cXMLHash& XMLParams)
 		return;
 	}
 	Buffer = (char*)File->BaseAddress;
-	cout << Filename << " Base Address: " << (int*)File->BaseAddress << "\n";
 	if (Size != File->FileLength) IsFound = false;
 	else IsFound = true;
 }

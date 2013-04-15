@@ -35,12 +35,12 @@ cString cMD5String::Encrypt(char* buff,DWORD length)
 	cString MD5Hash = "";
 	DWORD dwStatus = 0;
 	BOOL bResult = FALSE;
+	cbHash = 16;
 
 	if (!CryptAcquireContext(&hProv,NULL,NULL,PROV_RSA_FULL,CRYPT_VERIFYCONTEXT))return "";
 	if (!CryptCreateHash(hProv, CALG_MD5, 0, 0, &hHash))return "";
 	if (buff == NULL || length == 0)return "";
 	if (!CryptHashData(hHash, (BYTE*)buff, length, 0))return "";
-	cbHash = 16;
     if (CryptGetHashParam(hHash, HP_HASHVAL, rgbHash, &cbHash, 0))
     {
 		char* buff = (char*)malloc(cbHash*2+2);
@@ -51,11 +51,12 @@ cString cMD5String::Encrypt(char* buff,DWORD length)
                 rgbDigits[rgbHash[i] & 0xf]);
         }
 		MD5Hash = buff;
+		free(buff);
     }
 	CryptDestroyHash(hHash);
     CryptReleaseContext(hProv, 0);
 	EncryptedString = MD5Hash;
-	return MD5Hash;
+	return EncryptedString;
 }
 /* 
    base64.cpp and base64.h
@@ -218,11 +219,11 @@ cString cXMLEncodedString::Encode(char* buff,DWORD length)
 		 
          switch( c )
          {
-             case '&': memcpy(&newBuff[j],"&amp;",4);j+=4; break;
+             case '&': memcpy(&newBuff[j],"&amp;",5);j+=5; break;
              case '<': memcpy(&newBuff[j],"&lt;",4);j+=4; break;
              case '>': memcpy(&newBuff[j],"&gt;",4);j+=4; break;
-             case '"': memcpy(&newBuff[j],"&quot;",4);j+=4;break;
-             case '\'': memcpy(&newBuff[j],"&apos;",4);j+=4;break;
+             case '\"': memcpy(&newBuff[j],"&quot;",6);j+=6;break;
+             case '\'': memcpy(&newBuff[j],"&apos;",6);j+=6;break;
              default:
               if ( c<32 || c>127 )
               {
@@ -300,6 +301,7 @@ char* cXMLEncodedString::Decode(DWORD &len)
 				memset(num,0,n-2+1);
 				memcpy(num,&str[i+2],n-2);
 				buff[j] = (char)atoi(num);
+				free(num);
 				j++;
 				i+=n+1;
 			}

@@ -12,10 +12,10 @@ public:
 	cString(const char* str);
 	cString(const double var)				{ VarToString(var); }
 	cString()								{ m_nLength = 0; m_pString = 0; }
-	virtual ~cString()						{ if (m_pString)free(m_pString); }
+	virtual ~cString()						{ if (m_pString && m_nLength != 0)free(m_pString); }
 
 	// operator overloading helper
-	template <class T> friend cString _cdecl operator +(T var, const cString& str);
+	//template <class T> friend cString _cdecl operator +(T var, const cString& str);
 
 	// operator overloading
 	cString& operator  =(const char* str);
@@ -49,7 +49,7 @@ public:
 	// format string
 	int Format(const char* format, ...);
 	void Substr(cString Str, DWORD offset,DWORD length);
-	void Substr(cString Str, DWORD offset){Substr(Str,offset,strlen(m_pString)-offset); }
+	void Substr(cString Str, DWORD offset){Substr(Str,offset,strlen(Str)-offset); }
 	DWORD GetLength(){return m_nLength;};
 protected:
 	// can use faster algorithm for search ?
@@ -79,11 +79,11 @@ public:
 	char* m_pString;
 };
 
-template <class T>
+/*template <class T>
 Security::Elements::String::cString operator +(T var, const Security::Elements::String::cString& str) 
 { 
 	Security::Elements::String::cString svar = var;
 	return svar += str; 
-};
+};*/
 
 #endif

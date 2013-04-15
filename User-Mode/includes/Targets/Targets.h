@@ -21,6 +21,7 @@
 #include "cThread.h"
 #include "pe.h"
 #include "elf.h"
+#include "hPackets.h"
 //#include "tib.h"
 
 using namespace Security::Elements::String;
@@ -30,6 +31,15 @@ using namespace Security::Elements::String;
 //--          Files Namespace         --//
 //--------------------------------------//
 
+struct FILE_DATE_TIME
+{
+	DWORD Year;
+	DWORD Month;
+	DWORD Day;
+	DWORD Hour;
+	DWORD Min;
+	DWORD Sec;
+};
 
 class DLLIMPORT Security::Targets::Files::cFile
 {
@@ -41,6 +51,9 @@ public:
     DWORD        BaseAddress;
     DWORD        FileLength;
 	DWORD		 Attributes;
+	FILE_DATE_TIME CreatedTime;
+	FILE_DATE_TIME ModifiedTime;
+	FILE_DATE_TIME AccessedTime;
 	char*		 Filename;
 	cFile(char* szFilename);
 	cFile(char* buffer,DWORD size);
@@ -170,9 +183,9 @@ public:
 
 };
 
-//---------------------------------------------//
-//--				ELF Parser				 --//
-//---------------------------------------------//
+//--------------------------------------------------------------
+// ELF Parser
+//----------
 
 /* elf parser */
 struct SECTIONS 
@@ -181,14 +194,6 @@ struct SECTIONS
 	DWORD Address;
 	DWORD Offset;
 	DWORD Size;
-};
-
-struct DYNAMICSYMBOLS 
-{
-	char* Name;
-	DWORD Address;
-	DWORD Offset;
-	//DWORD Size;
 };
 
 struct SYMBOLS 
@@ -205,37 +210,34 @@ struct DYNAMICS
 	DWORD Offset;
 	DWORD Value;
 	DWORD Tag;
-	//char* Name;
+	char* Name;
 };
 
 struct IMPORTS
 {
-	DWORD Tag;
+	//DWORD Address;
+	//DWORD Offset;
 	DWORD Value;
 	char* Name;
 };
 
-class DLLIMPORT Security::Targets::Files::cELFFile : public Security::Targets::Files::cFile {
+class DLLIMPORT Security::Targets::Files::cELFFile : public Security::Targets::Files::cFile
+{
 private:
 
 	//Functions:
 	bool ParseELF();
 	void initSections();
 	void initDynSymbols();
-	void initSharedLibraries();
-	void initSymbols();
-	void initImportedFunctions();
+	void initImports();
+	void initDynamics();
 
 	char* sStringTable;
 	char* dStringTable;
 	unsigned int DynSymArray;
-	unsigned int SymArray;
 	unsigned int DynArray;
-	unsigned int nDynamics;
-	Elf32_Sym* DynamicSymbolsTable;
 	Elf32_Sym* SymbolsTable;
 	Elf32_Dyn* DynamicTable;
-	elf32_rel* PLTRelocationsTable;
 	
 public:
 	//Variables
@@ -245,18 +247,13 @@ public:
 	elf32_section_header* SHeader;
 
 	unsigned int nSections;
+	unsigned int nDynamics;
+	unsigned int nImports;
 	unsigned int nSymbols;
-	unsigned int nSharedLibraries;
-
-	unsigned int nDynamicSymbols;
-	unsigned int nImportedFunctions;
-
 	SECTIONS* Sections;
-	DYNAMICSYMBOLS* DynamicSymbols;
-	DYNAMICSYMBOLS* ImportedFunctions;
 	SYMBOLS* Symbols;
-	IMPORTS* SharedLibraries;
 	DYNAMICS* Dynamics;
+	IMPORTS* Imports;
 	
 	DWORD Magic;
 	DWORD Subsystem;
@@ -276,7 +273,6 @@ public:
 
 };
 
-
 //--------------------------------------//
 //--          Process Class           --//
 //--------------------------------------//
@@ -289,6 +285,8 @@ struct MODULE_INFO
 	cString* moduleName;
 	cString* modulePath;
 	cString* moduleMD5;
+	DWORD	 nExportedAPIs;
+	cHash*	 ImportedDLLs;
 };
 
 struct MEMORY_MAP
@@ -316,13 +314,17 @@ public:
 	char* Buffer;
 	DWORD Address;
 	DWORD Size;
+	DWORD AllocationBase;
+	DWORD Protection;
 	bool IsFound;
 	cString Filename;
-	MemoryRegion(char* buffer, DWORD size, DWORD RealAddress,cString filename);
+	MemoryRegion(char* buffer, DWORD size, DWORD allocationBase, DWORD protection, DWORD RealAddress,cString filename);
 	MemoryRegion();
+	~MemoryRegion();
 	virtual void SetSerialize(cXMLHash& XMLParams);
 	virtual void GetSerialize(cXMLHash& XMLParams);
 };
+
 class DLLIMPORT Security::Targets::Memory::MemoryDump : public Security::Elements::XML::cSerializer
 {
 	cProcess* Process;
@@ -340,6 +342,7 @@ class DLLIMPORT Security::Targets::Memory::MemoryDump : public Security::Element
 public:
 	MemoryDump(cProcess* Process,bool DumpFullMemory);
 	MemoryDump();
+	~MemoryDump();
 	virtual void SetSerialize(cXMLHash& XMLParams);
 	virtual void GetSerialize(cXMLHash& XMLParams);
 };
@@ -353,6 +356,7 @@ class DLLIMPORT Security::Targets::Memory::cProcess
 	cString Unicode2Ansi(LPWSTR,int);
 	BOOL GetMemoryMap();
 	void EnumerateThread(THREAD_INFO* ti);
+	cHash* ModuleImportedDlls(Security::Targets::Files::cPEFile* Module);
 public:
 	// parameters
 	DWORD procHandle;
@@ -371,7 +375,7 @@ public:
 	cList* Threads;
 	//methods
 	cProcess(int processId);
-	
+	~cProcess();
 	DWORD Read(DWORD startAddress,DWORD size);
 	DWORD Allocate (DWORD preferedAddress,DWORD size);
 	DWORD Write(DWORD startAddressToWrite ,DWORD buffer ,DWORD sizeToWrite);
@@ -484,7 +488,7 @@ struct FOLLOW_STREAM
 	USHORT	dest_port;
 };
 
-class DLLIMPORT Security::Targets::Packets::cPcapFile : public Security::Targets::Files::cFile
+class DLLIMPORT Security::Targets::Files::cPcapFile : public Security::Targets::Files::cFile
 {
 	PCAP_GENERAL_HEADER* PCAP_General_Header;
 	PCAP_PACKET_HEADER* PCAP_Packet_Header;
@@ -500,5 +504,6 @@ public:
 	~cPcapFile(void);
 	void DetectMalformedPackets();
 	UINT nConStreams;
+	static bool identify(cFile* File);
 	cConStream** ConStreams;
 };

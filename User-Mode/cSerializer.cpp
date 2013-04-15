@@ -26,23 +26,46 @@ using namespace std;
 using namespace Security::Elements::String;
 using namespace Security::Storage::Databases;
 
-cString _cdecl cSerializer::Serialize()
+cString _cdecl cSerializer::Serialize(bool AddRoot)
 {
-	cXMLHash XMLParams;
-	SetSerialize(XMLParams);
+	if (RootName.GetLength() == 0)RootName = "SerializableObject";
+	cXMLHash* XMLParams = new cXMLHash();
+	SetSerialize(*XMLParams);
 	cString XML = "";
-	for(DWORD i = 0;i < XMLParams.nItems; i++)
+	if (AddRoot)
 	{
-		XML << "\n<" << (char*)XMLParams.GetKey(i) << ">";
-		XML<< XMLParams[i];
-		XML<< "</" << (char*)XMLParams.GetKey(i) << ">";
+		XML << "<" << RootName << ">";
+		//cout << XML << "\n";
 	}
+	for(DWORD i = 0;i < XMLParams->nItems; i++)
+	{
+		XML << "\n<" << (char*)XMLParams->GetKey(i) << ">";
+		XML << XMLParams->GetValue(i);
+		XML<< "</" << (char*)XMLParams->GetKey(i) << ">";
+	}
+	if (AddRoot)
+	{
+		XML << "</" << RootName << ">";
+		//cout << XML << "\n";
+	}
+	delete XMLParams;
 	return XML;
 }
 
-void cSerializer::Deserialize(cString XMLDocument)
+cString cSerializer::SerializeObject(cXMLHash* XMLParams)
 {
-	cXMLHash XMLParams;
+	cString XML = "";
+	for(DWORD i = 0;i < XMLParams->nItems; i++)
+	{
+		XML << "\n<" << (char*)XMLParams->GetKey(i) << ">";
+		XML << XMLParams->GetValue(i);
+		XML<< "</" << (char*)XMLParams->GetKey(i) << ">";
+	}
+	return XML;
+}
+cXMLHash*  cSerializer::DeserializeObject(cString XMLDocument)
+{
+	cXMLHash* XMLParams = new cXMLHash();
 	int i = 0;
 	cString Key;
 	cString CheckKey;		//To check the begining and the end if identical <X> </X>
@@ -82,16 +105,36 @@ void cSerializer::Deserialize(cString XMLDocument)
 					i++;
 				}
 				CheckKey.Substr(XMLDocument,CheckKeyBegin,i-CheckKeyBegin);
-				XMLParams.AddItem(Key,Value);
-				if (Key != CheckKey)return;
+				XMLParams->AddItem(Key,Value);
+				if (Key != CheckKey)return NULL;
 				i++;
-			}else return;
+			}else return NULL;
 			
 		}
-		else return;
+		else return NULL;
 	}
 FINISH:
-	GetSerialize(XMLParams);
+	return XMLParams;
+}
+void cSerializer::Deserialize(cString XMLDocument,bool WithRoot)
+{
+	cXMLHash* XMLParams = NULL;
+	if (WithRoot)
+	{
+		cXMLHash* XMLRoot = DeserializeObject(XMLDocument);
+		RootName = XMLRoot->GetKey(0);
+		XMLParams = DeserializeObject(XMLRoot->GetValue(0));
+		delete XMLRoot;
+	}
+	else
+	{
+		XMLParams = DeserializeObject(XMLDocument);
+	}
+	if (XMLParams != NULL)
+	{
+		GetSerialize(*XMLParams);
+		delete XMLParams;
+	}
 }
 
 DWORD cSerializer::SkipInside(cString XMLDocument,int offset)

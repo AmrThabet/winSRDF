@@ -63,5 +63,5 @@ public:
 	char* CreatRule(cString name,cList strings,int condition);
 	char* CreatRule(cString name,cString strings,int condition);
 	char* GetLastError();
-	~cYaraScanner(void);
+	~cYaraScanner();
 };

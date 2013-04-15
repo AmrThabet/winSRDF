@@ -25,7 +25,7 @@
 using namespace std;
 using namespace Security::Elements::String;
 using namespace Security::Storage::Databases;
-
+#ifdef USE_SQLITE
 cSQLiteDatabase::~cSQLiteDatabase()
 {
 	CloseDatabase();
@@ -183,3 +183,4 @@ void cSQLiteDatabase::CloseDatabase()
 	IsDatabaseOpened = false;
 	LeaveCriticalSection(&CriticalSection);
 }
+#endif

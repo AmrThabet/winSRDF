@@ -25,13 +25,44 @@
 using namespace std;
 using namespace Security::Elements::String;
 
+void cXMLElement::SetSerialize(cXMLHash& XMLParams)
+{
+	XMLParams.AddText(Key,Value);
+}
+void cXMLElement::GetSerialize(cXMLHash& XMLParams)
+{
+	Key = XMLParams.GetKey(0);
+	Value = XMLParams.GetText(0);
+}
+
 cHash::cHash()
 {
 	nItems = 0;
 	HashArray = 0;
+	ItemName = "Item";
+	KeyName = "Key";
+	ValueName = "Value";
+	RootName = "ElementsHash";
 };
+
+cHash::cHash(cString rootName,cString itemName,cString keyName,cString valueName)
+{
+	nItems = 0;
+	HashArray = 0;
+	ItemName = itemName;
+	KeyName = keyName;
+	ValueName = valueName;
+	RootName = rootName;
+}
+
 cHash::~cHash()
 {
+	if (HashArray == NULL)return;
+	for (int i = 0;i < nItems;i++)
+	{
+		delete HashArray[i].Name;
+		delete HashArray[i].Value;
+	}
 	free(HashArray);
 };
 void cHash::AddItem(cString Name,cString Value)
@@ -63,6 +94,7 @@ void cHash::RemoveItem(DWORD id)
 	{
 		free(HashArray);
 		nItems = 0;
+		HashArray = NULL;
 		return;
 	}
 	
@@ -95,6 +127,7 @@ void cHash::ClearItems()
 {
 	nItems = 0;
 	free(HashArray);
+	HashArray = NULL;
 }
 cString cHash::GetValue(cString Name,int id)
 {
@@ -160,14 +193,29 @@ void cHash::SetSerialize(cXMLHash& XMLParams)
 {
 	for(DWORD i = 0;i< nItems;i++)
 	{
-		XMLParams.AddText(*HashArray[i].Name,*HashArray[i].Value);
+		cXMLHash ItemHash;
+		ItemHash.AddText(KeyName,*HashArray[i].Name);
+		ItemHash.AddText(ValueName,*HashArray[i].Value);
+		cString ItemXML = SerializeObject(&ItemHash);
+		XMLParams.AddItem(ItemName,ItemXML);
 	}
 }
 void cHash::GetSerialize(cXMLHash& XMLParams)
 {
+	ItemName = XMLParams.GetKey(0);	//Getting The Item Name
 	for(DWORD i = 0;i< XMLParams.GetNumberOfItems();i++)
 	{
-		AddItem(XMLParams.GetKey(i),XMLParams.GetText(i));
+		cXMLHash* ItemHash = DeserializeObject(XMLParams.GetText(ItemName,i));
+		if (ItemHash != NULL)
+		{
+			if (i == 0)
+			{
+				KeyName = ItemHash->GetKey(0);		//Get The Key Name
+				ValueName = ItemHash->GetKey(1);	//Get The Value Name
+			}
+			AddItem(ItemHash->GetValue(KeyName),ItemHash->GetValue(ValueName));
+			delete ItemHash;
+		}
 	}
 }
 
@@ -220,4 +268,15 @@ cString cXMLHash::GetBinary(int id,DWORD &len)
 	cBase64String EncodedStr;
 	EncodedStr.SetEncoded(GetValue(id));
 	return EncodedStr.Decode(len);
+}
+cXMLHash::~cXMLHash()
+{
+	if (HashArray == NULL)return;
+	for (int i = 0;i < nItems;i++)
+	{
+		delete HashArray[i].Name;
+		delete HashArray[i].Value;
+	}
+	if (HashArray)free(HashArray);
+	HashArray = NULL;
 }

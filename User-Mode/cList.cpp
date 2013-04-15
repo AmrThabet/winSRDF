@@ -37,7 +37,6 @@ cList::cList(int size)
 
 cList::~cList()
 {
-
 	if (nItems > 0)
 	{
 		nItems = 0;
@@ -77,14 +76,14 @@ DWORD cList::GetNumberOfItems()
 char* cList::GetItem(int index)
 {
 	if(nItems > 0)
-	return &head[index*Ssize];
+		return &head[index*Ssize];
 	return NULL;
 }
 
 char* cList::GetLastItem()
 {
 	if(nItems>0)
-	return &head[(nItems-1)*Ssize];
+		return &head[(nItems-1)*Ssize];
 	return NULL;
 }
 

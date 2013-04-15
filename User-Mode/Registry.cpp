@@ -44,7 +44,9 @@ void cRegistryKey::Initialize(HKEY Key,cString KeyPath, bool Create)
 }
 cRegistryKey::~cRegistryKey()
 {
-	for(DWORD i = 0;i< nEntries;i++){
+	if (isFound == false)return;
+	for(DWORD i = 0;i< nEntries;i++)
+	{
 		delete Entries[i];
 	}
 	if(isFound)RegCloseKey(hKey);
@@ -72,6 +74,7 @@ void cRegistryKey::EnumerateValues(DWORD &nValues)
 		ValueSize = maxValueLength;		//Set the ValueSize to The Maximum to accept any ValueName
 		
 	}
+	free(buff);
 	return;
 }
 void cRegistryKey::EnumerateKeys(DWORD &nKeys)
@@ -100,6 +103,7 @@ void cRegistryKey::EnumerateKeys(DWORD &nKeys)
 		memset(buff,0,maxKeyLength);
 		KeySize = maxKeyLength;
 	}
+	free(buff);
 	return;
 }
 void cRegistryKey::RefreshEntries()
@@ -115,7 +119,11 @@ cRegistryEntry cRegistryKey::operator [](char* Value)
 {
 	for (DWORD i =0; i < nEntries; i++)
 	{
-		if (Entries[i]->GetEntryName() == Value)return *Entries[i];
+		
+		if (Entries[i]->GetEntryName() == Value)
+		{
+			return *Entries[i];
+		}
 	}
 	return *new cRegistryEntry(this,Value);
 }
@@ -160,9 +168,10 @@ cRegistryEntry::cRegistryEntry(cRegistryKey* RegKey,cString Valuename)
 }
 cRegistryEntry::cRegistryEntry(HKEY hKey,cString Valuename)
 {
+	
 	if (RegQueryValueEx(hKey,Valuename,NULL,&Type,NULL,NULL) == ERROR_SUCCESS)isFound = true;
 	else isFound = false;
-	
+	if (Valuename.GetLength() == 0)system("pause");
 	this->hKey = hKey;
 	ValueName = Valuename;
 }
@@ -172,11 +181,10 @@ bool cRegistryEntry::IsFound()
 }
 char* cRegistryEntry::GetValue(DWORD &len)
 {
-	
-	if (RegQueryValueEx(hKey,ValueName,NULL,NULL,NULL,&len) != ERROR_SUCCESS) return NULL;
+	if (RegQueryValueEx(hKey,ValueName,NULL,NULL,NULL,&len) != ERROR_SUCCESS) return "";
 	char* buff = (char*)malloc(len+1);
 	memset(buff,0,len);
-	if (RegQueryValueEx(hKey,ValueName,NULL,NULL,(LPBYTE)buff,&len) != ERROR_SUCCESS) return NULL;
+	if (RegQueryValueEx(hKey,ValueName,NULL,NULL,(LPBYTE)buff,&len) != ERROR_SUCCESS) return "";
 	return buff;
 	
 }
@@ -191,6 +199,7 @@ cRegistryEntry::~cRegistryEntry()
 }
 cString cRegistryEntry::GetEntryName()
 {
+	if (ValueName.GetLength() == 0) return cString("default");
 	return ValueName;
 }
 

@@ -19,8 +19,9 @@
  */
 
 #include <fstream>
+#ifdef USE_SQLITE
 #include "sqlite3.h"
-
+#endif
 using namespace std;
 using namespace Security::Elements::String;
 
@@ -96,7 +97,7 @@ public:
 	cRegistryEntry(HKEY hKey,cString Valuename);
 	cString GetEntryName();
 	bool IsFound();
-	bool operator ==(cString Value) {cString str = GetValue(Reserved); return (str == Value);}
+	bool operator ==(cString Value) {if (isFound == false)return "";cString str = GetValue(Reserved); return (str == Value);}
 	bool operator ==(char* Value) {cString str = GetValue(Reserved);return (str == Value);}
 	cString operator =(cString Value){SetValue(Value,strlen(Value),REG_SZ);return Value;}
 	operator char* ()	{return GetValue(Reserved);}
@@ -124,6 +125,7 @@ public:
 	virtual bool RemoveItem(cString TableName,int id){return false;};
 	virtual bool CreateTable(cString TableName){return false;};
 };
+#ifdef USE_SQLITE
 
 class DLLIMPORT Security::Storage::Databases::cSQLiteDatabase : public Security::Storage::Databases::cDatabase
 {
@@ -142,3 +144,4 @@ public:
 	virtual bool CreateTable(cString TableName);
 	~cSQLiteDatabase();
 };
+#endif

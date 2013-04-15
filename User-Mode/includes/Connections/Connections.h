@@ -60,13 +60,15 @@ typedef ReadFunc *PReadFunc;
  
 class Security::Connections::KernelMode::cDevice
 {
-  public:
-  //Variables
-  char* DeviceName;
-  DWORD FileObject;
-  PReadFunc ReadFunction;
+	
+	PReadFunc ReadFunction;
+	char* DeviceName;
+	DWORD FileObject;
+	
+   HANDLE hThread;
+
+public:
   HANDLE DeviceHandle;
-  HANDLE hThread;
   //Functions
   cDevice(char* devicename);
   ~cDevice();

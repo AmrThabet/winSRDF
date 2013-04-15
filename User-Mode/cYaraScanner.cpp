@@ -53,7 +53,12 @@ cYaraScanner::cYaraScanner(void)
 
 cYaraScanner::~cYaraScanner(void)
 {
-	  yr_destroy_context( YContext);
+	for(DWORD i=0;i<Results->GetNumberOfItems();i++)
+	{
+		((YARA_RESULT*)(Results->GetItem(i)))->Matches->~cList();
+	}
+	delete Results;
+	yr_destroy_context( YContext);
 }
 
 char* cYaraScanner::GetLastError()
@@ -74,7 +79,7 @@ void cYaraScanner::FreeResults()
 	{
 		((YARA_RESULT*)(Results->GetItem(i)))->Matches->~cList();
 	}
-	Results->~cList();
+	delete Results;
 	Results=new cList(sizeof(YARA_RESULT));
 }
 

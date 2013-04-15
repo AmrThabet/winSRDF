@@ -36,7 +36,10 @@ using namespace Security::Targets::Files;
 
 cPEFile::cPEFile(char* szFilename) : cFile(szFilename)
 {
-	FileLoaded = ParsePE();
+	FileLoaded = false;
+	if (identify(this))
+		FileLoaded = ParsePE();
+
 }
 
 cPEFile::cPEFile(char* buffer,DWORD size) : cFile(buffer,size)
@@ -46,6 +49,7 @@ cPEFile::cPEFile(char* buffer,DWORD size) : cFile(buffer,size)
 bool cPEFile::identify(cFile* File)
 {
 	if (File->IsFound() == false) return false;
+	if (File->BaseAddress == NULL)return false;
 	dos_header* DosHeader = (dos_header*)File->BaseAddress;
 	
 	if (DosHeader->e_magic != 'ZM') return false;
@@ -58,18 +62,9 @@ bool cPEFile::identify(cFile* File)
 bool cPEFile::ParsePE()
 {
 	dos_header* DosHeader;
-
-	if (BaseAddress == NULL) return false;
-
 	DosHeader = (dos_header*)BaseAddress;
-	
-	if (DosHeader->e_magic != 'ZM') return false;
-	
 	PEHeader = (image_header*)(BaseAddress + DosHeader->e_lfanew);
-
-	if (DosHeader->e_lfanew > FileLength)return false;
-	if(PEHeader->signature != 'EP') return false;
-
+	
 	Magic = PEHeader->optional.magic;
 	Subsystem = PEHeader->optional.subsystem;
 	Imagebase = PEHeader->optional.image_base;
@@ -81,6 +76,7 @@ bool cPEFile::ParsePE()
 	initSections();
 	initExportTable();	// export table
 	initImportTable();
+	//initRelocations();	//Still under testing
 	return true;
 }
 void cPEFile::initExportTable()
@@ -101,8 +97,16 @@ void cPEFile::initExportTable()
 
 	for (DWORD i =0;i<ExportTable.nFunctions;i++)
 	{
-		ExportTable.Functions[i].funcName = (char*)(DWORD*)RVAToOffset(ExportTable.pNames[i]) + BaseAddress;
-		ExportTable.Functions[i].funcOrdinal = ExportTable.pNamesOrdinals[i];
+		if (i < ExportTable.nNames)
+		{
+			ExportTable.Functions[i].funcName = (char*)(DWORD*)RVAToOffset(ExportTable.pNames[i]) + BaseAddress;
+			ExportTable.Functions[i].funcOrdinal = ExportTable.pNamesOrdinals[i];
+		}
+		else
+		{
+			ExportTable.Functions[i].funcName = NULL;
+			ExportTable.Functions[i].funcOrdinal = i;
+		}
 		ExportTable.Functions[i].funcRVA = ExportTable.pFunctions[ExportTable.Functions[i].funcOrdinal];
 		ExportTable.Functions[i].funcOrdinal++;
 	}
@@ -140,7 +144,8 @@ VOID cPEFile::initImportTable()
               APINames = (image_import_by_name**)Imports->first_thunk;
         };
 
-        APINames = (image_import_by_name**)(RVAToOffset((DWORD)APINames) + BaseAddress);
+		if (RVAToOffset((DWORD)APINames) == NULL) APINames = NULL;
+        else APINames = (image_import_by_name**)(RVAToOffset((DWORD)APINames) + BaseAddress);
         APIAddresses = (DWORD*)(Imports->first_thunk + Imagebase);
 		
 		//Getting The Number of APIs
@@ -171,6 +176,7 @@ VOID cPEFile::initImportTable()
 void cPEFile::initRelocations()
 {
 	/*find reloc section*/
+	Relocations = NULL;
 	unsigned short int RelocSection;
 	for (unsigned int i = 0; i < nSections;i++)
 	{
@@ -196,7 +202,7 @@ void cPEFile::initRelocations()
 
 
 	Relocations = (RELOCATIONS*)malloc(sizeof(RELOCATIONS) * nRelocations);
-
+	memset (Relocations,0,sizeof(RELOCATIONS) * nRelocations);
 	baseReloc = (PIMAGE_BASE_RELOCATION)(BaseAddress+RelocRVA-(Section[4].VirtualAddress - Section[4].PointerToRawData));
 	for (unsigned int i = 0; i < nRelocations;i++)
 	{
@@ -206,6 +212,7 @@ void cPEFile::initRelocations()
 		DWORD* pEntry = MakePtr( DWORD*, baseReloc, sizeof(*baseReloc) );
 
 		Relocations[i].Entries = (RELOCATION_ENTRIES*)malloc(sizeof(RELOCATION_ENTRIES) * nEntries);
+		memset (Relocations[i].Entries,0,sizeof(RELOCATION_ENTRIES) * nEntries);
 		for (unsigned int j = 0; j<nEntries ;j++)
 		{
 			relocType = (*pEntry & 0xF000) >> 12;
@@ -222,6 +229,7 @@ void cPEFile::initRelocations()
 };
 cPEFile::~cPEFile()
 {
+	if (FileLoaded == false)return;
 	//Free Section Table
 	free(Section);
 
@@ -237,6 +245,19 @@ cPEFile::~cPEFile()
 		}
 		free(ImportTable.DLL);
 	}
+	/*
+	if (Relocations != NULL)
+	{
+		cout << "Here\n";
+		cout << Relocations << "\n";
+		for (int i = 0;i < Relocations->nEntries; i++)
+		{
+			cout << i << "\n";
+			if (Relocations[i].Entries)free(Relocations[i].Entries);
+		}
+		free(Relocations);	
+		cout << "Here2\n";
+	}*/
 }
 VOID cPEFile::initDataDirectory()
 {

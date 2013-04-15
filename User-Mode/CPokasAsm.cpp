@@ -23,6 +23,7 @@
 #include <iostream>
 using namespace Security::Libraries::Malware::Assembly::x86;
 using namespace std;
+#ifdef USE_POKAS_EMULATOR
 
 CPokasAsm::CPokasAsm()
 {
@@ -67,3 +68,4 @@ char* CPokasAsm::Assemble(DISASM_INSTRUCTION* ins, DWORD &Length)
     Length = Data->length;
     return (char*)Data->s;
 }
+#endif

@@ -76,7 +76,7 @@ cHash* cRecursiveScanner::GetDrives()
 		}
 		buff+=4;
 	}
-
+	free(buff);
 	return DriveHash;
 }
 void cRecursiveScanner::Scan(cString DirectoryName)
@@ -91,6 +91,7 @@ void cRecursiveScanner::Scan(cString DirectoryName)
 		ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH);
 	}
 	DirectoryName = buff;
+	free(buff);
 	Level = 0;
 	FindFiles(DirectoryName);
 }
@@ -153,6 +154,8 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
 				}
         }
     }
+	CloseHandle(fHandle);
+	temp = "";
 	Level--;
 }
 

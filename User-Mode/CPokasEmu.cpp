@@ -28,7 +28,7 @@
 using namespace Security::Libraries::Malware::OS::Win32::Dynamic;
 using namespace Security::Targets::Files;
 using namespace std;
- 
+ #ifdef USE_POKAS_EMULATOR
 CPokasEmu::CPokasEmu(char *szFileName,char* DLLPath)
 {
 	 m_szFileName = szFileName;
@@ -88,7 +88,7 @@ CPokasEmu::~CPokasEmu()
 int CPokasEmu::Emulate()
 { 
 	process->MaxIterations = 1000000;
-	return process->emulate("C:\\EmuFile.txt");
+	return process->emulate();
 }
 
 int CPokasEmu::Step()
@@ -259,3 +259,4 @@ DLL_FOUND:
 	int APIIndex = m_objSystem->define_api(APIName,&m_objSystem->DLLs[DLLIndex],nArgs,(API_INTERNAL_FUNC)APIFunc);
 	return m_objSystem->APITable[APIIndex].addr;
 }
+#endif

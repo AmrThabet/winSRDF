@@ -152,8 +152,12 @@ bool cDevice::Write(char msgcode,DWORD status,char* data,DWORD size)
                          InputData, InputSize,  // Input
                          output, 256,           // Output
                          &return_size,
-                         NULL) )//*/
+                         NULL) )
+	{
+		free(InputData);
 		return false;
+	}
+	free(InputData);
 	return true;
 }
 bool cDevice::SendFastMsg(char msgcode,DWORD status,char* data,DWORD size,DWORD& return_status,char* Output,DWORD MaxOutputSize)
@@ -174,10 +178,16 @@ bool cDevice::SendFastMsg(char msgcode,DWORD status,char* data,DWORD size,DWORD&
                          output, MaxOutputSize+sizeof(CommChannel),           // Output
                          &return_size,
                          NULL) )//*/
+	{
+		free(InputData);
+		free(output);
 		return false;
+	}
+	free(InputData);
     CommChannel* OutputBuffer = (CommChannel*)output;
     return_status = OutputBuffer->status;
     memcpy(Output,&OutputBuffer->data,return_size-sizeof(CommChannel));
+	free(output);
     return true;
 }
  void _cdecl ReadThread(cDevice* device)
@@ -197,7 +207,8 @@ bool cDevice::SendFastMsg(char msgcode,DWORD status,char* data,DWORD size,DWORD&
                              continue;
                 
         CommChannel* OutputBuffer = (CommChannel*)output;
-        if (OutputBuffer->size > 256){
+        if (OutputBuffer->size > 256)
+		{
            OutputBuffer = (CommChannel*)malloc(OutputBuffer->size);
            if( !DeviceIoControl(device->DeviceHandle,
                              IOCTL_READREQUEST,
