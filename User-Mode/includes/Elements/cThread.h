@@ -57,7 +57,7 @@ private:
 	cApp* App;
 public:
 	cThread();
-	cThread(const char* nm,cApp* App);
+	cThread(const char* nm,cApp* App = NULL);
 	virtual ~cThread();
 	void setName(const char* nm);
 	cString getName() const;

@@ -264,11 +264,13 @@ public:
 #define APIHOOK_BYTES_SIZE	6
 class DLLIMPORT Security::Libraries::Malware::OS::Win32::Behavioral::cAPIHook
 {
-public:
-
+	bool Hooked;
 	char oldBytes[APIHOOK_BYTES_SIZE]; 
 	char JMP[APIHOOK_BYTES_SIZE];	
 	DWORD OrgMemoryProtection; 
+public:
+
+	
 	DWORD OriginalAddr;
 	DWORD HookFunc;
 
