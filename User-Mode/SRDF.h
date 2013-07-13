@@ -49,6 +49,7 @@ namespace Security
 			class cPEFile;
 			class cELFFile;
 			class cPcapFile;
+			class cAndroidFile;
 		}
 		namespace Memory
 		{

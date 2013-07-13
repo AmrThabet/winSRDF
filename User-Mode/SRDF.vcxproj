@@ -116,6 +116,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cAndroidFile.cpp" />
     <ClCompile Include="cAPIHook.cpp" />
     <ClCompile Include="cApp.cpp" />
     <ClCompile Include="cCode.cpp" />
@@ -124,7 +125,7 @@
     <ClCompile Include="cDebugger.cpp" />
     <ClCompile Include="cELFFile.cpp" />
     <ClCompile Include="cEventIPC.cpp" />
-    <ClCompile Include="CFile.cpp" />
+    <ClCompile Include="cFile.cpp" />
     <ClCompile Include="cFileToWrite.cpp" />
     <ClCompile Include="cHash.cpp" />
     <ClCompile Include="cHTTPSocket.cpp" />
@@ -133,9 +134,9 @@
     <ClCompile Include="cPacket.cpp" />
     <ClCompile Include="cPacketGen.cpp" />
     <ClCompile Include="cPcapFile.cpp" />
-    <ClCompile Include="CPEFile.cpp" />
-    <ClCompile Include="CPokasAsm.cpp" />
-    <ClCompile Include="CPokasEmu.cpp" />
+    <ClCompile Include="cPEFile.cpp" />
+    <ClCompile Include="cPokasAsm.cpp" />
+    <ClCompile Include="cPokasEmu.cpp" />
     <ClCompile Include="cProcess.cpp" />
     <ClCompile Include="cProcessScanner.cpp" />
     <ClCompile Include="cRecursiveScanner.cpp" />
@@ -166,6 +167,7 @@
     <ClCompile Include="SSDeep\edit_dist.cpp" />
     <ClCompile Include="SSDeep\find-file-size.cpp" />
     <ClCompile Include="SSDeep\fuzzy.cpp" />
+    <ClCompile Include="unzip.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Connections\Connections.h" />
@@ -187,9 +189,7 @@
     <ClInclude Include="includes\Libraries\yara.h" />
     <ClInclude Include="SSDeep\fuzzy.h" />
     <ClInclude Include="SSDeep\main.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
+    <ClInclude Include="unzip.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

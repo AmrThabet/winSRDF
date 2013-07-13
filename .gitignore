@@ -1,4 +1,4 @@
-﻿User-Mode/Debug/
+User-Mode/Debug/
 User-Mode/Release
 User-Mode/SRDF.ncb
 User-Mode/SRDF.sln
@@ -218,3 +218,8 @@ User-Mode/Examples/DebuggerExample/Release/mt.dep
 User-Mode/Examples/DebuggerExample/Release/stdafx.obj
 User-Mode/Examples/DebuggerExample/Release/vc90.idb
 User-Mode/Examples/DebuggerExample/Release/vc90.pdb
+User-Mode/Examples/DebuggerExample/Debug
+*.sdf
+*.ncb
+
+ipch/
