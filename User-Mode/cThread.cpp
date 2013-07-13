@@ -101,6 +101,7 @@ cString cThread::getName() const {
 **/ 
 void cThread::run() {
 	// Base run
+	cout << "Here2\n";
 }
 
 /** sleep(long ms)
@@ -116,13 +117,16 @@ void cThread::sleep(long ms) {
   * run() function
 **/ 
 DWORD cThread::start() {
+	//cout << "Here1\n";
 	DWORD tid = 0;	
 	m_hThread = (unsigned long*)CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)_ou_thread_proc,(cThread*)this,0,&tid);
 	if(m_hThread == NULL) {
+		//cout << "Here11\n";
 		throw cThreadException("Failed to create thread");
 	}else {
 		setPriority(cThread::P_NORMAL);
 	}
+	//cout << "Here12\n";
 	return tid;
 }
 
@@ -304,6 +308,7 @@ cString cThreadException::getMessage() const {
 // global thread callback
 unsigned int _ou_thread_proc(void* param) {
 	cThread* tp = (cThread*)param;
+	//cout << "Here13\n";
 	tp->run();
 	return 0;
 }

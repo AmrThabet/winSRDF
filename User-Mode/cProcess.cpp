@@ -391,8 +391,7 @@ DWORD cProcess::DllInject(cString DLLFilename)
 	
 	remoteAddress = Allocate(NULL ,(DWORD)strlen((char*) DLLFilename));
 
-	HMODULE handleToKernel32 = GetModuleHandle("KERNEL32");
-	cout << (int*)remoteAddress << "\n";
+	HMODULE handleToKernel32 = GetModuleHandle("kernel32.dll");
 	if (Write(remoteAddress , (DWORD)DLLFilename.GetChar() ,(DWORD)strlen( (char*) DLLFilename)))
 	{
 		hThread = (DWORD)CreateRemoteThread((HANDLE)procHandle ,NULL , 0 , ( LPTHREAD_START_ROUTINE)GetProcAddress(handleToKernel32 , "LoadLibraryA") , (LPVOID)remoteAddress , 0 , &threadId);
