@@ -245,10 +245,9 @@ cString cXMLEncodedString::Encode(char* buff,DWORD length)
 
 char* cXMLEncodedString::Decode(DWORD &len)
 {
+	if (EncodedString.GetLength() < 4)return EncodedString;
 	char* buff = (char*)malloc(EncodedString.GetLength()+1);
 	memset(buff,0, EncodedString.GetLength()+1);
-	if (EncodedString.GetLength() < 4)return EncodedString;
-	memset(buff,0,EncodedString.GetLength());
 	char* str = EncodedString;
 	char c;
 	int i = 0;

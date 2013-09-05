@@ -95,6 +95,78 @@ bool cHTTPSocket::DownloadFile(cString Request,cString Filename)
 	InternetCloseHandle(hData);
 	return TRUE;
 }
+bool cHTTPSocket::UploadFile(cString urlpath,cString Filename, cString FileArgName, cHash* OtherArgs)
+{
+	INTERNET_BUFFERS BufferIn = {0};
+    BufferIn.dwStructSize = sizeof( INTERNET_BUFFERS );
+
+    HINTERNET   hRequest;
+    DWORD dwBytesWritten;
+
+    hRequest = HttpOpenRequest( hConnection, "POST", urlpath,
+                                HTTP_VERSION, NULL, 0, INTERNET_FLAG_KEEP_CONNECTION 
+                                , 0 );
+    if( hRequest == NULL )
+    {
+        return FALSE;
+    }
+	
+	
+	static TCHAR frmdata5[]	= "\n---------------------------7d82751e2bc0858--\n";//Content-Disposition: form-data; name=\"time\"\nContent-Type: text/plain; charset=utf-8\n\n1378273768\n---------------------------7d82751e2bc0858--\n"; 
+    static TCHAR hdrs3[] = "Content-Type: multipart/form-data; boundary=-------------------------7d82751e2bc0858"; 
+    cString boundary = "---------------------------7d82751e2bc0858";
+	cString Request = "";
+	if (OtherArgs)
+	{
+		for (int i = 0;i < OtherArgs->GetNumberOfItems(); i++)
+		{
+			Request += boundary;
+			Request +="\nContent-Disposition: form-data; name=\"";
+			Request += OtherArgs->GetKey(i);
+			Request += "\"\nContent-Type: text/plain; charset=utf-8\n\n";
+			Request += OtherArgs->GetValue(i);
+			Request += "\n";
+		}
+	}
+	Request += boundary;
+	Request += "\nContent-Disposition: form-data; name=\"zipcontent\"; filename=\"";
+	Request += FileArgName;
+	Request += "\"\nContent-Type: application/x-zip-compressed\n\n";
+	HANDLE hFile = CreateFileA(Filename,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		return FALSE;
+	}
+	HANDLE hMapping = CreateFileMappingW(hFile,NULL,PAGE_READONLY,0, 0,NULL);
+	DWORD BaseAddress = (unsigned long) MapViewOfFile(hMapping, FILE_MAP_READ,0,0,0);
+	if (BaseAddress == 0)
+	{
+		return FALSE;
+	}
+	DWORD FileLength  = (DWORD) GetFileSize(hFile,NULL);
+
+	//BufferIn.dwBufferTotal = strlen(frmdata3) + file->FileLength + strlen(frmdata5);//strlen(frmdata4)
+	BufferIn.dwBufferTotal = Request.GetLength() + FileLength + strlen(frmdata5);
+	BufferIn.dwBufferLength = Request.GetLength();
+	BufferIn.lpvBuffer = Request.GetChar();
+	BufferIn.lpcszHeader = hdrs3;
+	BufferIn.dwHeadersLength = strlen(hdrs3);
+	if (!HttpSendRequestEx(hRequest, &BufferIn, 0,  NULL, 0))
+	{
+		InternetCloseHandle( hRequest );
+		UnmapViewOfFile((LPVOID)BaseAddress);
+		CloseHandle(hMapping);
+		CloseHandle(hFile);
+	}
+
+	InternetWriteFile(hRequest, (LPCVOID)BaseAddress, FileLength, &dwBytesWritten);
+	InternetWriteFile(hRequest, frmdata5, strlen(frmdata5), &dwBytesWritten);
+	InternetCloseHandle( hRequest );
+	UnmapViewOfFile((LPVOID)BaseAddress);
+	CloseHandle(hMapping);
+	CloseHandle(hFile);
+	return TRUE;
+}
 
 /*
 BOOL GetFile(LPSTR url,LPSTR request,LPSTR filename)

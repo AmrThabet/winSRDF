@@ -32,14 +32,14 @@ cDebugger::cDebugger(cString Filename,cString Commandline)
 {
 	DWORD dwContinueStatus = DBG_CONTINUE;
 	bContinueDebugging = 1;
-
+	IsDebugging = FALSE;
+	//if (Filename == NULL)return;
 	Breakpoints = new cList(sizeof(DBG_BREAKPOINT));
 	MemoryBreakpoints = new cList(sizeof(DBG_MEMORY_BREAKPOINT));
 	memset (&debug_event,0,sizeof(debug_event));
 	STARTUPINFO si = {0};
 	PROCESS_INFORMATION pi = {0};
 	si.cb = sizeof(si);
-	IsDebugging = FALSE;
 	this->Filename = Filename;
 	this->Commandline = Commandline;
 	HardwareBreakpoints[0].Address = 0;

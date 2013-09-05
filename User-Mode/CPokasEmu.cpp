@@ -90,7 +90,12 @@ int CPokasEmu::Emulate()
 	process->MaxIterations = 1000000;
 	return process->emulate();
 }
-
+int CPokasEmu::Emulate(cString LogFile)
+{ 
+	string LogFilename = LogFile.GetChar();
+	process->MaxIterations = 1000000;
+	return process->emulate(LogFilename);
+}
 int CPokasEmu::Step()
 {
 	return process->emulatecommand();

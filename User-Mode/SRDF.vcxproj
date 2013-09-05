@@ -23,8 +23,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -82,15 +82,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <Optimization>Full</Optimization>
+      <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SRDF_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <ProjectReference>
@@ -99,7 +99,7 @@
     <Link>
       <AdditionalDependencies>wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -116,7 +116,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cAndroidFile.cpp" />
     <ClCompile Include="cAPIHook.cpp" />
     <ClCompile Include="cApp.cpp" />
     <ClCompile Include="cCode.cpp" />
@@ -125,7 +124,7 @@
     <ClCompile Include="cDebugger.cpp" />
     <ClCompile Include="cELFFile.cpp" />
     <ClCompile Include="cEventIPC.cpp" />
-    <ClCompile Include="cFile.cpp" />
+    <ClCompile Include="CFile.cpp" />
     <ClCompile Include="cFileToWrite.cpp" />
     <ClCompile Include="cHash.cpp" />
     <ClCompile Include="cHTTPSocket.cpp" />
@@ -134,9 +133,10 @@
     <ClCompile Include="cPacket.cpp" />
     <ClCompile Include="cPacketGen.cpp" />
     <ClCompile Include="cPcapFile.cpp" />
-    <ClCompile Include="cPEFile.cpp" />
-    <ClCompile Include="cPokasAsm.cpp" />
-    <ClCompile Include="cPokasEmu.cpp" />
+    <ClCompile Include="cPDFFile.cpp" />
+    <ClCompile Include="CPEFile.cpp" />
+    <ClCompile Include="CPokasAsm.cpp" />
+    <ClCompile Include="CPokasEmu.cpp" />
     <ClCompile Include="cProcess.cpp" />
     <ClCompile Include="cProcessScanner.cpp" />
     <ClCompile Include="cRecursiveScanner.cpp" />
@@ -167,7 +167,6 @@
     <ClCompile Include="SSDeep\edit_dist.cpp" />
     <ClCompile Include="SSDeep\find-file-size.cpp" />
     <ClCompile Include="SSDeep\fuzzy.cpp" />
-    <ClCompile Include="unzip.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Connections\Connections.h" />
@@ -189,7 +188,9 @@
     <ClInclude Include="includes\Libraries\yara.h" />
     <ClInclude Include="SSDeep\fuzzy.h" />
     <ClInclude Include="SSDeep\main.h" />
-    <ClInclude Include="unzip.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -12,7 +12,7 @@ public:
 	cString(const char* str);
 	cString(const double var)				{ VarToString(var); }
 	cString()								{ m_nLength = 0; m_pString = 0; }
-	virtual ~cString()						{ if (m_pString && m_nLength != 0)free(m_pString); }
+	~cString();
 
 	// operator overloading helper
 	//template <class T> friend cString _cdecl operator +(T var, const cString& str);

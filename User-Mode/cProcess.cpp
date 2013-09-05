@@ -103,7 +103,6 @@ cProcess::cProcess(int processId)
 		if (NULL != ProcAdd) 
 		{
 			fRunTimeLinkSuccess = TRUE;
-
 			procHandle = (DWORD)OpenProcess(PROCESS_ALL_ACCESS , FALSE, DWORD(processId)); // setting process handle PROCESS_CREATE_THREAD | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_SUSPEND_RESUME
 			if (procHandle != NULL)
 			{
@@ -117,7 +116,6 @@ cProcess::cProcess(int processId)
 				AnalyzeProcess();
 				isFound = true;
 			}
-	       
 		}
 			
 	}

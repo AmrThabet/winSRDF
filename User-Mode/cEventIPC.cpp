@@ -31,6 +31,7 @@ using namespace std;
 
 DWORD _cdecl EventIPC_ReadThread(cEventIPC* EventIPC)
 {
+	
 	EventIPC->Read();
 	return 0;
 }
@@ -40,7 +41,7 @@ cEventIPC::cEventIPC(cString Name,DWORD Type, DWORD MaxSize)
 	if (Type == EVENT_IPC_CLIENT)DestType = EVENT_IPC_SERVER;
 	else DestType = EVENT_IPC_CLIENT;
 	Size = MaxSize;
-
+	ReadNotify = NULL;
 	cString ReadClient = Name + "ReadClientEvent";
 	cString ReadServer = Name + "ReadServerEvent";
 	cString WriteClient = Name + "WriteClientEvent";
@@ -157,14 +158,19 @@ VOID cEventIPC::Read()
 				}
 				else
 				{
+					cString x;
+					x.Format("Message Resieved: %x bytes",WrittenSize);
+					//MessageBoxA(0,x.GetChar(), "SRDF: Read Event",0);
 					char* DataWritten = (char*)malloc(WrittenSize);
-					memset(DataWritten,0,WrittenSize);	
+					memset(DataWritten,0,WrittenSize);
 					char* NewBuffer = (char*)((DWORD)Buffer[DestType] + 4); //Get the next 4 bytes
 					memcpy(DataWritten, NewBuffer,WrittenSize);
 					memset(Buffer[DestType],0,Size);			//with Maximum Size
 					SetEvent(ReadEvent[SrcType]);
-					(*ReadNotify)(DataWritten,WrittenSize);
+					if (ReadNotify != NULL)
+						(*ReadNotify)(DataWritten,WrittenSize);
 					free(DataWritten);
+					//MessageBoxA(0,"Read Finished", "SRDF: Read Event",0);
 				}
 			}
 		}

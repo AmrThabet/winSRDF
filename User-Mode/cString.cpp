@@ -27,7 +27,7 @@ cString::cString(const char* str)
 
 cString::cString(const cString& str)
 { 
-	if(str == 0)
+	if(str.m_nLength == 0 || str.m_pString == NULL)
 	{
 		m_nLength = 0;
 		m_pString = 0;
@@ -89,7 +89,12 @@ cString& cString::operator =(const cString& str)
 
 	return *this;
 }
-
+cString::~cString()
+{
+	if (m_pString != NULL && m_nLength != NULL)free(m_pString);
+	m_pString = NULL;
+	m_nLength = 0;
+}
 void cString::VarToString(const double var)
 {
 	char str[33];

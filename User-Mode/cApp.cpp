@@ -31,11 +31,13 @@ cApp::cApp(cString AppName)
 {
 	this->AppName = AppName;
 	char* lpBuffer = (char*)malloc(MAX_PATH);
+	memset(lpBuffer,0,MAX_PATH);
 	GetCurrentDirectory(MAX_PATH , lpBuffer);
 	AppPath = lpBuffer;
 	Log = NULL;
 	optind = 0;
 	optarg = NULL;
+	free(lpBuffer);
 	SetDefaultSettings();
 
 }
@@ -170,7 +172,9 @@ void cApp::Initialize(int argc, char *argv[])
 	{
 		if (!InstanceMutex.create(AppName))ExitProcess(0);
 	}
-	GetRequest(argc,argv);
+	this->argc = argc;
+	this->argv = argv;
+	GetRequest();
 	if (Flags & APP_ADDLOG)
 	{
 		Log = new cLog(AppName,LogFilename);
@@ -185,7 +189,7 @@ void cApp::Initialize(int argc, char *argv[])
 		#endif
 	}
 }
-void cApp::GetRequest(int argc, char *argv[])
+void cApp::GetRequest()
 {
 	char c;
 	while ((c = getopt(argc, argv, Options)) != EOF)

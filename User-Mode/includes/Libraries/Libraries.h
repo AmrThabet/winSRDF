@@ -90,6 +90,7 @@ public:
 	   CPokasEmu(char *buff,int size,int ImageType,char* DLLPath);
        ~CPokasEmu();
        int Emulate();
+	   int Emulate(cString LogFile);
 	   int Step();
        int SetBreakpoint(char* Breakpoint);
        int SetBreakpoint(char* FuncName,DWORD BreakpointFunc);
@@ -130,6 +131,8 @@ public:
 	void Scan(cString DirectoryName);
 	~cRecursiveScanner();
 	virtual bool DirectoryCallback(cString DirName,cString FullName,int Level);
+	cHash* GetinPath(cString DirectoryName);
+	cString ExpandPath(cString Filename);
 	virtual void FileCallback(cString Filename,cString FullName,int Level);
 };
 
@@ -223,7 +226,7 @@ public:
 
 	//Functions
 	void UpdateRegisters();	
-	cDebugger(cString Filename, cString Commandline = cString(""));
+	cDebugger(cString Filename, cString Commandline = cString(" "));
 	cDebugger(Security::Targets::Memory::cProcess* Process);
 	int Run();
 	int Step();

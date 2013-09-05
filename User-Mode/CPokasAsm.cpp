@@ -23,6 +23,7 @@
 #include <iostream>
 using namespace Security::Libraries::Malware::Assembly::x86;
 using namespace std;
+
 #ifdef USE_POKAS_EMULATOR
 
 CPokasAsm::CPokasAsm()
@@ -40,9 +41,9 @@ char* CPokasAsm::Disassemble(char* Buffer,DWORD &InstructionLength)
 {
     string strInst = "";
     DISASM_INSTRUCTION* ins;
-    ins = (DISASM_INSTRUCTION*)malloc(sizeof(DISASM_INSTRUCTION));
-    ins = m_objSystem->disasm(ins, Buffer, strInst);
-    char* cIns = (char*)malloc(strInst.length()+1);
+    ins = (DISASM_INSTRUCTION*)malloc(sizeof(DISASM_INSTRUCTION)+1);
+    ins = m_objSystem->disasm(ins, Buffer,strInst);
+    char* cIns = (char*)malloc(strInst.length()+2);
     memset(cIns,0,strInst.length()+1);
     memcpy(cIns, strInst.c_str(), strInst.length());
     InstructionLength = (DWORD)ins->hde.len;

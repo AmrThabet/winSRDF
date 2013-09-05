@@ -36,6 +36,7 @@ public:
 	void close();
 	bool SendRequest(cString Request);
 	bool DownloadFile(cString Request,cString Filename);
+	bool UploadFile(cString urlpath,cString Filename, cString FileArgName, cHash* OtherArgs);
 	~cHTTPSocket(){close();}
 };
 

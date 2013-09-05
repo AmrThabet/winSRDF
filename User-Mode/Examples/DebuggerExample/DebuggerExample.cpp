@@ -71,15 +71,17 @@ int _tmain(int argc, char* argv[])
 
 cDebuggerApp::cDebuggerApp(cString AppName) : cConsoleApp(AppName)
 {
-	
+	Debugger = NULL;
+	Asm = NULL;
 }
 cDebuggerApp::~cDebuggerApp()
 {
-	((cApp*)this)->~cApp();
+	((cConsoleApp*)this)->~cConsoleApp();
 }
 
 void cDebuggerApp::SetCustomSettings()
 {
+
 	Intro = "\
 	***********************************\n\
 	**       Win32 Debugger          **\n\

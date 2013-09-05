@@ -45,17 +45,17 @@ cHash* cRecursiveScanner::GetDrives()
 	DWORD nLength = GetLogicalDriveStrings(200,(LPSTR)buff);
 	if (nLength > 195)
 	{
-		char* buff = (char*)malloc(nLength+5);
+		char* buff = (char*)realloc(buff,nLength+5);
 		memset(buff,0,nLength+5);
 		GetLogicalDriveStrings(nLength+5,(LPSTR)buff);
 		
 	}
 	cString str;
 	int i =0;
-	while(buff[i] != 0)
+	while(i < nLength)
 	{
-		buff[2] = 0;
-		str = buff;
+		buff[i+2] = 0;
+		str = &buff[i];
 		switch (GetDriveType((LPSTR)str.GetChar()))
 		{
 		case DRIVE_FIXED:
@@ -74,7 +74,7 @@ cHash* cRecursiveScanner::GetDrives()
 				DriveHash->AddItem(str,"Unknown");
 				break;
 		}
-		buff+=4;
+		i+=4;
 	}
 	free(buff);
 	return DriveHash;
@@ -86,7 +86,7 @@ void cRecursiveScanner::Scan(cString DirectoryName)
 	DWORD Length = 0;
 	if (Length = ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH) > MAX_PATH)
 	{
-		char* buff = (char*)malloc(Length);
+		char* buff = (char*)realloc(buff,Length);
 		memset(buff,0,Length);
 		ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH);
 	}
@@ -158,7 +158,80 @@ void cRecursiveScanner::FindFiles(cString wrkdir)
 	temp = "";
 	Level--;
 }
-
+cString cRecursiveScanner::ExpandPath(cString Filename)
+{
+	char* buff = (char*)malloc(MAX_PATH);
+	memset(buff,0,MAX_PATH);
+	DWORD Length = 0;
+	if (Length = ExpandEnvironmentStrings(Filename,buff,MAX_PATH) > MAX_PATH)
+	{
+		char* buff = (char*)realloc(buff,Length);
+		memset(buff,0,Length);
+		ExpandEnvironmentStrings(Filename,buff,MAX_PATH);
+	}
+	Filename = buff;
+	free(buff);
+	return Filename;
+}
+cHash* cRecursiveScanner::GetinPath(cString DirectoryName)
+{
+	char* buff = (char*)malloc(MAX_PATH);
+	memset(buff,0,MAX_PATH);
+	DWORD Length = 0;
+	if (Length = ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH) > MAX_PATH)
+	{
+		char* buff = (char*)realloc(buff,Length);
+		memset(buff,0,Length);
+		ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH);
+	}
+	DirectoryName = buff;
+	free(buff);
+	cString temp = DirectoryName + "\\" + "*";
+    HANDLE fHandle = FindFirstFile( temp, &file_data );
+	cHash* Files = new cHash();
+    if( fHandle == INVALID_HANDLE_VALUE )
+    {
+         return Files;
+    }
+    else 
+    { 
+		if( file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY &&
+                    strcmp(file_data.cFileName, ".") != 0 && 
+                    strcmp(file_data.cFileName, "..") != 0 )
+                
+		{		
+			Files->AddItem("DIRECTORY",file_data.cFileName);
+		}
+		else 
+		{
+			
+			if	(strcmp(file_data.cFileName, ".") != 0 && 
+				strcmp(file_data.cFileName, "..") != 0)
+			{
+				Files->AddItem("FILE",file_data.cFileName);
+			}
+		}
+        while( FindNextFile( fHandle, &file_data ) ) 
+        {
+                if( file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY &&
+                    strcmp(file_data.cFileName, ".") != 0 && 
+                    strcmp(file_data.cFileName, "..") != 0 )
+                {
+						Files->AddItem("DIRECTORY",file_data.cFileName);
+                }
+                else 
+				{
+					if	(strcmp(file_data.cFileName, ".") != 0 && 
+						 strcmp(file_data.cFileName, "..") != 0)
+					{
+						Files->AddItem("FILE",file_data.cFileName);
+					}
+				}
+        }
+    }
+	CloseHandle(fHandle);
+	return Files;
+}
 
 bool cRecursiveScanner::DirectoryCallback(cString DirName,cString FullName,int Level)
 {
