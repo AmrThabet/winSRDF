@@ -26,9 +26,9 @@
 using namespace std;
 using namespace Security::Elements::String;
 using namespace Security::Targets;
-using namespace Security::Libraries::Malware::OS::Win32::Enumeration;
+using namespace Security::Libraries::Malware::Enumeration;
 using namespace Security::Targets::Memory;
-using namespace Security::Libraries::Malware::OS::Win32::Static;
+using namespace Security::Libraries::Malware::Static;
 int callback(RULE* rule, void* data);
 
 TAG* specified_tags_list = NULL;
@@ -99,7 +99,7 @@ cList* cYaraScanner::Scan(cProcess* Process)
 }
 
 //strings = {XX XX XX XX} or *SFEGEGE*
-char* cYaraScanner::CreatRule(cString name,cList strings,cString condition)
+char* cYaraScanner::CreateRule(cString name,cList strings,cString condition)
 {
 
 //"rule silent_banker : banker{ strings:$a = {6A 40}$b={8D 4D}$c=\"geb\"condition:$a or $b or $c}
@@ -139,7 +139,7 @@ char* cYaraScanner::CreatRule(cString name,cList strings,cString condition)
 
 }
 
-char* cYaraScanner::CreatRule(cString name,cList strings,int condition)
+char* cYaraScanner::CreateRule(cString name,cList strings,int condition)
 {
 	cString conditions;
 
@@ -182,15 +182,9 @@ char id[2]={'a',0};
 }
 
 //For searching for bytes ... write {XX XX XX XX} to search .. although .. it will search for it as a string
-char* cYaraScanner::CreatRule(cString name,cString wildcard,int condition)
+char* cYaraScanner::CreateRule(cString name,cString wildcard)
 {
-	cString conditions;
-	if(condition==RULE_ALL_OF_THEM)
-		conditions=" all of them";
-	else
-		conditions=" 1 of them";
-
-
+	cString conditions = " all of them";
 	char id[2]={'a',0};
 	
 	cString SStrings="";

@@ -23,7 +23,7 @@
 #include <iostream>
 
 using namespace std;
-using namespace Security::Libraries::Malware::OS::Win32::Dynamic;
+using namespace Security::Libraries::Malware::Dynamic;
 using namespace Security::Targets;
 using namespace Security::Targets::Files;
 using namespace Security::Targets::Memory;

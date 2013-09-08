@@ -37,7 +37,7 @@ using namespace std;
 
 //PokasAsm
 //---------
-class DLLIMPORT Security::Libraries::Malware::Assembly::x86::CPokasAsm
+class DLLIMPORT Security::Libraries::Malware::Static::CPokasAsm
 {
 	DWORD PokasAsmObj;
 	System*  m_objSystem;
@@ -75,7 +75,7 @@ struct DIRTYPAGES_STRUCT         //the changes in the memory during the emulatio
        DWORD Flags;
 }; 
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Dynamic::CPokasEmu
+class DLLIMPORT Security::Libraries::Malware::Dynamic::CPokasEmu
 {
 	System*  m_objSystem;
      int     nSystemObjUses;
@@ -118,7 +118,7 @@ public:
 #endif 
 
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Enumeration::cRecursiveScanner
+class DLLIMPORT Security::Libraries::Malware::Enumeration::cRecursiveScanner
 {
 	DWORD Level;
 	WIN32_FIND_DATA file_data;
@@ -136,7 +136,7 @@ public:
 	virtual void FileCallback(cString Filename,cString FullName,int Level);
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Enumeration::cProcessScanner
+class DLLIMPORT Security::Libraries::Malware::Enumeration::cProcessScanner
 {
 	bool isSuccess;
 public:
@@ -193,7 +193,7 @@ struct DBG_MEMORY_BREAKPOINT
 	WORD wReserved;
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Dynamic::cDebugger
+class DLLIMPORT Security::Libraries::Malware::Dynamic::cDebugger
 {
 protected:
 	Security::Storage::Files::cLog* Log;
@@ -251,7 +251,7 @@ public:
 	virtual void ProcessExitNotifyRoutine(){};
 };
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Static::SSDeep
+class DLLIMPORT Security::Libraries::Malware::Static::SSDeep
 {
 	int count;
 public:
@@ -265,7 +265,7 @@ public:
 
 
 #define APIHOOK_BYTES_SIZE	6
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Behavioral::cAPIHook
+class DLLIMPORT Security::Libraries::Malware::Behavioral::cAPIHook
 {
 	bool Hooked;
 	char oldBytes[APIHOOK_BYTES_SIZE]; 

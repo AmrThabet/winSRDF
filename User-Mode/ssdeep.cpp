@@ -5,7 +5,7 @@
 #include "SRDF.h"
 #include <iostream>
 using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Static;
+using namespace Security::Libraries::Malware::Static;
 
 
 SSDeep::SSDeep(void)

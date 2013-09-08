@@ -228,8 +228,8 @@ long cAndroidFile::Decompress()
 		{
 			nResourceFiles++;
 			ResourceFiles = (UCHAR**)realloc(ResourceFiles, nResourceFiles * sizeof(UCHAR*));
-			ResourceFiles[nResourceFiles-1] = new UCHAR[str.length()];
-			memset(ResourceFiles[nResourceFiles-1], 0, str.length());
+			ResourceFiles[nResourceFiles-1] = new UCHAR[str.length()+1];
+			memset(ResourceFiles[nResourceFiles-1], 0, str.length()+1);
 			int len = str.length();
 			memcpy_s(ResourceFiles[nResourceFiles-1], str.length(), &ArchieveEntry.name, str.length());
 		}

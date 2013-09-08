@@ -43,7 +43,7 @@ class Thread;
 #include "tib.h"
 #include "pe.h"
 #include <iostream>
-#include <string.h>
+
 
 //FLAGS
 

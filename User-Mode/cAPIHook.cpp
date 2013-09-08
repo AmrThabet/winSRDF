@@ -6,7 +6,7 @@
 
 
 using namespace std;
-using namespace Security::Libraries::Malware::OS::Win32::Behavioral;
+using namespace Security::Libraries::Malware::Behavioral;
 
 cAPIHook::cAPIHook( DWORD originalAddr, DWORD hookFunc)
 {

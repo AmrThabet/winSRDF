@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "APIHooking", "APIHooking.vcxproj", "{497D85F9-98B3-4891-B06D-FB57DE250638}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1} = {FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SRDF", "..\..\..\..\SRDF.vcxproj", "{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+		Single|Win32 = Single|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{497D85F9-98B3-4891-B06D-FB57DE250638}.Debug|Win32.ActiveCfg = Debug|Win32
+		{497D85F9-98B3-4891-B06D-FB57DE250638}.Debug|Win32.Build.0 = Debug|Win32
+		{497D85F9-98B3-4891-B06D-FB57DE250638}.Release|Win32.ActiveCfg = Release|Win32
+		{497D85F9-98B3-4891-B06D-FB57DE250638}.Release|Win32.Build.0 = Release|Win32
+		{497D85F9-98B3-4891-B06D-FB57DE250638}.Single|Win32.ActiveCfg = Release|Win32
+		{497D85F9-98B3-4891-B06D-FB57DE250638}.Single|Win32.Build.0 = Release|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Win32.Build.0 = Debug|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Release|Win32.ActiveCfg = Release|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Release|Win32.Build.0 = Release|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Single|Win32.ActiveCfg = Single|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Single|Win32.Build.0 = Single|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

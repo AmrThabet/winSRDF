@@ -269,8 +269,6 @@ public:
 	cELFFile(char* buffer,DWORD size);
 	~cELFFile();
 	static bool identify(cFile* File);
-	DWORD RVAToOffset(DWORD RVA);
-	DWORD OffsetToRVA(DWORD RawOffset);
 
 };
 

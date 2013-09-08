@@ -25,7 +25,7 @@
 #include <iostream>
 
 
-using namespace Security::Libraries::Malware::OS::Win32::Dynamic;
+using namespace Security::Libraries::Malware::Dynamic;
 using namespace Security::Targets::Files;
 using namespace std;
  #ifdef USE_POKAS_EMULATOR

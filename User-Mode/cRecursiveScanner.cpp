@@ -24,7 +24,7 @@
 
 using namespace std;
 using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Enumeration;
+using namespace Security::Libraries::Malware::Enumeration;
 
 cRecursiveScanner::cRecursiveScanner()
 {
@@ -45,7 +45,7 @@ cHash* cRecursiveScanner::GetDrives()
 	DWORD nLength = GetLogicalDriveStrings(200,(LPSTR)buff);
 	if (nLength > 195)
 	{
-		char* buff = (char*)realloc(buff,nLength+5);
+		buff = (char*)realloc(buff,nLength+5);
 		memset(buff,0,nLength+5);
 		GetLogicalDriveStrings(nLength+5,(LPSTR)buff);
 		
@@ -86,7 +86,7 @@ void cRecursiveScanner::Scan(cString DirectoryName)
 	DWORD Length = 0;
 	if (Length = ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH) > MAX_PATH)
 	{
-		char* buff = (char*)realloc(buff,Length);
+		buff = (char*)realloc(buff,Length);
 		memset(buff,0,Length);
 		ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH);
 	}
@@ -165,7 +165,7 @@ cString cRecursiveScanner::ExpandPath(cString Filename)
 	DWORD Length = 0;
 	if (Length = ExpandEnvironmentStrings(Filename,buff,MAX_PATH) > MAX_PATH)
 	{
-		char* buff = (char*)realloc(buff,Length);
+		buff = (char*)realloc(buff,Length);
 		memset(buff,0,Length);
 		ExpandEnvironmentStrings(Filename,buff,MAX_PATH);
 	}
@@ -180,7 +180,7 @@ cHash* cRecursiveScanner::GetinPath(cString DirectoryName)
 	DWORD Length = 0;
 	if (Length = ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH) > MAX_PATH)
 	{
-		char* buff = (char*)realloc(buff,Length);
+		buff = (char*)realloc(buff,Length);
 		memset(buff,0,Length);
 		ExpandEnvironmentStrings(DirectoryName,buff,MAX_PATH);
 	}

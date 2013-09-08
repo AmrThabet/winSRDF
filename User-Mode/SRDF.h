@@ -130,37 +130,25 @@ namespace Security
 	{
 		namespace Malware
 		{
-			namespace OS
+			namespace Enumeration
 			{
-				namespace Win32
-				{
-					namespace Enumeration
-					{
-						class cRecursiveScanner;
-						class cProcessScanner;
-					}
-					namespace Static
-					{
-						class cYaraScanner;
-						class SSDeep;
-					}
-					namespace Dynamic
-					{
-						class CPokasEmu;
-						class cDebugger;
-					}
-					namespace Behavioral
-					{
-						class cAPIHook;
-					}
-				}
+				class cRecursiveScanner;
+				class cProcessScanner;
 			}
-			namespace Assembly
+			namespace Static
 			{
-				namespace x86
-				{
-					class CPokasAsm;
-				}
+				class cYaraScanner;
+				class SSDeep;
+				class CPokasAsm;
+			}
+			namespace Dynamic
+			{
+				class CPokasEmu;
+				class cDebugger;
+			}
+			namespace Behavioral
+			{
+				class cAPIHook;
 			}
 		}
 		namespace Network

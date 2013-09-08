@@ -21,7 +21,7 @@
 #include "stdafx.h"
 #include "SRDF.h"
 #include <iostream>
-using namespace Security::Libraries::Malware::Assembly::x86;
+using namespace Security::Libraries::Malware::Static;
 using namespace std;
 
 #ifdef USE_POKAS_EMULATOR
@@ -56,10 +56,11 @@ DISASM_INSTRUCTION* CPokasAsm::Disassemble(char* Buffer,DISASM_INSTRUCTION* ins)
     ins = m_objSystem->disasm(ins, Buffer);
     return ins;
 };
+
 char* CPokasAsm::Assemble(char* InstructionString, DWORD &Length)
 {
-      string s = InstructionString;
-      bytes* Data = m_objSystem->assembl(s);
+      std::string s = InstructionString;
+      bytes* Data = m_objSystem->assembl(InstructionString);
       Length = Data->length;
       return (char*)Data->s;
 }

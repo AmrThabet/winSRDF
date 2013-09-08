@@ -49,7 +49,6 @@ bool cPDFFile::identify(cFile* File)
 	if (File->IsFound() == false) return false;
 	if (File->BaseAddress == NULL) return false;
 	if(strcmp((char*)File->BaseAddress,"%PDF") < 0) return false;
-	cout << "PDF File\n";
 	return true;
 }
 bool cPDFFile::ParsePDF()
@@ -166,6 +165,7 @@ bool cPDFFile::get_objects_pdf()
         objects = obj;
         return true;
 	}
+	return false;
 }
 
 
@@ -304,8 +304,7 @@ bool cPDFFile::get_xref_table()
 				xref_obj.end = atoi(line.c_str());
 
 				xref_obj.xref_table.resize(xref_obj.end - xref_obj.start);
-
-				for(int i= xref_obj.start; i< xref_obj.end+1; i++)
+				for(int i= xref_obj.start; i< xref_obj.end; i++)
 				{
 					Addr = GetValue((char*)Addr,line);
 					xref_obj.xref_table[i].offset = atoi(line.c_str());

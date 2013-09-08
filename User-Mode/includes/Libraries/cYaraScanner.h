@@ -36,6 +36,7 @@ typedef struct _MSTRING
    
 
 }MSTRING;
+
 typedef struct _YARA_RESULT
 { 
 	char*           RuleIdentifier;
@@ -44,9 +45,9 @@ typedef struct _YARA_RESULT
 } YARA_RESULT;
 
 using namespace Security::Elements::String;
-using namespace Security::Libraries::Malware::OS::Win32::Static;
+using namespace Security::Libraries::Malware::Static;
 
-class DLLIMPORT Security::Libraries::Malware::OS::Win32::Static::cYaraScanner
+class DLLIMPORT Security::Libraries::Malware::Static::cYaraScanner
 {
 	YARA_CONTEXT* YContext;
 	
@@ -59,9 +60,9 @@ public:
 	cList* Scan(unsigned char* buffer,DWORD buffer_size);
 	cList* Scan(Security::Targets::Memory::cProcess* Process);
 	int ScannerCallback(RULE* rule);
-	char* CreatRule(cString name,cList strings,cString condition);
-	char* CreatRule(cString name,cList strings,int condition);
-	char* CreatRule(cString name,cString strings,int condition);
+	char* CreateRule(cString name,cList strings,cString condition);
+	char* CreateRule(cString name,cList strings,int condition);
+	char* CreateRule(cString name,cString strings);
 	char* GetLastError();
 	~cYaraScanner();
 };

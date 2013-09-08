@@ -63,7 +63,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level1</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -116,6 +116,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cAndroidFile.cpp" />
     <ClCompile Include="cAPIHook.cpp" />
     <ClCompile Include="cApp.cpp" />
     <ClCompile Include="cCode.cpp" />
@@ -167,6 +168,7 @@
     <ClCompile Include="SSDeep\edit_dist.cpp" />
     <ClCompile Include="SSDeep\find-file-size.cpp" />
     <ClCompile Include="SSDeep\fuzzy.cpp" />
+    <ClCompile Include="unzip.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Connections\Connections.h" />
@@ -179,6 +181,7 @@
     <ClInclude Include="includes\Elements\pe.h" />
     <ClInclude Include="includes\Connections\Socket.h" />
     <ClInclude Include="includes\Storage\sqlite3.h" />
+    <ClInclude Include="includes\Targets\unzip.h" />
     <ClInclude Include="SRDF.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="includes\Storage\Storage.h" />

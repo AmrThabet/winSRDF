@@ -123,10 +123,11 @@ void cELFFile::initDynamics()
 		}
 	}
 
-	DynamicTable = (Elf32_Dyn*)malloc(SHeader[DynArray].sh_size);
+	//DynamicTable = (Elf32_Dyn*)malloc(SHeader[DynArray].sh_size);
 	DynamicTable = (Elf32_Dyn*)(BaseAddress + SHeader[DynArray].sh_offset);
 	nDynamics = (SHeader[DynArray].sh_size/sizeof(Elf32_Dyn));
 	Dynamics = (DYNAMICS*)malloc(sizeof(DYNAMICS) * nDynamics);
+	memset (Dynamics,0,sizeof(DYNAMICS) * nDynamics);
 
 	for (unsigned int i=0; i < nDynamics; i++)
 	{
