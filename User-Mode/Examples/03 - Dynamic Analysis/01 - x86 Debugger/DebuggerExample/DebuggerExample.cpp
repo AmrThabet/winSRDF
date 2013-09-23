@@ -108,6 +108,12 @@ int cDebuggerApp::Run()
 {
 	//Get the commandline argument .. default is the normal argument for no command 
 	//like Debug.exe xxx.exe
+	if (Request.GetValue("default").GetLength() == 0)
+	{
+		cout << Intro << "\n\n";
+		cout << "Usage: DebuggerExample <Filename>" << "\n";
+		return 0;
+	}
 	Debugger = new cDebugger(Request.GetValue("default"));
 
 

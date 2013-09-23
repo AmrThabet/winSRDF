@@ -85,7 +85,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>D:\Personal\C\SRDF\winSRDF\User-Mode\Release\SRDF.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Release\SRDF.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
