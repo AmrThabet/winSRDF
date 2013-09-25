@@ -18,111 +18,57 @@
  *
  */
 
-#include "StdAfx.h"
-#include <iostream>
+#include "stdafx.h"
 #include "SRDF.h"
 
-using namespace Security::Targets::Files;
 using namespace std;
+using namespace Security::Targets::Packets;
+using namespace Security::Targets::Files;
 
-cPcapFile::cPcapFile(char* szFilename) : cFile(szFilename)
+cPcapFile::cPcapFile(char* szFilename, UINT Options) : cFile(szFilename)
 {
-	FileLoaded = ProcessPCAP();
+	Traffic = new cTraffic;
+	FileLoaded = ProcessPCAP(Options);
 }
-bool cPcapFile::identify(cFile* File)
-{
-	if (File->BaseAddress == 0 || File->FileLength == 0) return false;
-	PCAP_GENERAL_HEADER* PCAP_General_Header = (PCAP_GENERAL_HEADER*)File->BaseAddress;
-	if (PCAP_General_Header->magic_number != 0xA1B2C3D4) return false;
-	return true;
-}
-BOOL cPcapFile::ProcessPCAP()
+
+BOOL cPcapFile::ProcessPCAP(UINT Options)
 {
 	nPackets = 0;
 	if (BaseAddress == 0 || FileLength == 0) return false;
 	PCAP_General_Header = (PCAP_GENERAL_HEADER*)BaseAddress;
-	if (PCAP_General_Header->magic_number != 0xA1B2C3D4) return false;
 	UINT psize = 0;
 
 	PCAP_Packet_Header = (PCAP_PACKET_HEADER*)(BaseAddress + sizeof(PCAP_GENERAL_HEADER));
 	psize = psize + PCAP_Packet_Header->incl_len;
 	
+	/* parse each packet*/
+	UINT fsize = 0;
+	UINT lsize = 0;
+
 	/* getting number of packets inside file */
 	for(UINT i=1; PCAP_Packet_Header->incl_len !=0 ;i++)
 	{
 		PCAP_Packet_Header = (PCAP_PACKET_HEADER*)(BaseAddress + sizeof(PCAP_GENERAL_HEADER) + (sizeof(PCAP_PACKET_HEADER) * i) + psize);
 		psize = psize + PCAP_Packet_Header->incl_len;
-		nPackets = nPackets + 1;
-	}
+		nPackets++;
 
-	/* parse each packet*/
-	UINT fsize = 0;
-	UINT lsize = 0;
 
-	Packets = (cPacket**)malloc(sizeof(cPacket*) * nPackets);
-	for (UINT i=0; i < nPackets; i++)
-	{
-		DWORD PBaseAddress = (BaseAddress + sizeof(PCAP_GENERAL_HEADER) + (sizeof(PCAP_PACKET_HEADER)*(i+1)) + fsize);
-		PCAP_Packet_Header = (PCAP_PACKET_HEADER*)(BaseAddress + sizeof(PCAP_GENERAL_HEADER) + (sizeof(PCAP_PACKET_HEADER)*(i)) + fsize);
+		PBaseAddress = (BaseAddress + sizeof(PCAP_GENERAL_HEADER) + (sizeof(PCAP_PACKET_HEADER)*(nPackets)) + fsize);
+		PCAP_Packet_Header = (PCAP_PACKET_HEADER*)(BaseAddress + sizeof(PCAP_GENERAL_HEADER) + (sizeof(PCAP_PACKET_HEADER)*(nPackets-1)) + fsize);
 		
 		fsize = fsize + PCAP_Packet_Header->incl_len;
-		UINT PSize = PCAP_Packet_Header->incl_len;
+		PSize = PCAP_Packet_Header->incl_len;
 		
-		Packet = new cPacket((UCHAR*)PBaseAddress,PSize);
-		memcpy((void**)&Packets[i],(void**)&Packet,sizeof(cPacket*));
+		Packet = new cPacket((UCHAR*)PBaseAddress,PSize, PCAP_Packet_Header->ts_sec + PCAP_Packet_Header->ts_usec/1000000, 
+			PCAP_General_Header->network, (Options & CPCAP_OPTIONS_MALFORM_CHECK) ? CPACKET_OPTIONS_MALFORM_CHECK : CPACKET_OPTIONS_NONE);
+
+		Traffic->AddPacket(Packet, Packet->Timestamp);
 	}
 
-	GetStreams();
 	return true;
 };
 
-cPcapFile::~cPcapFile(void)
+cPcapFile::~cPcapFile()
 {
-
-};
-
-void cPcapFile::GetStreams()
-{
-	nConStreams = 0;
-	ConStreams = (cConStream**)malloc( sizeof(cConStream*) * nConStreams);
-
-	for (UINT i=0; i<nPackets; i++)
-	{
-		if (nConStreams > 0)
-		{
-			for (UINT j=0; j<nConStreams; j++)
-			{
-				if (ConStreams[j]->isIPPacket && Packets[i]->isIPPacket)
-				{
-					if (ConStreams[j]->AddPacket(Packets[i]))
-					{
-						break;
-					}
-					else if (j == (nConStreams - 1))
-					{
-						cConStream* tmp1 = new cConStream();
-						tmp1->AddPacket(Packets[i]);
-
-						nConStreams++;
-						ConStreams = (cConStream**)realloc((void*)ConStreams, nConStreams * sizeof(cConStream*));
-						memcpy((void**)&ConStreams[nConStreams-1],(void**)&tmp1, sizeof(cConStream*));
-						break;
-					}
-				}
-			}
-		}
-		else
-		{
-			if (Packets[i]->isIPPacket && (Packets[i]->isTCPPacket || Packets[i]->isUDPPacket))
-			{
-				//allocate new stream
-				cConStream* tmp2 = new cConStream();
-				tmp2->AddPacket(Packets[i]);
-
-				nConStreams++;
-				ConStreams = (cConStream**)realloc((void*)ConStreams, nConStreams * sizeof(cConStream*));
-				memcpy((void**)&ConStreams[nConStreams-1],(void**)&tmp2, sizeof(cConStream*));
-			}
-		}
-	}
+	delete Traffic;
 };

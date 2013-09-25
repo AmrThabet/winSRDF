@@ -21,6 +21,7 @@
 #include "cThread.h"
 #include "pe.h"
 #include "elf.h"
+#include <map>
 #include "hPackets.h"
 #include <regex>
 
@@ -62,6 +63,7 @@ public:
 	int OpenFile(char* szFilename);
 	BOOL IsFound();
 	~cFile();
+	BOOL		IsReassembled;
 };
 
 //--------------------------------------------------------------
@@ -458,21 +460,24 @@ public:
 #define PACKET_IP_CHECKSUM		0x1
 #define PACKET_TCP_CHECKSUM		0x2
 #define PACKET_UDP_CHECKSUM		0x3
-#define PACKET_ICMP_CHECKSUM		0x4
+#define PACKET_ICMP_CHECKSUM	0x4
 #define PACKET_IP_TTL			0x5
+
+#define CPACKET_OPTIONS_NONE	0x0000
+#define CPACKET_OPTIONS_MALFORM_CHECK	0x0001
 
 class DLLIMPORT Security::Targets::Packets::cPacket
 {
-	void CheckIfMalformed();
 	UINT sHeader;
 	UINT eType;
 	void ResetIs();
 	USHORT GlobalChecksum(USHORT *buffer, UINT length);
-	BOOL ProcessPacket();
+	BOOL ProcessPacket(UINT network, UINT Options);
+	Security::Targets::Files::cFile* File;
 
 public:
-	cPacket(string filename);
-	cPacket(UCHAR* buffer, UINT size);
+	cPacket(string filename, time_t timestamp = NULL ,UINT network = LINKTYPE_ETHERNET, UINT Options = CPACKET_OPTIONS_NONE);
+	cPacket(UCHAR* buffer, UINT size, time_t timestamp = NULL ,UINT network = LINKTYPE_ETHERNET, UINT Options = CPACKET_OPTIONS_NONE);
 	~cPacket();
 
 	BOOL FixIPChecksum();
@@ -480,18 +485,23 @@ public:
 	BOOL FixUDPChecksum();
 	BOOL FixICMPChecksum();
 
+	time_t Timestamp;
+
 	DWORD BaseAddress;
 	UINT Size;
 
-	PETHER_HEADER*	EthernetHeader;
-	PIP_HEADER*		IPHeader;
-	PTCP_HEADER*	TCPHeader;
-	PARP_HEADER*	ARPHeader;
-	PUDP_HEADER*	UDPHeader;
-	PICMP_HEADER*	ICMPHeader;
-	PIGMP_HEADER*	IGMPHeader;
+	SLL_HEADER* SLLHeader;
+	ETHER_HEADER*	EthernetHeader;
+	IP_HEADER*		IPHeader;
+	TCP_HEADER*	TCPHeader;
+	ARP_HEADER*	ARPHeader;
+	UDP_HEADER*	UDPHeader;
+	ICMP_HEADER*	ICMPHeader;
+	IGMP_HEADER*	IGMPHeader;
 
+	UCHAR* RawPacket;
 	UINT PacketSize;
+
 	BOOL isParsed;
 	WORD PacketError;
 
@@ -502,6 +512,11 @@ public:
 	BOOL isARPPacket;
 	BOOL isIPPacket;
 	BOOL isMalformed;
+	BOOL isIPv6Packet;
+	BOOL isUnknownPacket;
+
+	BOOL hasSLLHeader;
+	BOOL hasEtherHeader;
 
 	UCHAR* TCPData;
 	UINT TCPDataSize;
@@ -513,34 +528,290 @@ public:
 
 	UCHAR* ICMPData;
 	UINT ICMPDataSize;
+
+	void CheckIfMalformed();
 };
 
-
-class DLLIMPORT Security::Targets::Packets::cConStream
+class DLLIMPORT Security::Targets::Packets::cConnection
 {
-	BOOL	AnalyzePackets();
+protected:
+	virtual BOOL AnalyzePackets();
+	virtual BOOL CheckPacket(cPacket* Packet);
 public:
-	cConStream();
-	~cConStream();
-
-	UINT	ClientIP;
-	UINT	ServerIP; 
-	USHORT	ServerPort;
-	USHORT	ClientPort;
+	cConnection();
+	virtual ~cConnection();
 
 	cPacket**	Packets;
 	UINT		nPackets;
-	UINT		nActivePackets;
 
-	BOOL	AddPacket(cPacket* packet);
-	BOOL	ClearActivePackets(UINT keeped);
+	virtual BOOL	AddPacket(cPacket* Packet);
+	BOOL	ClearActivePackets(UINT NumberToBeKeeped);
 
-	BOOL	isTCPPacket;
-	BOOL	isUDPPacket;
-	BOOL	isIPPacket;
+	UCHAR	ClientMAC[ETHER_ADDR_LEN];
+	UCHAR	ServerMAC[ETHER_ADDR_LEN];
+	USHORT	Protocol;
 
+	BOOL isIPConnection;
 };
 
+class DLLIMPORT Security::Targets::Packets::cConStream : public Security::Targets::Packets::cConnection
+{
+public:
+	cConStream();
+	virtual ~cConStream();
+
+	UINT	ClientIP;
+	UINT	ServerIP; 
+
+	BOOL isTCPConnection;
+	BOOL isUDPConnection;
+
+	BOOL AddPacket(cPacket* Packet);
+	static BOOL Identify(cPacket* Packet);
+};
+
+class DLLIMPORT Security::Targets::Packets::cARPStream : public Security::Targets::Packets::cConnection
+{
+	void AnalyzeProtocol();
+public:
+	cARPStream();
+	virtual ~cARPStream();
+
+	BOOL AddPacket(cPacket* Packet);
+	static BOOL Identify(cPacket* Packet);
+
+	UCHAR RequesterMAC[ETHER_ADDR_LEN];
+	UINT RequesterIP;
+
+	UCHAR RequestedMAC[ETHER_ADDR_LEN];
+	BOOL GotReply;
+	UINT RequestedMACIP;
+
+	UCHAR ReplierMAC[ETHER_ADDR_LEN];
+};
+
+class DLLIMPORT Security::Targets::Packets::cUDPStream : public Security::Targets::Packets::cConStream
+{
+public:
+	cUDPStream(void);
+	virtual ~cUDPStream(void);
+
+	USHORT ClientPort;
+	USHORT ServerPort;
+
+	BOOL AddPacket(cPacket* Packet);
+	static BOOL Identify(cPacket* Packet);
+};
+
+
+class DLLIMPORT Security::Targets::Packets::cDNSStream : public Security::Targets::Packets::cUDPStream
+{
+private:
+	DNS_HEADER* DNSHeader;
+	QUERY* DNSQuery;
+	RES_RECORD* QueryResponse;
+	UCHAR* ResponseBase;
+
+	UINT NameSize;
+	UINT current,offset, step, i;
+	void AnalyzeProtocol();
+public:
+	static BOOL Identify(cPacket* Packet);
+
+	UCHAR* RequestedDomain;
+
+	UINT* ResolvedIPs;
+	UINT nResolvedIPs;
+
+	UINT Requester;
+	BOOL DomainIsFound;
+
+	cDNSStream();
+	virtual ~cDNSStream();
+
+	BOOL AddPacket(cPacket* Packet);
+};
+
+class DLLIMPORT Security::Targets::Packets::cTCPStream : public Security::Targets::Packets::cConStream
+{
+	virtual BOOL CheckPacket(cPacket* Packet);
+	virtual void AnalyzeProtocol();
+
+public:
+	cTCPStream();
+	virtual ~cTCPStream();
+
+	USHORT ClientPort;
+	USHORT ServerPort;
+
+	BOOL AddPacket(cPacket* Packet);
+	static BOOL Identify(cPacket* Packet);
+};
+
+
+struct REQUEST
+{
+	UCHAR*	RequestType;
+	cString*	Address;
+	cHash*	Arguments;
+	UINT	ReplyNumber;
+};
+
+class DLLIMPORT Security::Targets::Packets::cHTTPStream : public Security::Targets::Packets::cTCPStream
+{
+	static BOOL CheckType(UCHAR* buffer);
+	void AnalyzeProtocol();
+	BOOL CheckPacket(cPacket* Packet);	
+
+	CHAR* RegxData;	
+	UINT RegxDataSize;
+	cmatch RegxResult;
+
+	cString* Cookie;
+	CHAR* ArgumentBuffer;
+	char* main;
+	char* buffer; 
+	UINT pos;
+	UINT content_length;
+
+	cmatch TmpRegxResult;
+	UINT TmpContentLength;
+	UINT TmpHTTPBodySize;
+
+	Security::Targets::Files::cFile* ExtFile;
+	UINT length, i;
+
+	cTCPReassembler* Reassembler;
+	void ExtractFile(cPacket* Packet);
+public:
+
+
+
+	static BOOL Identify(cPacket* Packet);
+	static UCHAR* GetHttpHeader(cPacket* Packet, UINT *EndPos);
+	BOOL NeedsReassembly(cPacket* Packet, UINT* ContentLength);
+
+	cHTTPStream();
+	virtual ~cHTTPStream();
+
+	cString** Cookies;
+	UINT nCookies;
+
+	cString* UserAgent;
+	cString* Referer;
+	cString* ServerType;
+
+	Security::Targets::Files::cFile** Files;
+	UINT nFiles;
+
+	REQUEST* Requests;
+	UINT nRequests;
+};
+
+class DLLIMPORT Security::Targets::Packets::cICMPStream : public Security::Targets::Packets::cConnection
+{
+	void AnalyzeProtocol();
+public:
+	cICMPStream();
+	virtual ~cICMPStream();
+
+	BOOL AddPacket(cPacket* Packet);
+	static BOOL Identify(cPacket* Packet);
+
+	UINT	ClientIP;
+	UINT	ServerIP; 
+
+	UINT PingRequester ;
+	UINT PingReceiver;
+
+	UINT nPingRequests, nPingResponses;
+
+	UCHAR* PingReceivedData;
+	UINT PingReceivedDataSize;
+	UCHAR* PingSentData;
+	UINT PingSentDataSize;
+};
+
+
+
+struct NETWORK_ADAPTERS_SEND
+{
+	CHAR Name[200];
+	CHAR ID[200];
+};
+
+class DLLIMPORT Security::Targets::Packets::cWinpcapSend
+{
+	#define LINE_LEN 16
+	pcap_if_t *alldevs, *d;
+	pcap_t *fp;
+	CHAR errbuf[PCAP_ERRBUF_SIZE];
+
+	BOOL InitializeAdapters();
+
+public:
+	BOOL isReady;
+
+	NETWORK_ADAPTERS_SEND *Adapters;
+	UINT nAdapters;
+
+	BOOL SendPacket(UINT AdapterIndex, cPacket* Packet);
+
+	cWinpcapSend();
+	~cWinpcapSend();
+};
+
+#define GENERATE_TCP		1
+#define GENERATE_UDP		2
+#define GENERATE_ARP		3
+#define GENERATE_ICMP		4
+
+#define TCP_ACK				1
+#define TCP_SYN				2
+#define TCP_FIN				4
+#define TCP_RST				8
+#define TCP_PSH				16
+#define TCP_URG				32
+
+class DLLIMPORT Security::Targets::Packets::cPacketGen
+{
+	cPacket* Packet;
+
+	UCHAR src_mac_hex[6], dest_mac_hex[6];
+	UINT src_ip_hex, dest_ip_hex;
+	UCHAR data_offset;
+	USHORT total_length;
+	UCHAR PacketType;
+
+public:
+	cPacketGen(UINT type);
+	~cPacketGen();
+
+	UINT GeneratedPacketSize;
+	UCHAR* GeneratedPacket;
+
+	UINT IPToLong(const CHAR ip[]);
+
+	BOOL SetMACAddress(string src_mac, string dest_mac);
+	BOOL SetIPAddress(string src_ip, string dest_ip);
+	BOOL SetPorts(USHORT src_port, USHORT dest_port);
+
+	BOOL CustomizeTCP(UCHAR* tcp_options, UINT tcp_options_size, UCHAR* tcp_data, UINT tcp_data_size, USHORT tcp_flags);
+	BOOL CustomizeUDP(UCHAR* udp_data, UINT udp_data_size);
+	BOOL CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_data, UINT icmp_data_size);
+};
+
+
+
+
+
+
+
+
+
+
+#define CPCAP_OPTIONS_NONE				0x0000
+#define CPCAP_OPTIONS_MALFORM_CHECK		0x0001
 
 struct FOLLOW_STREAM
 {
@@ -558,19 +829,106 @@ class DLLIMPORT Security::Targets::Files::cPcapFile : public Security::Targets::
 	PCAP_GENERAL_HEADER* PCAP_General_Header;
 	PCAP_PACKET_HEADER* PCAP_Packet_Header;
 
-	BOOL ProcessPCAP();
 	cPacket* Packet;
+
+	BOOL ProcessPCAP(UINT Options);
 	void GetStreams();
+	
+	UINT PSize;
+	DWORD PBaseAddress;
+
 public:
+
 	UINT nPackets;
-	cPacket** Packets;
+
 	BOOL FileLoaded;
-	cPcapFile(char* szFilename);
-	~cPcapFile(void);
+
 	void DetectMalformedPackets();
-	UINT nConStreams;
-	static bool identify(cFile* File);
-	cConStream** ConStreams;
+
+	cTraffic *Traffic;
+	
+	cPcapFile(char* szFilename, UINT Options = CPCAP_OPTIONS_NONE);
+	~cPcapFile();
+};
+
+class DLLIMPORT Security::Targets::Packets::cTraffic
+{
+	cConnection* TmpConnection;
+public:
+	UINT nConnections;
+	cConnection** Connections;
+
+	BOOL AddPacket(cPacket* Packet, time_t TimeStamp);
+
+	cTraffic();
+	~cTraffic();
+};
+
+class DLLIMPORT Security::Targets::Packets::cTCPReassembler
+{
+	struct DATASTREAM
+	{
+		UCHAR* Pointer;
+		UINT Size;
+	}; 
+
+	map<UINT, DATASTREAM*>::iterator DataStreamIterator;
+	map<UINT, DATASTREAM*> DataStream;
+	UCHAR* Stream;
+	UINT PositionPointer;
+	DATASTREAM* DataStreamContainer;
+
+public:
+
+	BOOL AddPacket(cPacket* Packet);
+	BOOL isReassembled;
+	BOOL BelongsToStream(cPacket* Packet);
+
+	UCHAR* GetReassembledStream();
+
+	cTCPReassembler(cPacket* Packet, UINT TotalLength, UINT BodySize);
+	~cTCPReassembler();
+
+	cPacket* RefPacket;
+	UINT TotalSize, CurrentSize;
+
+	void Empty();
+	static BOOL Identify(cPacket* Packet, UINT AssumendDataSize);
+};
+
+struct NETWORK_ADAPTERS_CAPTURE
+{
+	CHAR Name[200];
+	CHAR ID[200];
+};
+
+class DLLIMPORT Security::Targets::Packets::cWinpcapCapture
+{
+
+	VOID AnalyzeTraffic();
+
+	#define LINE_LEN 16
+	pcap_if_t *alldevs, *d;
+	pcap_t *fp;
+	int res;
+	struct pcap_pkthdr * PacketHeader;
+	const u_char * PacketData;
+	CHAR errbuf[PCAP_ERRBUF_SIZE];
+
+	BOOL InitializeAdapters();
+public:
+	BOOL isReady;
+	BOOL CapturePackets(UINT AdapterIndex, UINT MaxNumOfPackets, const CHAR* Filter = NULL);
+
+	NETWORK_ADAPTERS_CAPTURE *Adapters;
+	UINT nAdapters;
+
+	UINT nCapturedPackets;
+	
+	cTraffic Traffic;
+
+	cWinpcapCapture();
+	~cWinpcapCapture();
 };
 
 

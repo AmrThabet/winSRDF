@@ -31,6 +31,7 @@ cFile::cFile(char* szFilename)
 	BaseAddress = NULL;
 	FILETIME ftCreation, ftLastaccess, ftLastwrite;
     SYSTEMTIME stCreation, stLastaccess, stLastwrite;
+	Filename = szFilename;
 
 	if (szFilename == NULL)return;
 	char* buff = (char*)malloc(MAX_PATH);
@@ -126,6 +127,7 @@ cFile::cFile(char* szFilename)
     }
 
     FileLength  = (DWORD) GetFileSize(hFile,NULL);
+	
 	IsFile = TRUE;
 	isFound = TRUE;
 	free(buff);

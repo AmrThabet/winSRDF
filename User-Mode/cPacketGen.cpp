@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2012-2013  Anwar Mohamed <anwarelmakrahy[at]gmail.com>
+ *  Copyright (C) 2013  Anwar Mohamed <anwarelmakrahy[at]gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,14 +18,18 @@
  *
  */
 
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SRDF.h"
+#include <algorithm>
+#include <ctime>
 
-using namespace Security::Libraries::Network::PacketGeneration;
+using namespace Security::Targets::Packets;
 
 cPacketGen::cPacketGen(UINT type)
 {
 	GeneratedPacketSize = 0;
+	GeneratedPacket = NULL;
+
 	if (type == GENERATE_TCP)
 	{
 		PacketType = GENERATE_TCP;
@@ -109,7 +113,7 @@ cPacketGen::cPacketGen(UINT type)
 	}
 
 	if (GeneratedPacketSize > 0)
-		Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+		Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 };
 
 BOOL cPacketGen::SetMACAddress(string src_mac, string dest_mac)
@@ -175,30 +179,30 @@ BOOL cPacketGen::CustomizeTCP(UCHAR* tcp_options, UINT tcp_options_size, UCHAR* 
 		if (tcp_options_size ==0)
 		{
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else if (tcp_options_size > 0)
 		{
 			total_length = ntohs((USHORT) (htons(Packet->IPHeader->TotalLength) + (tcp_options_size)));
 			memcpy(&Packet->IPHeader->TotalLength, &total_length, sizeof(USHORT));
 
-			data_offset = (tcp_options_size + sizeof(PTCP_HEADER)) / 4;
+			data_offset = (tcp_options_size + sizeof(TCP_HEADER)) / 4;
 			Packet->TCPHeader->DataOffset = data_offset;
 
-			GeneratedPacketSize = (sizeof(PETHER_HEADER) + (Packet->IPHeader->HeaderLength*4) + (Packet->TCPHeader->DataOffset*4));
+			GeneratedPacketSize = (sizeof(ETHER_HEADER) + (Packet->IPHeader->HeaderLength*4) + (Packet->TCPHeader->DataOffset*4));
 			GeneratedPacket = (UCHAR*)realloc(GeneratedPacket, GeneratedPacketSize);
 			memcpy(&GeneratedPacket[GeneratedPacketSize - tcp_options_size], tcp_options, tcp_options_size);
 			memset(&GeneratedPacket[GeneratedPacketSize - (4 - (options_size%4))], 0, 4 - (options_size%4));
 
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else return false;
 
 		if (tcp_data_size ==0)
 		{
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else if (tcp_data_size > 0)
 		{
@@ -210,7 +214,7 @@ BOOL cPacketGen::CustomizeTCP(UCHAR* tcp_options, UINT tcp_options_size, UCHAR* 
 			memcpy(&GeneratedPacket[GeneratedPacketSize - tcp_data_size], tcp_data ,tcp_data_size);
 
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else return false;
 
@@ -239,14 +243,14 @@ BOOL cPacketGen::CustomizeUDP(UCHAR* udp_data, UINT udp_data_size)
 		if (udp_data_size ==0)
 		{
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else if (udp_data_size > 0)
 		{
 			total_length = htons((USHORT) (ntohs(Packet->IPHeader->TotalLength) + udp_data_size));
 			memcpy(&Packet->IPHeader->TotalLength, &total_length, sizeof(USHORT));
 
-			data_length = htons((USHORT) (sizeof(PUDP_HEADER) + udp_data_size));
+			data_length = htons((USHORT) (sizeof(UDP_HEADER) + udp_data_size));
 			memcpy(&Packet->UDPHeader->DatagramLength, &data_length, sizeof(USHORT));
 
 			GeneratedPacketSize += udp_data_size;
@@ -254,7 +258,7 @@ BOOL cPacketGen::CustomizeUDP(UCHAR* udp_data, UINT udp_data_size)
 			memcpy(&GeneratedPacket[GeneratedPacketSize - udp_data_size], udp_data ,udp_data_size);
 
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else return false;
 
@@ -278,7 +282,7 @@ BOOL cPacketGen::CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_dat
 		if (icmp_data_size ==0)
 		{
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else if (icmp_data_size > 0)
 		{
@@ -290,7 +294,7 @@ BOOL cPacketGen::CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_dat
 			memcpy(&GeneratedPacket[GeneratedPacketSize - icmp_data_size], icmp_data ,icmp_data_size);
 
 			delete Packet;
-			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize);
+			Packet = new cPacket(GeneratedPacket, GeneratedPacketSize, time(0));
 		}
 		else return false;
 
@@ -306,7 +310,8 @@ BOOL cPacketGen::CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_dat
 
 cPacketGen::~cPacketGen()
 {
-
+	if (GeneratedPacket != NULL)
+		free(GeneratedPacket);
 };
 
 UINT cPacketGen::IPToLong(const CHAR ip[]) {

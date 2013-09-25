@@ -20,7 +20,7 @@
 
 #pragma once
 
-
+#include <pcap.h>
 #include <windows.h>
 #include <new>
 #include <winsock2.h>
@@ -62,6 +62,18 @@ namespace Security
 		{
 			class cPacket;
 			class cConStream;
+			class cARPStream;
+			class cConnection;
+			class cDNSStream;
+			class cUDPStream;
+			class cHTTPStream;
+			class cTCPStream;
+			class cTCPReassembler;
+			class cICMPStream;
+			class cTraffic;
+			class cWinpcapSend;
+			class cPacketGen;
+			class cWinpcapCapture;
 		}
 	}
 

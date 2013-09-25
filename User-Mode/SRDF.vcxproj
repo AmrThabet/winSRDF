@@ -58,16 +58,17 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SRDF_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_REMOTE;WPCAP;WIN32;_DEBUG;_WINDOWS;_USRDLL;SRDF_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level1</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>C:\WpdPack\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;wpcap.lib;packet.lib;wsock32.lib;ws2_32.lib;wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <AddModuleNamesToAssembly>%(AddModuleNamesToAssembly)</AddModuleNamesToAssembly>
@@ -78,13 +79,14 @@
       </DelayLoadDLLs>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>C:\WpdPack\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SRDF_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_REMOTE;WPCAP;WIN32;NDEBUG;_WINDOWS;_USRDLL;SRDF_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -92,12 +94,13 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <AdditionalIncludeDirectories>C:\WpdPack\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;wpcap.lib;packet.lib;wsock32.lib;ws2_32.lib;wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -109,6 +112,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <LinkErrorReporting>PromptImmediately</LinkErrorReporting>
       <CLRUnmanagedCodeCheck>false</CLRUnmanagedCodeCheck>
+      <AdditionalLibraryDirectories>C:\WpdPack\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Lib>
       <AdditionalDependencies>wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -119,16 +123,21 @@
     <ClCompile Include="cAndroidFile.cpp" />
     <ClCompile Include="cAPIHook.cpp" />
     <ClCompile Include="cApp.cpp" />
+    <ClCompile Include="cARPStream.cpp" />
     <ClCompile Include="cCode.cpp" />
+    <ClCompile Include="cConnection.cpp" />
     <ClCompile Include="cConsoleApp.cpp" />
     <ClCompile Include="cConStream.cpp" />
     <ClCompile Include="cDebugger.cpp" />
+    <ClCompile Include="cDNSStream.cpp" />
     <ClCompile Include="cELFFile.cpp" />
     <ClCompile Include="cEventIPC.cpp" />
     <ClCompile Include="CFile.cpp" />
     <ClCompile Include="cFileToWrite.cpp" />
     <ClCompile Include="cHash.cpp" />
     <ClCompile Include="cHTTPSocket.cpp" />
+    <ClCompile Include="cHTTPStream.cpp" />
+    <ClCompile Include="cICMPStream.cpp" />
     <ClCompile Include="cList.cpp" />
     <ClCompile Include="cLog.cpp" />
     <ClCompile Include="cPacket.cpp" />
@@ -144,7 +153,13 @@
     <ClCompile Include="cSerializer.cpp" />
     <ClCompile Include="cSQLiteDatabase.cpp" />
     <ClCompile Include="cString.cpp" />
+    <ClCompile Include="cTCPReassembler.cpp" />
+    <ClCompile Include="cTCPStream.cpp" />
     <ClCompile Include="cThread.cpp" />
+    <ClCompile Include="cTraffic.cpp" />
+    <ClCompile Include="cUDPStream.cpp" />
+    <ClCompile Include="cWinpcapCapture.cpp" />
+    <ClCompile Include="cWinpcapSend.cpp" />
     <ClCompile Include="cYaraScanner.cpp" />
     <ClCompile Include="dllmain.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
