@@ -26,6 +26,8 @@
 using namespace Security::Targets::Packets;
 using namespace std;
 
+#ifdef USE_WINPCAP
+
 BOOL cWinpcapCapture::InitializeAdapters()
 {
 	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1) return FALSE;
@@ -93,3 +95,5 @@ cWinpcapCapture::~cWinpcapCapture()
 	pcap_freealldevs(alldevs);
 	free(Adapters);
 };
+
+#endif

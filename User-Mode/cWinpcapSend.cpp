@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include "SRDF.h"
 
+#ifdef USE_WINPCAP
 
 using namespace Security::Targets::Packets;
 
@@ -68,3 +69,4 @@ cWinpcapSend::~cWinpcapSend()
 	pcap_freealldevs(alldevs);
 	free(Adapters);
 }
+#endif

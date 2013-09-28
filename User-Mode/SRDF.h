@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <pcap.h>
+
 #include <windows.h>
 #include <new>
 #include <winsock2.h>
@@ -35,6 +35,8 @@ using namespace std;
 
 #define USE_POKAS_EMULATOR 1
 #define USE_SQLITE 1
+//#define USE_WINPCAP 1
+
 
 //Development Framework Design:
 //-----------------------------

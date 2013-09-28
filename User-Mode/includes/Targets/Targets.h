@@ -734,6 +734,11 @@ public:
 
 
 
+
+
+#ifdef USE_WINPCAP
+
+#include <pcap.h>
 struct NETWORK_ADAPTERS_SEND
 {
 	CHAR Name[200];
@@ -760,6 +765,44 @@ public:
 	cWinpcapSend();
 	~cWinpcapSend();
 };
+
+
+struct NETWORK_ADAPTERS_CAPTURE
+{
+	CHAR Name[200];
+	CHAR ID[200];
+};
+
+class DLLIMPORT Security::Targets::Packets::cWinpcapCapture
+{
+
+	VOID AnalyzeTraffic();
+
+#define LINE_LEN 16
+	pcap_if_t *alldevs, *d;
+	pcap_t *fp;
+	int res;
+	struct pcap_pkthdr * PacketHeader;
+	const u_char * PacketData;
+	CHAR errbuf[PCAP_ERRBUF_SIZE];
+
+	BOOL InitializeAdapters();
+public:
+	BOOL isReady;
+	BOOL CapturePackets(UINT AdapterIndex, UINT MaxNumOfPackets, const CHAR* Filter = NULL);
+
+	NETWORK_ADAPTERS_CAPTURE *Adapters;
+	UINT nAdapters;
+
+	UINT nCapturedPackets;
+
+	cTraffic Traffic;
+
+	cWinpcapCapture();
+	~cWinpcapCapture();
+};
+
+#endif
 
 #define GENERATE_TCP		1
 #define GENERATE_UDP		2
@@ -894,41 +937,6 @@ public:
 
 	void Empty();
 	static BOOL Identify(cPacket* Packet, UINT AssumendDataSize);
-};
-
-struct NETWORK_ADAPTERS_CAPTURE
-{
-	CHAR Name[200];
-	CHAR ID[200];
-};
-
-class DLLIMPORT Security::Targets::Packets::cWinpcapCapture
-{
-
-	VOID AnalyzeTraffic();
-
-	#define LINE_LEN 16
-	pcap_if_t *alldevs, *d;
-	pcap_t *fp;
-	int res;
-	struct pcap_pkthdr * PacketHeader;
-	const u_char * PacketData;
-	CHAR errbuf[PCAP_ERRBUF_SIZE];
-
-	BOOL InitializeAdapters();
-public:
-	BOOL isReady;
-	BOOL CapturePackets(UINT AdapterIndex, UINT MaxNumOfPackets, const CHAR* Filter = NULL);
-
-	NETWORK_ADAPTERS_CAPTURE *Adapters;
-	UINT nAdapters;
-
-	UINT nCapturedPackets;
-	
-	cTraffic Traffic;
-
-	cWinpcapCapture();
-	~cWinpcapCapture();
 };
 
 

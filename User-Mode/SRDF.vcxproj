@@ -30,7 +30,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Single|Win32'">
     <PlatformToolset>v110</PlatformToolset>
@@ -68,7 +68,7 @@
       <AdditionalIncludeDirectories>C:\WpdPack\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Rpcrt4.lib;wpcap.lib;packet.lib;wsock32.lib;ws2_32.lib;wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;libs\wpcap.lib;libs\packet.lib;wsock32.lib;ws2_32.lib;wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <AddModuleNamesToAssembly>%(AddModuleNamesToAssembly)</AddModuleNamesToAssembly>
@@ -100,7 +100,7 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>Rpcrt4.lib;wpcap.lib;packet.lib;wsock32.lib;ws2_32.lib;wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;libs\wpcap.lib;libs\packet.lib;wsock32.lib;ws2_32.lib;wininet.lib;libs\X86Emulator.lib;libs\libyara.lib;libs\sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
