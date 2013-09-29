@@ -24,10 +24,11 @@
 using namespace std;
 using namespace Security::Targets::Packets;
 
-cConStream::cConStream()
+cConStream::cConStream() : cConnection()
 {
 	ServerIP = NULL;
 	ClientIP = NULL;
+	AddressingType = CONN_ADDRESSING_IP;
 };
 
 cConStream::~cConStream()

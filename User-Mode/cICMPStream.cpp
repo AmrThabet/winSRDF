@@ -23,7 +23,7 @@
 
 using namespace Security::Targets::Packets;
 
-cICMPStream::cICMPStream()
+cICMPStream::cICMPStream() : cConnection()
 {
 	nPingRequests = 0;
 	nPingResponses = 0;
@@ -36,6 +36,9 @@ cICMPStream::cICMPStream()
 
 	PingRequester = NULL;
 	PingReceiver = NULL;
+
+	AddressingType = CONN_ADDRESSING_IP;
+	TransportType = CONN_TRANSPORT_ICMP;
 }
 
 

@@ -23,10 +23,11 @@
 
 using namespace Security::Targets::Packets;
 
-cUDPStream::cUDPStream(void)
+cUDPStream::cUDPStream() : cConStream()
 {
 	ServerPort = NULL;
 	ClientPort = NULL;
+	TransportType = CONN_TRANSPORT_UDP;
 }
 
 cUDPStream::~cUDPStream(void)

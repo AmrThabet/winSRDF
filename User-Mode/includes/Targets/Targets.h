@@ -532,6 +532,25 @@ public:
 	void CheckIfMalformed();
 };
 
+#define CONN_NETWORK_UNKNOWN		0
+#define CONN_NETWORK_ETHERNET		1
+#define CONN_NETWORK_SSL			2
+
+#define CONN_TRANSPORT_UNKNOWN		0
+#define CONN_TRANSPORT_TCP			1
+#define CONN_TRANSPORT_UDP			2
+#define CONN_TRANSPORT_ICMP			3
+#define CONN_TRANSPORT_IGMP			4
+
+#define CONN_ADDRESSING_UNKOWN		0
+#define CONN_ADDRESSING_ARP			1
+#define CONN_ADDRESSING_IP			2
+
+#define CONN_APPLICATION_UNKOWN		0
+#define CONN_APPLICATION_DNS		1
+#define CONN_APPLICATION_HTTP		2
+
+
 class DLLIMPORT Security::Targets::Packets::cConnection
 {
 protected:
@@ -550,6 +569,11 @@ public:
 	UCHAR	ClientMAC[ETHER_ADDR_LEN];
 	UCHAR	ServerMAC[ETHER_ADDR_LEN];
 	USHORT	Protocol;
+
+	DWORD NetworkType;
+	DWORD TransportType;
+	DWORD AddressingType;
+	DWORD ApplicationType;
 
 	BOOL isIPConnection;
 };

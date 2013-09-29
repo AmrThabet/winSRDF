@@ -23,10 +23,11 @@
 
 using namespace Security::Targets::Packets;
 
-cTCPStream::cTCPStream()
+cTCPStream::cTCPStream() : cConStream()
 {
 	ServerPort = NULL;
 	ClientPort = NULL;
+	TransportType = CONN_TRANSPORT_TCP;
 	//ExtractedFilesCursor = 0;
 	//Segmented = FALSE;
 }

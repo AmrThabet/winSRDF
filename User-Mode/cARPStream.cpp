@@ -23,12 +23,12 @@
 
 using namespace Security::Targets::Packets;
 
-cARPStream::cARPStream()
+cARPStream::cARPStream() : cConnection()
 {
 	memset(&RequesterMAC, 0, ETHER_ADDR_LEN);
 	memset(&RequestedMAC, 0, ETHER_ADDR_LEN);
 	memset(&ReplierMAC, 0, ETHER_ADDR_LEN);
-
+	AddressingType = CONN_ADDRESSING_ARP;
 	RequesterIP = NULL;
 	RequestedMACIP = NULL;
 

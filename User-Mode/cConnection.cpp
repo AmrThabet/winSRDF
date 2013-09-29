@@ -28,6 +28,10 @@ cConnection::cConnection()
 {
 	nPackets = 0;
 	isIPConnection = FALSE;
+	NetworkType = 0;
+	TransportType = 0;
+	AddressingType = 0;
+	ApplicationType = 0;
 	Packets = (cPacket**)malloc(nPackets * sizeof(cPacket*));
 };
 
@@ -45,7 +49,8 @@ BOOL cConnection::AddPacket(cPacket* Packet)
 		nPackets++;
 		Packets = (cPacket**)realloc(Packets, nPackets * sizeof(cPacket*));
 		memcpy(&Packets[( nPackets-1)], &Packet, sizeof(cPacket*));
-		isIPConnection = Packet->isIPPacket;	
+		isIPConnection = Packet->isIPPacket;
+		AddressingType = CONN_ADDRESSING_IP;
 		return AnalyzePackets();
 	}
 	else
@@ -81,6 +86,7 @@ BOOL cConnection::AnalyzePackets()
 			memcpy(&ServerMAC, &Packets[0]->EthernetHeader->DestinationHost, ETHER_ADDR_LEN);
 			memcpy(&ClientMAC, &Packets[0]->EthernetHeader->SourceHost, ETHER_ADDR_LEN);
 			Protocol = Packets[0]->EthernetHeader->ProtocolType;
+			NetworkType = CONN_NETWORK_ETHERNET;
 			return true;
 		}
 		else if (Packets[0]->hasSLLHeader && ntohs(Packets[0]->SLLHeader->AddressLength) == 6)
@@ -88,6 +94,7 @@ BOOL cConnection::AnalyzePackets()
 			memset(&ServerMAC, 0,ETHER_ADDR_LEN);
 			memcpy(&ClientMAC, &Packets[0]->SLLHeader->Address, ETHER_ADDR_LEN);
 			Protocol = Packets[0]->SLLHeader->ProtocolType;
+			NetworkType = CONN_NETWORK_SSL;
 			return true;
 		}
 		else return false;

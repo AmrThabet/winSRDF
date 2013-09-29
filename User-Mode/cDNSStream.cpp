@@ -24,7 +24,7 @@
 using namespace std;
 using namespace Security::Targets::Packets;
 
-cDNSStream::cDNSStream()
+cDNSStream::cDNSStream() : cUDPStream()
 {
 	DNSHeader = NULL;
 	ResponseBase = NULL;
@@ -38,6 +38,8 @@ cDNSStream::cDNSStream()
 	DNSQuery = new QUERY;
 	DNSQuery->Name = NULL;
 	QueryResponse = new RES_RECORD;
+
+	ApplicationType = CONN_APPLICATION_DNS;
 }
 
 BOOL cDNSStream::Identify(cPacket* Packet)

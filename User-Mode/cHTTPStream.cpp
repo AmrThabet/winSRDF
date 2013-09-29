@@ -31,11 +31,11 @@ using namespace Security::Targets::Files;
 
 const CHAR head[][5] = {"GET", "POST", "HEAD", "HTTP"};
 
-cHTTPStream::cHTTPStream()
+cHTTPStream::cHTTPStream() : cTCPStream()
 {
 	nCookies = 0;
 	Cookies = (cString**)malloc(nCookies * sizeof(cString*));
-
+	
 	UserAgent = NULL;
 	Referer = NULL;
 	ServerType = NULL;
@@ -47,6 +47,7 @@ cHTTPStream::cHTTPStream()
 	Requests = (REQUEST*)malloc(nRequests * sizeof(REQUEST)); 
 
 	Reassembler = NULL;
+	ApplicationType = CONN_APPLICATION_HTTP;
 };
 
 BOOL cHTTPStream::Identify(cPacket* Packet)
