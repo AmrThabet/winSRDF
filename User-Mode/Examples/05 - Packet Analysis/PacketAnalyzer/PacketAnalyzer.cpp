@@ -5,13 +5,6 @@
 using namespace Security::Targets::Files;
 using namespace Security::Targets::Packets;
 
-char* PrintIP(UINT nIP)
-{
-	char buf[255] = {0};
-	unsigned char* IP = (unsigned char*)&nIP;
-	sprintf(buf,"%d.%d.%d.%d",IP[0],IP[1],IP[2],IP[3]);
-	return buf;
-}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -170,7 +163,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			cout << endl << "     ";
 	}
 	cout << endl;
-
 	
 	system("PAUSE"); 
 	return 0;
