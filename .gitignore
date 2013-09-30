@@ -221,6 +221,8 @@ User-Mode/Examples/DebuggerExample/Release/vc90.pdb
 User-Mode/Examples/DebuggerExample/Debug
 *.sdf
 *.ncb
+*.opensdf
 
 ipch/
-PacketAnalyzer
+Release/
+Debug/

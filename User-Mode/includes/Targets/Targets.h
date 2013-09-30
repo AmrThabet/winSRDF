@@ -756,9 +756,18 @@ public:
 	UINT PingSentDataSize;
 };
 
+class DLLIMPORT Security::Targets::Packets::cTraffic
+{
+	cConnection* TmpConnection;
+public:
+	UINT nConnections;
+	cConnection** Connections;
 
+	BOOL AddPacket(cPacket* Packet, time_t TimeStamp);
 
-
+	cTraffic();
+	~cTraffic();
+};
 
 #ifdef USE_WINPCAP
 
@@ -918,18 +927,6 @@ public:
 	~cPcapFile();
 };
 
-class DLLIMPORT Security::Targets::Packets::cTraffic
-{
-	cConnection* TmpConnection;
-public:
-	UINT nConnections;
-	cConnection** Connections;
-
-	BOOL AddPacket(cPacket* Packet, time_t TimeStamp);
-
-	cTraffic();
-	~cTraffic();
-};
 
 class DLLIMPORT Security::Targets::Packets::cTCPReassembler
 {
