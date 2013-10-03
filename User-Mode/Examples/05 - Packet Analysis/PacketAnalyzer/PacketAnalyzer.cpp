@@ -5,6 +5,21 @@
 using namespace Security::Targets::Files;
 using namespace Security::Targets::Packets;
 
+char* PrintMAC(char* sMAC)
+{
+  char buf[255] = {0};
+  unsigned char* MAC = (unsigned char*)sMAC;
+  sprintf(buf,"%02x:%02x:%02x:%02x:%02x",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4]);
+  return buf;
+}
+
+char* PrintIP(UINT nIP)
+{
+	char buf[255] = {0};
+	unsigned char* IP = (unsigned char*)&nIP;
+	sprintf(buf,"%d.%d.%d.%d",IP[0],IP[1],IP[2],IP[3]);
+	return buf;
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -12,16 +27,19 @@ int _tmain(int argc, _TCHAR* argv[])
 			" +               Packetyzer Unit Tests                +\n"
 			" +----------------------------------------------------+\n\n");
 
-	cPacket* TestPacket;
+	cPacket* TestPacket = NULL;
 	printf(	" [*] Single Packets:\n" " -------------------\n");
 
-	UCHAR ARP[] = {		0x28,0x10,0x7b,0x34,0xf7,0xd6,0x68,0x5d,0x43,0x54,0x96,0xe7,0x08,
+	UCHAR ARP[42] = {		0x28,0x10,0x7b,0x34,0xf7,0xd6,0x68,0x5d,0x43,0x54,0x96,0xe7,0x08,
 						0x06,0x00,0x01,0x08,0x00,0x06,0x04,0x00,0x02,0x68,0x5d,0x43,0x54,
 						0x96,0xe7,0x0a,0x00,0x00,0x04,0x28,0x10,0x7b,0x34,0xf7,0xd6,0x0a,
 						0x00,0x00,0x01 };
 
 	TestPacket = new cPacket((UCHAR*)ARP, sizeof(ARP));
 	printf(" [+] Testing ARP Packet of size %d \t%s\n", TestPacket->PacketSize, TestPacket->isARPPacket ? "OK":"FAILED");
+	cout << "\t - Source MAC: " << PrintMAC((char*)TestPacket->EthernetHeader->SourceHost) << "\n";
+	cout << "\t - Destination MAC: " << PrintMAC((char*)TestPacket->EthernetHeader->DestinationHost) << "\n";
+	cout << "\n";
 	delete(TestPacket);
 
 	UCHAR ICMP[] = {	0x28,0x10,0x7b,0x34,0xf7,0xd6,0x68,0x5d,0x43,0x54,0x96,0xe7,0x08,
@@ -33,6 +51,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	TestPacket = new cPacket((UCHAR*)ICMP, sizeof(ICMP));
 	printf(" [+] Testing ICMP Packet of size %d \t%s\n", TestPacket->PacketSize, TestPacket->isICMPPacket ? "OK":"FAILED");
+	cout << "\t - Source IP: " << PrintIP(TestPacket->IPHeader->SourceAddress) << "\n";
+	cout << "\t - Destination IP: " << PrintIP(TestPacket->IPHeader->DestinationAddress) << "\n";
+	cout << "\t - Source MAC: " << PrintMAC((char*)TestPacket->EthernetHeader->SourceHost) << "\n";
+	cout << "\t - Destination MAC: " << PrintMAC((char*)TestPacket->EthernetHeader->DestinationHost) << "\n";
+	cout << "\t - ICMP Packet Type: " << (int)TestPacket->ICMPHeader->Type << "\n";
+	cout << "\n";
 	delete(TestPacket);
 
 	UCHAR IGMP[] = {	0x01,0x00,0x5e,0x7f,0xff,0xfa,0x00,0x15,0x58,0xdc,0xa8,0x4d,0x08,
@@ -45,7 +69,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	printf(" [+] Testing IGMP Packet of size %d \t%s\n", TestPacket->PacketSize, TestPacket->isIGMPPacket ? "OK":"FAILED");
 	delete(TestPacket);
 
-	UCHAR UDP[] = {		0x00,0xc0,0x9f,0x32,0x41,0x8c,0x00,0xe0,0x18,0xb1,0x0c,0xad,0x08,
+	CHAR UDP[] = {		0x00,0xc0,0x9f,0x32,0x41,0x8c,0x00,0xe0,0x18,0xb1,0x0c,0xad,0x08,
 						0x00,0x45,0x00,0x00,0x38,0x00,0x00,0x40,0x00,0x40,0x11,0x65,0x47,
 						0xc0,0xa8,0xaa,0x08,0xc0,0xa8,0xaa,0x14,0x80,0x1b,0x00,0x35,0x00,
 						0x24,0x9e,0xb0,0xf7,0x6f,0x01,0x00,0x00,0x01,0x00,0x00,0x00,0x00,
@@ -54,6 +78,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	TestPacket = new cPacket((UCHAR*)UDP, sizeof(UDP));
 	printf(" [+] Testing UDP Packet of size %d \t%s\n", TestPacket->PacketSize, TestPacket->isUDPPacket ? "OK":"FAILED");
+	cout << "\t - Source IP: " << PrintIP(TestPacket->IPHeader->SourceAddress) << "\n";
+	cout << "\t - Destination IP: " << PrintIP(TestPacket->IPHeader->DestinationAddress) << "\n";
+	cout << "\t - Source Port: " << ntohs(TestPacket->UDPHeader->SourcePort) << "\n";
+	cout << "\t - Destination Port: " << ntohs(TestPacket->UDPHeader->DestinationPort) << "\n";
+	cout << "\n";
 	delete(TestPacket);
 
 	UCHAR IP[] = {		0x28,0x10,0x7b,0x34,0xf7,0xd6,0x68,0x5d,0x43,0x54,0x96,0xe7,0x08,
@@ -67,7 +96,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	printf(" [+] Testing IP Packet of size %d \t%s\n", TestPacket->PacketSize, TestPacket->isIPPacket ? "OK":"FAILED");
 	delete(TestPacket);
 
-	UCHAR TCP[] = {		0x28,0x10,0x7b,0x34,0xf7,0xd6,0x68,0x5d,0x43,0x54,0x96,0xe7,0x08,
+	CHAR TCP[] = {		0x28,0x10,0x7b,0x34,0xf7,0xd6,0x68,0x5d,0x43,0x54,0x96,0xe7,0x08,
 						0x00,0x45,0x00,0x00,0x34,0x2e,0xfb,0x40,0x00,0x80,0x06,0xc2,0x5e,
 						0x0a,0x00,0x00,0x04,0xad,0xc0,0x51,0xa6,0xea,0x94,0x00,0x50,0xd9,
 						0x07,0xa1,0xcb,0x00,0x00,0x00,0x00,0x80,0x02,0x20,0x00,0xdf,0xf3,
@@ -76,6 +105,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	TestPacket = new cPacket((UCHAR*)TCP, sizeof(TCP));
 	printf(" [+] Testing TCP Packet of size %d \t%s\n", TestPacket->PacketSize, TestPacket->isTCPPacket ? "OK":"FAILED");
+	cout << "\t - Source IP: " << PrintIP(TestPacket->IPHeader->SourceAddress) << "\n";
+	cout << "\t - Destination IP: " << PrintIP(TestPacket->IPHeader->DestinationAddress) << "\n";
+	cout << "\t - Source Port: " << ntohs(TestPacket->TCPHeader->SourcePort) << "\n";
+	cout << "\t - Destination Port: " << ntohs(TestPacket->TCPHeader->DestinationPort) << "\n";
+	cout << "\n";
 	delete(TestPacket);
 
 	UCHAR SLL_IP[] = {	0x00,0x00,0x03,0x04,0x00,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
