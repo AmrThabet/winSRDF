@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <ctime>
 
-using namespace Security::Targets::Packets;
+using namespace Security::Libraries::Network::PacketGeneration;
 
 cPacketGen::cPacketGen(UINT type)
 {

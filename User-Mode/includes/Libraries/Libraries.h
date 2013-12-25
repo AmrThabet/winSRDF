@@ -283,6 +283,92 @@ public:
 
 };
 
+class DLLIMPORT Security::Libraries::Malware::Behavioral::cIATHook
+{
+	cHash* HookedModules;
+	cString HookedAPIName;
+	DWORD HookedAPI;
+	cHash* HookedAddresses;
+	__PEB* PEB;
+
+	DWORD GetPEB();
+	cHash* GetModules(cHash* SkippedModules);
+public:
+	cIATHook(){};
+	~cIATHook(){};
+	void Hook(cString DLLName, cString APIName,  DWORD NewFunc, cHash* SkippedModules = NULL);		//Hash( key=anything, value=ModuleName)
+	void Unhook();
+	
+};
+
+#ifdef USE_WINPCAP
+
+#include <pcap.h>
+struct NETWORK_ADAPTERS_SEND
+{
+	CHAR Name[200];
+	CHAR ID[200];
+};
+
+class DLLIMPORT Security::Libraries::Network::PacketGeneration::cWinpcapSend
+{
+#define LINE_LEN 16
+	pcap_if_t *alldevs, *d;
+	pcap_t *fp;
+	CHAR errbuf[PCAP_ERRBUF_SIZE];
+
+	BOOL InitializeAdapters();
+
+public:
+	BOOL isReady;
+
+	NETWORK_ADAPTERS_SEND *Adapters;
+	UINT nAdapters;
+
+	BOOL SendPacket(UINT AdapterIndex, cPacket* Packet);
+
+	cWinpcapSend();
+	~cWinpcapSend();
+};
+
+
+struct NETWORK_ADAPTERS_CAPTURE
+{
+	CHAR Name[200];
+	CHAR ID[200];
+};
+
+class DLLIMPORT Security::Libraries::Network::PacketCapture::cWinpcapCapture
+{
+
+	VOID AnalyzeTraffic();
+
+#define LINE_LEN 16
+	pcap_if_t *alldevs, *d;
+	pcap_t *fp;
+	int res;
+	struct pcap_pkthdr * PacketHeader;
+	const u_char * PacketData;
+	CHAR errbuf[PCAP_ERRBUF_SIZE];
+
+	BOOL InitializeAdapters();
+public:
+	BOOL isReady;
+	BOOL CapturePackets(UINT AdapterIndex, UINT MaxNumOfPackets, const CHAR* Filter = NULL);
+
+	NETWORK_ADAPTERS_CAPTURE *Adapters;
+	UINT nAdapters;
+
+	UINT nCapturedPackets;
+
+	cTraffic Traffic;
+
+	cWinpcapCapture();
+	~cWinpcapCapture();
+};
+
+#endif
+
 #define GENERATE_TCP		1
 #define GENERATE_UDP		2
 #define GENERATE_ARP		3
@@ -297,7 +383,6 @@ public:
 
 class DLLIMPORT Security::Libraries::Network::PacketGeneration::cPacketGen
 {
-	/* global */
 	cPacket* Packet;
 
 	UCHAR src_mac_hex[6], dest_mac_hex[6];
@@ -323,3 +408,5 @@ public:
 	BOOL CustomizeUDP(UCHAR* udp_data, UINT udp_data_size);
 	BOOL CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_data, UINT icmp_data_size);
 };
+
+

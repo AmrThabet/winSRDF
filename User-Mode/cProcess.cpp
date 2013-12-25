@@ -151,23 +151,23 @@ void cProcess::AnalyzeProcess()
 
 	//setting  processSizeOfImage , processPath , processName ,MODULE_INFO
 
-	_PEB_LDR_DATA2 *tmp1=NULL;
-	_LDR_DATA_TABLE_ENTRY2	tmp2;
+	_PEB_LDR_DATA2 *LoaderData = NULL;
+	_LDR_DATA_TABLE_ENTRY2	ModuleEntry;
 	LPWSTR pathBuffer,nameBuffer,moduleNameBuffer,modulePathBuffer;
 	DWORD bytesRead;
 	DWORD myFlag;
 	MODULE_INFO mod;
 	modulesList =cList(sizeof(MODULE_INFO));
-	ReadProcessMemory((HANDLE)procHandle,&(ppeb->LoaderData),&tmp1,sizeof(tmp1),NULL);
-	if(tmp1)
+	ReadProcessMemory((HANDLE)procHandle,&(ppeb->LoaderData),&LoaderData,sizeof(LoaderData),NULL);
+	if(LoaderData)
 	{
-		if (!ReadProcessMemory((HANDLE)procHandle,&(tmp1->InLoadOrderModuleList),&tmp2,sizeof(tmp2),&bytesRead))return;
+		if (!ReadProcessMemory((HANDLE)procHandle,&(LoaderData->InLoadOrderModuleList),&ModuleEntry,sizeof(ModuleEntry),&bytesRead))return;
 		
-		myFlag = tmp2.DllBase;
+		myFlag = ModuleEntry.DllBase;
 			
 		do{	
-			ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.InLoadOrderLinks.Flink),&tmp2,sizeof(tmp2),&bytesRead);
-			if (ImageBase == tmp2.DllBase)
+			ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.InLoadOrderLinks.Flink),&ModuleEntry,sizeof(ModuleEntry),&bytesRead);
+			if (ImageBase == ModuleEntry.DllBase)
 			{
 				//Initializing The Variables
 				mod.moduleName = new cString(" ");
@@ -177,21 +177,21 @@ void cProcess::AnalyzeProcess()
 				mod.moduleSizeOfImage = 0;
 				mod.ImportedDLLs = new cHash();
 
-				SizeOfImage = tmp2.SizeOfImage;
+				SizeOfImage = ModuleEntry.SizeOfImage;
 
-				pathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
-				memset(pathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.FullDllName.Buffer),pathBuffer,(tmp2.FullDllName.Length+1)*2,&bytesRead);
-				processPath = Unicode2Ansi(pathBuffer,(tmp2.FullDllName.Length+1)*2);
+				pathBuffer = (LPWSTR) malloc((ModuleEntry.FullDllName.Length+1)*2);
+				memset(pathBuffer , 0 ,(ModuleEntry.FullDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.FullDllName.Buffer),pathBuffer,(ModuleEntry.FullDllName.Length+1)*2,&bytesRead);
+				processPath = Unicode2Ansi(pathBuffer,(ModuleEntry.FullDllName.Length+1)*2);
 				free(pathBuffer);
-				nameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
-				memset(nameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.BaseDllName.Buffer),nameBuffer,(tmp2.BaseDllName.Length+1)*2,&bytesRead);
-				processName = Unicode2Ansi(nameBuffer , (tmp2.BaseDllName.Length+1)*2);
+				nameBuffer = (LPWSTR) malloc((ModuleEntry.BaseDllName.Length+1)*2);
+				memset(nameBuffer , 0 ,(ModuleEntry.BaseDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.BaseDllName.Buffer),nameBuffer,(ModuleEntry.BaseDllName.Length+1)*2,&bytesRead);
+				processName = Unicode2Ansi(nameBuffer , (ModuleEntry.BaseDllName.Length+1)*2);
 				free(nameBuffer);
 				mod.moduleName = &processName;
-				mod.moduleImageBase = tmp2.DllBase;
-				mod.moduleSizeOfImage = tmp2.SizeOfImage;
+				mod.moduleImageBase = ModuleEntry.DllBase;
+				mod.moduleSizeOfImage = ModuleEntry.SizeOfImage;
 				mod.modulePath = &processPath;
 				mod.nExportedAPIs = 0;
 				cPEFile* ModuleFile = new cPEFile(mod.modulePath->GetChar());
@@ -222,19 +222,19 @@ void cProcess::AnalyzeProcess()
 				mod.moduleSizeOfImage = 0;
 				mod.ImportedDLLs = new cHash();
 
-				if (tmp2.DllBase == 0)continue;
+				if (ModuleEntry.DllBase == 0)continue;
 
-				mod.moduleImageBase = tmp2.DllBase;
-				mod.moduleSizeOfImage = tmp2.SizeOfImage;
-				modulePathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
-				memset(modulePathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.FullDllName.Buffer),modulePathBuffer,(tmp2.FullDllName.Length+1)*2,&bytesRead);
-				mod.modulePath = new cString(Unicode2Ansi(modulePathBuffer,(tmp2.FullDllName.Length+1)*2));
+				mod.moduleImageBase = ModuleEntry.DllBase;
+				mod.moduleSizeOfImage = ModuleEntry.SizeOfImage;
+				modulePathBuffer = (LPWSTR) malloc((ModuleEntry.FullDllName.Length+1)*2);
+				memset(modulePathBuffer , 0 ,(ModuleEntry.FullDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.FullDllName.Buffer),modulePathBuffer,(ModuleEntry.FullDllName.Length+1)*2,&bytesRead);
+				mod.modulePath = new cString(Unicode2Ansi(modulePathBuffer,(ModuleEntry.FullDllName.Length+1)*2));
 				free(modulePathBuffer);
-				moduleNameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
-				memset(moduleNameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.BaseDllName.Buffer),moduleNameBuffer,(tmp2.BaseDllName.Length+1)*2,&bytesRead);
-				mod.moduleName = new cString(Unicode2Ansi(moduleNameBuffer , (tmp2.BaseDllName.Length+1)*2));
+				moduleNameBuffer = (LPWSTR) malloc((ModuleEntry.BaseDllName.Length+1)*2);
+				memset(moduleNameBuffer , 0 ,(ModuleEntry.BaseDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.BaseDllName.Buffer),moduleNameBuffer,(ModuleEntry.BaseDllName.Length+1)*2,&bytesRead);
+				mod.moduleName = new cString(Unicode2Ansi(moduleNameBuffer , (ModuleEntry.BaseDllName.Length+1)*2));
 				free(moduleNameBuffer);
 				if (mod.modulePath->GetLength() == 0)
 				{
@@ -262,7 +262,7 @@ void cProcess::AnalyzeProcess()
 				delete ModuleFile;
 			}
 				
-		} while(myFlag != tmp2.DllBase);
+		} while(myFlag != ModuleEntry.DllBase);
 		
 	}
 	GetMemoryMap();

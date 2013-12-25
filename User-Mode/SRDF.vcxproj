@@ -137,6 +137,7 @@
     <ClCompile Include="cHash.cpp" />
     <ClCompile Include="cHTTPSocket.cpp" />
     <ClCompile Include="cHTTPStream.cpp" />
+    <ClCompile Include="cIATHook.cpp" />
     <ClCompile Include="cICMPStream.cpp" />
     <ClCompile Include="cList.cpp" />
     <ClCompile Include="cLog.cpp" />
@@ -145,6 +146,7 @@
     <ClCompile Include="cPcapFile.cpp" />
     <ClCompile Include="cPDFFile.cpp" />
     <ClCompile Include="CPEFile.cpp" />
+    <ClCompile Include="cPipe.cpp" />
     <ClCompile Include="CPokasAsm.cpp" />
     <ClCompile Include="CPokasEmu.cpp" />
     <ClCompile Include="cProcess.cpp" />

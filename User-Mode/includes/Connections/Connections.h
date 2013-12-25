@@ -122,3 +122,61 @@ public:
 	cEventIPC(cString Name,DWORD Type, DWORD MaxSize);
 	~cEventIPC();
 };
+
+//==========================================================================================
+//Pipe Connections:
+//==========================================================================================
+
+typedef void PipeReadNotifyFunc(Security::Connections::InterProcess::cPipeServerSession* Session, char* buffer,DWORD size,int ProcessId);
+typedef PipeReadNotifyFunc *PPipeReadNotifyFunc;
+
+typedef void PipeClientReadNotifyFunc(Security::Connections::InterProcess::cPipeClient* Session, char* buffer,DWORD size);
+typedef PipeClientReadNotifyFunc *PPipeClientReadNotifyFunc;
+class DLLIMPORT Security::Connections::InterProcess::cPipeClient
+{
+	
+	cString PipeName;
+	HANDLE hPipe;
+	HANDLE hThread;
+	PPipeClientReadNotifyFunc ReadRoutine;
+public:
+	bool IsConnected;
+	cPipeClient(cString PipeName,bool WaitForRead = false);
+	bool SendFastMessage(char* InputBuffer,int InputLength,char* &OutputBuffer,int &OutputLength);
+	void SetReadNotifyRoutine(PPipeClientReadNotifyFunc ReadFunc);
+	void WaitForRead();
+	void ReadThread();
+	~cPipeClient();
+};
+
+
+
+class DLLIMPORT Security::Connections::InterProcess::cPipeServer
+{
+	cString PipeName;
+	cPipeServerSession** Sessions;
+	int nSessions;
+	PPipeReadNotifyFunc ReadNotifyRoutine;
+	HANDLE hPipe;
+	HANDLE hThread;
+public:
+	cPipeServer(cString PipeName,PPipeReadNotifyFunc ReadNotifyRoutine,bool AutoWaitForConnections = true);
+	bool ListenForConnection();
+	void SetReadNotifyRoutine(PPipeReadNotifyFunc ReadFunc);
+	~cPipeServer();
+};
+
+class DLLIMPORT Security::Connections::InterProcess::cPipeServerSession
+{
+	HANDLE hPipe;
+	cPipeServer* Server;
+	HANDLE hThread;
+	PPipeReadNotifyFunc ReadNotifyRoutine;
+public:
+	cPipeServerSession(cPipeServer* Server, HANDLE hPipe);
+	void Listen();
+	void ReadThread();
+	void Write(char* buff, DWORD len);
+	~cPipeServerSession();
+	void SetReadNotifyRoutine(PPipeReadNotifyFunc ReadFunc);
+};

@@ -32,6 +32,7 @@ public:
 	// add more logic comparison operators as following, for example, although not efficient
 	virtual bool operator !=(char* str)	{ return strcmp(str, m_pString) != 0; }
 	virtual bool operator ==(char* str)	{ return strcmp(str, m_pString) == 0; }
+	virtual bool operator ==(const char str[])	{ return strcmp(str, m_pString) == 0; }
 	// c type string conversion
 	operator char* ()					{ return m_pString; }
 	operator const char* ()	const		{ return m_pString; }

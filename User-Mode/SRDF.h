@@ -73,9 +73,7 @@ namespace Security
 			class cTCPReassembler;
 			class cICMPStream;
 			class cTraffic;
-			class cWinpcapSend;
-			class cPacketGen;
-			class cWinpcapCapture;
+			
 		}
 	}
 
@@ -115,6 +113,9 @@ namespace Security
 		namespace InterProcess
 		{
 			class cEventIPC;
+			class cPipeClient;
+			class cPipeServer;
+			class cPipeServerSession;
 		}
 		namespace KernelMode
 		{
@@ -163,6 +164,7 @@ namespace Security
 			namespace Behavioral
 			{
 				class cAPIHook;
+				class cIATHook;
 			}
 		}
 		namespace Network
@@ -173,15 +175,12 @@ namespace Security
 			}
 			namespace PacketCapture
 			{
-
-			}
-			namespace ProtocolAnalyzers
-			{
-
+				class cWinpcapCapture;
 			}
 			namespace PacketGeneration
 			{
 				class cPacketGen;
+				class cWinpcapSend;
 			}
 		}
 	}

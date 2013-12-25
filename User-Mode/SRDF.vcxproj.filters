@@ -16,6 +16,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\PacketAnalysis">
+      <UniqueIdentifier>{b5f809c7-44c9-4866-9bd0-cd8be4cf2df6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cAPIHook.cpp">
@@ -114,18 +117,6 @@
     <ClCompile Include="SSDeep\fuzzy.cpp">
       <Filter>Header Files\SSDeep</Filter>
     </ClCompile>
-    <ClCompile Include="cPacket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cPacketGen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cPcapFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cConStream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="cPokasEmu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -147,37 +138,55 @@
     <ClCompile Include="cPDFFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cARPStream.cpp">
+    <ClCompile Include="cWinpcapSend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cIATHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cConnection.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
-    <ClCompile Include="cDNSStream.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="cConStream.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
     <ClCompile Include="cHTTPStream.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
     <ClCompile Include="cICMPStream.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="cPacket.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="cPacketGen.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="cPcapFile.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
     <ClCompile Include="cTCPReassembler.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
     <ClCompile Include="cTCPStream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cTraffic.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
     <ClCompile Include="cUDPStream.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="cTraffic.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
     <ClCompile Include="cWinpcapCapture.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\PacketAnalysis</Filter>
     </ClCompile>
-    <ClCompile Include="cWinpcapSend.cpp">
+    <ClCompile Include="cDNSStream.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="cARPStream.cpp">
+      <Filter>Source Files\PacketAnalysis</Filter>
+    </ClCompile>
+    <ClCompile Include="cPipe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
