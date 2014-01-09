@@ -184,6 +184,7 @@ public:
 	static bool identify(cFile* File);
 	DWORD RVAToOffset(DWORD RVA);
 	DWORD OffsetToRVA(DWORD RawOffset);
+	double CalculateEntropy();
 
 };
 
