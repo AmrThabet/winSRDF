@@ -308,3 +308,98 @@ DWORD cPEFile::OffsetToRVA(DWORD RawOffset)
 	return 0;
 };
 
+
+double round_number(double, int);
+int pow_new(int, int number = 10);
+double Log2( double);
+
+
+double Log2( double n )  
+{  
+    // log(n)/log(2) is log2.  
+    return log( n ) / log( (double)2 );  
+}
+
+
+
+double round_number(double number, int places)
+	{
+		places = pow_new(places);
+		int temp_number = number * places;
+		double number_2 = (double)temp_number / (double)places;
+		double number_3 = (number - number_2) * places * 10.0;
+		if (number_3 >= 5)
+		{
+			number_2 = number_2 + (1.0 / places);
+		}
+		return number_2;
+	}
+
+int pow_new(int places, int number)
+	{
+		if (places == 0)
+		{
+			return 1;
+		}
+		else if (places == 1)
+		{
+			return number;
+		}
+		else
+		{
+			return pow_new(places - 1, number * 10);
+		}
+	}
+
+
+struct d_struct {
+	
+		double item;
+};
+
+
+double cPEFile::CalculateEntropy()
+{
+
+	BYTE* buf = (BYTE*)BaseAddress;
+
+	cList* myClist = new cList(sizeof(d_struct));
+	d_struct d;
+	
+
+	for(int c =0; c<=255 ;c++)
+	{
+		int count=0;
+		for (int i=0; i<= FileLength;i++)
+		{
+			
+			if (buf[i] ==c)
+			{
+				count++;
+			}
+		
+		}
+
+		d.item = ((double) count / FileLength);
+		myClist->AddItem((char*)&d);
+
+	}
+
+	
+	double entropy =0.0;
+	for (int c=0;c<=myClist->GetNumberOfItems();c++)
+	{
+
+		d_struct* temp = (d_struct*) myClist->GetItem(c);
+		
+		if (temp->item > 0)
+		{
+			entropy = entropy + (temp->item) * Log2(temp->item);
+		}
+	
+	}
+	entropy = - round_number(entropy,2);
+	
+	return entropy;
+}
+
