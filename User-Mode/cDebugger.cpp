@@ -28,6 +28,7 @@ using namespace Security::Targets;
 using namespace Security::Targets::Files;
 using namespace Security::Targets::Memory;
 
+
 cDebugger::cDebugger(cString Filename,cString Commandline)
 {
 	DWORD dwContinueStatus = DBG_CONTINUE;
@@ -379,6 +380,7 @@ void cDebugger::UpdateRegisters()
 	lcContext.EFlags = EFlags;
 	SetThreadContext((HANDLE)hThread,&lcContext);
 }
+
 DBG_BREAKPOINT* cDebugger::GetBreakpoint(DWORD Address)
 {
 	DBG_BREAKPOINT* bp;

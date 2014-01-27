@@ -77,14 +77,14 @@ struct DIRTYPAGES_STRUCT         //the changes in the memory during the emulatio
 
 class DLLIMPORT Security::Libraries::Malware::Dynamic::CPokasEmu
 {
-	System*  m_objSystem;
+	 System*  m_objSystem;
      int     nSystemObjUses;
      char *m_szFileName;
-     Process *process;
      EnviromentVariables *m_objEnvVar;
      int nDebuggerFunctions;
 
 public:
+		Process *process;
        CPokasEmu(char *szFileName,char* DLLPath);
 	   CPokasEmu(Security::Targets::Files::cPEFile* PEFile,char* DLLPath);
 	   CPokasEmu(char *buff,int size,int ImageType,char* DLLPath);
@@ -205,14 +205,29 @@ protected:
 	DBG_HARDWARE_BREAKPOINT HardwareBreakpoints[4];
 	
 	void RefreshRegisters();		//Get The Registers from the context
-			//Save the updates of the registers to the context
+									//Save the updates of the registers to the context
 	void RefreshDebugRegisters();
+	void Freeclass();
 public:
 	BOOL IsDebugging;
 	Security::Targets::Memory::cProcess* DebuggeeProcess;
 	Security::Targets::Files::cPEFile* DebuggeePE;
 	DEBUG_EVENT debug_event;
-	DWORD Reg[8];
+	union
+	{
+		DWORD Reg[8];
+		struct
+		{
+			DWORD eax;
+			DWORD ecx;
+			DWORD edx;
+			DWORD ebx;
+			DWORD esp;
+			DWORD ebp;
+			DWORD esi;
+			DWORD edi;
+		};
+	};
 	DWORD EFlags;
 	DWORD Eip;
 	DWORD DebugStatus;
@@ -242,7 +257,7 @@ public:
 	DBG_MEMORY_BREAKPOINT* GetMemoryBreakpoint(DWORD Address);
 	BOOL SetMemoryBreakpoint(DWORD Address,DWORD Size, DWORD Type);		//usually Size is multiply of 0x1000
 	void RemoveMemoryBreakpoint(DWORD Address);
-	~cDebugger();
+	~cDebugger(){};
 
 	virtual void DLLLoadedNotifyRoutine(){};
 	virtual void DLLUnloadedNotifyRoutine(){};
@@ -300,6 +315,49 @@ public:
 	void Unhook();
 	
 };
+
+
+//*/
+#define GENERATE_TCP		1
+#define GENERATE_UDP		2
+#define GENERATE_ARP		3
+#define GENERATE_ICMP		4
+
+#define TCP_ACK				1
+#define TCP_SYN				2
+#define TCP_FIN				4
+#define TCP_RST				8
+#define TCP_PSH				16
+#define TCP_URG				32
+
+class DLLIMPORT Security::Libraries::Network::PacketGeneration::cPacketGen
+{
+	cPacket* Packet;
+
+	UCHAR src_mac_hex[6], dest_mac_hex[6];
+	UINT src_ip_hex, dest_ip_hex;
+	UCHAR data_offset;
+	USHORT total_length;
+	UCHAR PacketType;
+
+public:
+	cPacketGen(UINT type);
+	~cPacketGen();
+
+	UINT GeneratedPacketSize;
+	UCHAR* GeneratedPacket;
+
+	UINT IPToLong(const CHAR ip[]);
+
+	BOOL SetMACAddress(string src_mac, string dest_mac);
+	BOOL SetIPAddress(string src_ip, string dest_ip);
+	BOOL SetPorts(USHORT src_port, USHORT dest_port);
+
+	BOOL CustomizeTCP(UCHAR* tcp_options, UINT tcp_options_size, UCHAR* tcp_data, UINT tcp_data_size, USHORT tcp_flags);
+	BOOL CustomizeUDP(UCHAR* udp_data, UINT udp_data_size);
+	BOOL CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_data, UINT icmp_data_size);
+};
+
 
 #ifdef USE_WINPCAP
 
@@ -368,45 +426,3 @@ public:
 };
 
 #endif
-
-#define GENERATE_TCP		1
-#define GENERATE_UDP		2
-#define GENERATE_ARP		3
-#define GENERATE_ICMP		4
-
-#define TCP_ACK				1
-#define TCP_SYN				2
-#define TCP_FIN				4
-#define TCP_RST				8
-#define TCP_PSH				16
-#define TCP_URG				32
-
-class DLLIMPORT Security::Libraries::Network::PacketGeneration::cPacketGen
-{
-	cPacket* Packet;
-
-	UCHAR src_mac_hex[6], dest_mac_hex[6];
-	UINT src_ip_hex, dest_ip_hex;
-	UCHAR data_offset;
-	USHORT total_length;
-	UCHAR PacketType;
-
-public:
-	cPacketGen(UINT type);
-	~cPacketGen();
-
-	UINT GeneratedPacketSize;
-	UCHAR* GeneratedPacket;
-
-	UINT IPToLong(const CHAR ip[]);
-
-	BOOL SetMACAddress(string src_mac, string dest_mac);
-	BOOL SetIPAddress(string src_ip, string dest_ip);
-	BOOL SetPorts(USHORT src_port, USHORT dest_port);
-
-	BOOL CustomizeTCP(UCHAR* tcp_options, UINT tcp_options_size, UCHAR* tcp_data, UINT tcp_data_size, USHORT tcp_flags);
-	BOOL CustomizeUDP(UCHAR* udp_data, UINT udp_data_size);
-	BOOL CustomizeICMP(UCHAR icmp_type, UCHAR icmp_code, UCHAR* icmp_data, UINT icmp_data_size);
-};
-
-

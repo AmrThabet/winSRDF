@@ -44,6 +44,7 @@ cPEFile::cPEFile(char* szFilename) : cFile(szFilename)
 
 cPEFile::cPEFile(char* buffer,DWORD size) : cFile(buffer,size)
 {
+	
 	FileLoaded = ParsePE();
 }
 bool cPEFile::identify(cFile* File)
@@ -74,15 +75,16 @@ bool cPEFile::ParsePE()
 	SizeOfImage = PEHeader->optional.size_of_image;
 	initDataDirectory();
 	initSections();
-	initExportTable();	// export table
+	initExportTable();
 	initImportTable();
-	//initRelocations();	//Still under testing
+	initRelocations();
 	return true;
 }
 void cPEFile::initExportTable()
 {
 	ExportTable.Functions = NULL;
 	DWORD ExportRVA = PEHeader->optional.data_directory[0].virtual_address;
+	memset(&ExportTable,0,sizeof(EXPORTTABLE));
 	if (ExportRVA == NULL)return;
 	image_export_directory* Exports = (image_export_directory*)(RVAToOffset(ExportRVA)+BaseAddress);
 
@@ -115,6 +117,7 @@ VOID cPEFile::initImportTable()
 {
 	ImportTable.DLL = NULL;
 	DWORD ImportRVA = PEHeader->optional.data_directory[1].virtual_address;
+	memset(&ImportTable,0,sizeof(IMPORTTABLE));
 	if (ImportRVA == NULL)return;
 	image_import_descriptor* Imports = (image_import_descriptor*)(RVAToOffset(ImportRVA)+BaseAddress);
 	
@@ -176,34 +179,21 @@ VOID cPEFile::initImportTable()
 void cPEFile::initRelocations()
 {
 	/*find reloc section*/
+
 	Relocations = NULL;
-	unsigned short int RelocSection;
-	for (unsigned int i = 0; i < nSections;i++)
-	{
-		if (strcmp(Section[i].SectionName,".reloc") ==0) 
-			RelocSection = i;
-	}
+	nRelocations = 0;
 
 	char *RelocTypes[] = {"ABSOLUTE","HIGH","LOW","HIGHLOW","HIGHADJ","MIPS_JMPADDR","I860_BRADDR","I860_SPLIT" };
-
 	char *RelocType;
 	WORD relocType;
 
 	DWORD RelocRVA = PEHeader->optional.data_directory[5].virtual_address;
 	if (RelocRVA == NULL) return;
 
-	PIMAGE_BASE_RELOCATION baseReloc;
-	baseReloc = (PIMAGE_BASE_RELOCATION)(BaseAddress+RelocRVA-(Section[RelocSection].VirtualAddress - Section[RelocSection].PointerToRawData));
-	while ( baseReloc->SizeOfBlock != 0 )
-	{
-		nRelocations++;
-		baseReloc = (PIMAGE_BASE_RELOCATION)((DWORD)(baseReloc) + (DWORD)(baseReloc->SizeOfBlock));
-	}
-
-
 	Relocations = (RELOCATIONS*)malloc(sizeof(RELOCATIONS) * nRelocations);
 	memset (Relocations,0,sizeof(RELOCATIONS) * nRelocations);
-	baseReloc = (PIMAGE_BASE_RELOCATION)(BaseAddress+RelocRVA-(Section[4].VirtualAddress - Section[4].PointerToRawData));
+	PIMAGE_BASE_RELOCATION baseReloc = (PIMAGE_BASE_RELOCATION)(RVAToOffset(RelocRVA) + BaseAddress);
+
 	for (unsigned int i = 0; i < nRelocations;i++)
 	{
 		unsigned int nEntries = (baseReloc->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
@@ -218,7 +208,7 @@ void cPEFile::initRelocations()
 			relocType = (*pEntry & 0xF000) >> 12;
 			RelocType = (relocType < 8) ? RelocTypes[relocType] : "unknown";
 
-			Relocations[i].Entries[j].Offset = (DWORD)(*pEntry & 0x0FFF)+baseReloc->VirtualAddress;
+			Relocations[i].Entries[j].Offset = (DWORD)(*pEntry & 0x0FFF) + baseReloc->VirtualAddress;
 			Relocations[i].Entries[j].Type = (char *)RelocType;
 
 			pEntry++;
@@ -286,7 +276,16 @@ VOID cPEFile::initSections()
 }
 DWORD cPEFile::RVAToOffset(DWORD RVA)
 {
-	if (RVA > SizeOfImage)return 0;
+	if (RVA > SizeOfImage)
+	{
+		if (RVA > Imagebase)
+		{
+			RVA -= Imagebase;
+			if (RVA > SizeOfImage) return 0;
+		}
+		else
+			return 0;
+	}
 
 	for (DWORD i = 0; i < nSections;i++)
 	{

@@ -75,8 +75,10 @@ DWORD cList::GetNumberOfItems()
 
 char* cList::GetItem(int index)
 {
-	if(nItems > 0)
+	if(nItems > 0 && (index < nItems))
+	{
 		return &head[index*Ssize];
+	}
 	return NULL;
 }
 

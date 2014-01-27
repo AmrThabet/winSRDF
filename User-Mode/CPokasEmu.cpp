@@ -59,6 +59,7 @@ CPokasEmu::CPokasEmu(cPEFile* PEFile,char* DLLPath)
 	 m_objSystem = new System(m_objEnvVar);
      process = new Process(m_objSystem,(char*)PEFile->BaseAddress,PEFile->FileLength,PROCESS_UNLOADEDIMAGE);
 }
+
 CPokasEmu::CPokasEmu(char *buff,int size,int ImageType,char* DLLPath)
 {
 	 m_szFileName = NULL;
@@ -90,16 +91,20 @@ int CPokasEmu::Emulate()
 	process->MaxIterations = 1000000;
 	return process->emulate();
 }
+
 int CPokasEmu::Emulate(cString LogFile)
 { 
 	string LogFilename = LogFile.GetChar();
 	process->MaxIterations = 1000000;
 	return process->emulate(LogFilename);
 }
+
 int CPokasEmu::Step()
 {
-	return process->emulatecommand();
+	process->MaxIterations = 1;
+	return process->emulate();
 }
+
 //Breakpoints:
 //------------
 
@@ -119,7 +124,7 @@ int  CPokasEmu::SetBreakpoint(char* FuncName ,DWORD BreakpointFunc)
 
 VOID CPokasEmu::DisableBreakpoint(int index)
 {
-     process->debugger->RemoveBp(index);
+     process->debugger->PauseBp(index);
 }
 
 

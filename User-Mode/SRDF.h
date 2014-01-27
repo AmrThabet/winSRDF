@@ -35,6 +35,7 @@ using namespace std;
 
 #define USE_POKAS_EMULATOR 1
 #define USE_SQLITE 1
+
 //#define USE_WINPCAP 1
 
 
