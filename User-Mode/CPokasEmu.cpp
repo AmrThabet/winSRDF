@@ -73,6 +73,7 @@ CPokasEmu::CPokasEmu(char *buff,int size,int ImageType,char* DLLPath)
 	 m_objEnvVar->MaxIterations=10000000;  
 	 m_objSystem = new System(m_objEnvVar);
      process = new Process(m_objSystem,buff,size,ImageType);
+	 MaxIteration = 1000000;
 }
 
 CPokasEmu::~CPokasEmu()
@@ -88,7 +89,7 @@ CPokasEmu::~CPokasEmu()
 
 int CPokasEmu::Emulate()
 { 
-	process->MaxIterations = 1000000;
+	process->MaxIterations = MaxIteration;
 	return process->emulate();
 }
 

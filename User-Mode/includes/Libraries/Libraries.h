@@ -84,6 +84,7 @@ class DLLIMPORT Security::Libraries::Malware::Dynamic::CPokasEmu
      int nDebuggerFunctions;
 
 public:
+		DWORD MaxIteration;
 		Process *process;
        CPokasEmu(char *szFileName,char* DLLPath);
 	   CPokasEmu(Security::Targets::Files::cPEFile* PEFile,char* DLLPath);
@@ -300,18 +301,19 @@ public:
 
 class DLLIMPORT Security::Libraries::Malware::Behavioral::cIATHook
 {
-	cHash* HookedModules;
+	
 	cString HookedAPIName;
 	DWORD HookedAPI;
 	cHash* HookedAddresses;
 	__PEB* PEB;
 
 	DWORD GetPEB();
-	cHash* GetModules(cHash* SkippedModules);
+	cHash* GetModules(cHash* SkippedModules,bool HookThese);
 public:
+	cHash* HookedModules;
 	cIATHook(){};
 	~cIATHook(){};
-	void Hook(cString DLLName, cString APIName,  DWORD NewFunc, cHash* SkippedModules = NULL);		//Hash( key=anything, value=ModuleName)
+	void Hook(cString DLLName, cString APIName,  DWORD NewFunc, cHash* SkippedModules = NULL,bool HookThese = false);		//Hash( key=anything, value=ModuleName)
 	void Unhook();
 	
 };
@@ -332,8 +334,9 @@ public:
 
 class DLLIMPORT Security::Libraries::Network::PacketGeneration::cPacketGen
 {
-	cPacket* Packet;
-
+	
+	UINT GeneratedPacketSize;
+	UCHAR* GeneratedPacket;
 	UCHAR src_mac_hex[6], dest_mac_hex[6];
 	UINT src_ip_hex, dest_ip_hex;
 	UCHAR data_offset;
@@ -344,9 +347,8 @@ public:
 	cPacketGen(UINT type);
 	~cPacketGen();
 
-	UINT GeneratedPacketSize;
-	UCHAR* GeneratedPacket;
-
+	
+	cPacket* Packet;
 	UINT IPToLong(const CHAR ip[]);
 
 	BOOL SetMACAddress(string src_mac, string dest_mac);

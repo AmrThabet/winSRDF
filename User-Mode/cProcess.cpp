@@ -82,7 +82,7 @@ cString cProcess::Unicode2Ansi(const LPWSTR unicodeString_,int stringLength)
 	
 }
 
-cProcess::cProcess(int processId)
+cProcess::cProcess(int processId,bool SkipThreads)
 {
 
 	ProcessId = processId;
@@ -93,7 +93,7 @@ cProcess::cProcess(int processId)
 	MYPROC ProcAdd; 
 	BOOL fRunTimeLinkSuccess; 
 	isFound = false;
-	    
+	this->SkipThreads = SkipThreads;
 	hinstLib = LoadLibrary(TEXT("ntdll.dll")); 
 	 
 	    
@@ -266,7 +266,8 @@ void cProcess::AnalyzeProcess()
 		
 	}
 	GetMemoryMap();
-	RefreshThreads();
+	if(!SkipThreads)
+		RefreshThreads();
 
 }
 cHash* cProcess::ModuleImportedDlls(cPEFile* Module)
@@ -281,6 +282,7 @@ cHash* cProcess::ModuleImportedDlls(cPEFile* Module)
 }
 BOOL cProcess::GetMemoryMap()
 {
+	
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	char *pMin = (char*)si.lpMinimumApplicationAddress;
@@ -288,7 +290,6 @@ BOOL cProcess::GetMemoryMap()
 
 	MEMORY_MAP memMap;
 	MemoryMap = cList(sizeof(MEMORY_MAP));
-	
 	for (char* pAddress = pMin; pAddress<pMax; /*Empty*/)
 	{
 		MEMORY_BASIC_INFORMATION mbi;
@@ -300,6 +301,7 @@ BOOL cProcess::GetMemoryMap()
 		}
 		if (mbi.State == MEM_COMMIT)
 		{
+
 			memMap.Address = (DWORD)mbi.BaseAddress;
 			memMap.Size	= (DWORD)mbi.RegionSize;
 			memMap.AllocationBase = (DWORD)mbi.AllocationBase;
@@ -422,7 +424,6 @@ void cProcess::RefreshThreads()
 	 {
 			return;	
 	 }
-
 	 Threads = new cList(sizeof(THREAD_INFO));
 	 memset(&te32,0,sizeof(te32));
 	 te32.dwSize = sizeof( THREADENTRY32 );

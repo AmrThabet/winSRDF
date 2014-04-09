@@ -31,6 +31,11 @@ using namespace std;
 
 #define BUFSIZE 1024
 
+typedef BOOL WINAPI GetNamedPipeClientProcessIdAPI( __in HANDLE Pipe, __out PULONG ClientProcessId);
+
+typedef GetNamedPipeClientProcessIdAPI *PGetNamedPipeClientProcessIdAPI;
+
+
 DWORD WINAPI ServerThread(LPVOID param)
 {
 	cout << "Here\n";
@@ -179,7 +184,10 @@ void cPipeServerSession::ReadThread()
 			else continue;
 		}
 		DWORD ProcessId;
-		if (!GetNamedPipeClientProcessId(hPipe,&ProcessId)) ProcessId = NULL;
+		PGetNamedPipeClientProcessIdAPI GetPipeProcessId = (PGetNamedPipeClientProcessIdAPI)GetProcAddress(LoadLibraryA("Kernel32"),"GetNamedPipeClientProcessId");
+
+		if (GetPipeProcessId == NULL) ProcessId = NULL;
+		if (!(*GetPipeProcessId)(hPipe,&ProcessId)) ProcessId = NULL;
 		if(ReadNotifyRoutine)
 		{
 			ReadNotifyRoutine(this,InputBuffer,Offset + cbBytesRead,ProcessId);

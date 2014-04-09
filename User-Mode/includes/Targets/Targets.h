@@ -738,6 +738,7 @@ class DLLIMPORT Security::Targets::Memory::cProcess
 	void EnumerateThread(THREAD_INFO* ti);
 	cHash* ModuleImportedDlls(Security::Targets::Files::cPEFile* Module);
 public:
+	bool SkipThreads;
 	// parameters
 	DWORD procHandle;
 	__PEB  *ppeb;
@@ -754,7 +755,7 @@ public:
 	bool isFound;
 	cList* Threads;
 	//methods
-	cProcess(int processId);
+	cProcess(int processId,bool SkipThreads = false);
 	~cProcess();
 	DWORD Read(DWORD startAddress,DWORD size);
 	DWORD Allocate (DWORD preferedAddress,DWORD size);

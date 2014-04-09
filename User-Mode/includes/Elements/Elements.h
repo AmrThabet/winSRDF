@@ -124,6 +124,36 @@ public:
 	virtual void GetSerialize(cXMLHash& XMLParams);
 };
 
+//cList in Array .. easy to use
+template <typename Type>
+struct ListOf {
+	cList* data;
+	ListOf(cList* y)
+	{
+		data = y;
+	}
+	ListOf(){};
+	void init(size_t size)
+	{
+		data = new cList(size);
+	}
+	void setvalues(cList* values)
+	{
+		  data = values;
+	}
+	void additem(Type Item)
+	{
+		data->AddItem((char*)Item);
+	}
+	void clear()
+	{
+		delete data;
+	}
+	cString toxml()
+	{
+		return data->Serialize(true);
+	}
+};
 
 class DLLIMPORT Security::Elements::String::cEncryptedString
 {

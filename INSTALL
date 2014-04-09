@@ -1,5 +1,5 @@
 to install SRDF Source code on Windows
 -------------------------------------
-1.Install Microsoft Visual Studio 2008
+1.Install Microsoft Visual Studio 2012
 2.open srdf.vcproj
 3.recompile the appliication in Release Mode

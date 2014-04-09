@@ -242,24 +242,27 @@ int cYaraScanner::ScannerCallback(RULE* rule)
 		YSTRING* gh=rule->string_list_head;
 		TResult.RuleIdentifier=rule->identifier;
 		TResult.Matches=new cList(sizeof(MSTRING));
-        while(gh!=NULL)
+		if(gh->matches_head!=NULL)
 		{
-			if(gh->matches_head!=NULL)
+			while(gh != NULL)
 			{
-				MSTRING* ms=new MSTRING;
-				ms->identifier=gh->identifier;
-				ms->offset=gh->matches_head->offset;
-				ms->data=gh->matches_head->data;
-				ms->string=gh->string;
-				ms->length=gh->length;
-				ms->mlength=gh->matches_head->length;
-				TResult.Matches->AddItem((char*)ms);
+				
+				MATCH* match = gh->matches_head;
+				while(match != NULL)
+				{
+					MSTRING* ms=new MSTRING;
+					ms->identifier=gh->identifier;
+					ms->offset=match->offset;
+					ms->data=match->data;
+					ms->string=gh->string;
+					ms->length=gh->length;
+					ms->mlength=match->length;
+					TResult.Matches->AddItem((char*)ms);
+					match = match->next;
+				}
+				gh=gh->next;
 			}
-			gh=gh->next;
-			//cout << "Here\n";
-	
 		}
-		//count++;
 		Results->AddItem((char*)&TResult);
 
 	}

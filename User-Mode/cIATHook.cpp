@@ -47,7 +47,7 @@ DWORD cIATHook::GetPEB()
 }
 
 // Get all loaded modules and skip the modules that will not be hooked
-cHash* cIATHook::GetModules(cHash* SkippedModules)
+cHash* cIATHook::GetModules(cHash* SkippedModules,bool HookThese)
 {
 	HookedModules = new cHash();
 	GetPEB();
@@ -78,26 +78,52 @@ cHash* cIATHook::GetModules(cHash* SkippedModules)
 				}
 				if (Found)	//Skip
 				{
-					ModuleEntry = (_LDR_DATA_TABLE_ENTRY2*)ModuleEntry->InLoadOrderLinks.Flink;
-					continue;
+					
+					if (HookThese)
+					{
+						HookedModules->AddItem("Hooked",ModuleEntry->DllBase);
+						
+						//ModuleEntry = (_LDR_DATA_TABLE_ENTRY2*)ModuleEntry->InLoadOrderLinks.Flink;
+						cString x;
+						x.Format("Hooking DLL: %X\n",ModuleEntry->DllBase);
+						cout << x;
+						//FILE* file = fopen("mem3.log","a");
+						//fwrite(x.GetChar(),x.GetLength(),1,file);
+						//fclose(file);
+					}
+					else 
+					{
+						ModuleEntry = (_LDR_DATA_TABLE_ENTRY2*)ModuleEntry->InLoadOrderLinks.Flink;
+						continue;
+					}
 				}
 			}
-			HookedModules->AddItem("Hooked",ModuleEntry->DllBase);
+			if (!HookThese)
+			{
+				//cout << "Hooking DLL:" << (int*)ModuleEntry->DllBase << "\n";
+				HookedModules->AddItem("Hooked",ModuleEntry->DllBase);
+			}
 			ModuleEntry = (_LDR_DATA_TABLE_ENTRY2*)ModuleEntry->InLoadOrderLinks.Flink;
 
 		} while(FirstDLL != ModuleEntry->DllBase);
 	}
+	
 	return NULL;
 }
 
 //Hook all modules by parsing their import table
-void cIATHook::Hook(cString DLLName, cString APIName, DWORD NewFunc, cHash* SkippedModules)
+void cIATHook::Hook(cString DLLName, cString APIName, DWORD NewFunc, cHash* SkippedModules,bool HookThese)
 {
-	GetModules(SkippedModules);
+	GetModules(SkippedModules,HookThese);
 	HookedAddresses = new cHash();
 	HookedAPIName = APIName;
-	HookedAPI = (DWORD)GetProcAddress(GetModuleHandle(DLLName),APIName);
-
+	HookedAPI = (DWORD)GetProcAddress(LoadLibraryA(DLLName.GetChar()),APIName.GetChar());
+	cString x;
+	//if(HookedAPI == 0x76F024F1)HookedAPI = 0x74CAE4A6;
+	
+	x.Format("Found API: %s = %X at %X",APIName.GetChar(),HookedAPI,GetModuleHandleA(DLLName.GetChar()));
+	//MessageBoxA(0,x.GetChar(),"MemMirtigation",0);
+	if (HookedAPI == 0x74CAE4A6) ;
 	for (int i =0; i< HookedModules->GetNumberOfItems();i++)
 	{
 		DWORD BaseAddress = atoi(HookedModules->GetValue(i));
@@ -116,40 +142,55 @@ void cIATHook::Hook(cString DLLName, cString APIName, DWORD NewFunc, cHash* Skip
 		while ((Imports->original_first_thunk != 0 && Imports->first_thunk != 0) || Imports->name != 0)
 		{
 			//cout << (char*)(Imports->name + BaseAddress) << "\n";
-			if (GetModuleHandle((char*)(Imports->name + BaseAddress)) == GetModuleHandle(DLLName))
+			if (1)//GetModuleHandle((char*)(Imports->name + BaseAddress)) == GetModuleHandle(DLLName))
 			{
 				Found = true;
-				break;
+				//Hooking DLL Function
+				DWORD* AddressesArray = (DWORD*)(Imports->first_thunk + BaseAddress);
+				for (int l = 0;AddressesArray[l] != NULL;l++)
+				{
+					//cout << (int*)HookedAPI << "\n";
+					if (AddressesArray[l] == HookedAPI)
+					{
+						//76F024F1 ==> 74CAE4A6
+						//76EEE046
+						//76EEDFA5
+						//76EF302A
+						//74C914C9
+						//Do Hooking
+						//cout << "API Found: " << l << "\t" << (int*)AddressesArray[l] << "\n";
+						
+						DWORD nProtect = NULL;
+						//cout << (int*)(&AddressesArray[l]) << "\n";
+						if (BaseAddress == 0x74B20000)
+						{
+							cString x;
+							x.Format("Found API: %X = %X",&AddressesArray[l],AddressesArray[l]);
+							//MessageBoxA(0,x.GetChar(),"MemMitigation",0);
+						}
+						if ((DWORD)&AddressesArray[l] == 0x74B219E8)
+						{
+							//MessageBoxA(0,"Hooked","MemMitigation",0);
+						}
+						DWORD Success = VirtualProtect(&AddressesArray[l],4,PAGE_READWRITE,&nProtect);
+						if (!Success)
+						{
+							cout << "Error\n";
+							continue;
+						}
+						AddressesArray[l] = NewFunc;//AddressesArray[l];
+						HookedAddresses->AddItem(BaseAddress,(DWORD)&AddressesArray[l]);
+						VirtualProtect(&AddressesArray[l],4,nProtect,&nProtect);
+					}
+				}
 			}
 			Imports = (image_import_descriptor*)((DWORD)Imports + (DWORD)sizeof(image_import_descriptor));
 		};
 
-		if (!Found) continue;
+		//if (!Found) continue;
 
-		//Hooking DLL Function
-		DWORD* AddressesArray = (DWORD*)(Imports->first_thunk + BaseAddress);
-		for (int l = 0;AddressesArray[l] != NULL;l++)
-		{
-			//cout << (int*)HookedAPI << "\n";
-			if (AddressesArray[l] == HookedAPI)
-			{
-				//Do Hooking
-				//cout << "API Found: " << l << "\t" << (int*)AddressesArray[l] << "\n";
-				
-				DWORD nProtect = NULL;
-				//cout << (int*)(&AddressesArray[l]) << "\n";
-				DWORD Success = VirtualProtect(&AddressesArray[l],4,PAGE_READWRITE,&nProtect);
-				if (!Success)
-				{
-					//cout << "Error\n";
-					continue;
-				}
-				AddressesArray[l] = NewFunc;//AddressesArray[l];
-
-				HookedAddresses->AddItem(BaseAddress,(DWORD)&AddressesArray[l]);
-				VirtualProtect(&AddressesArray[l],4,nProtect,&nProtect);
-			}
-		}
+		
+		
 	}
 }
 
