@@ -212,8 +212,189 @@ struct __PEB {
   char                    TlsExpansionBitmapBits[0x80];
   DWORD                   SessionId;
 };
+//==========================================================
+//by ReWolf  ... under testing
 
+#pragma pack(push)
+#pragma pack(1)
+template <class T>
+struct LIST_ENTRY_T
+{
+    T Flink;
+    T Blink;
+};
+ 
+template <class T>
+struct UNICODE_STRING_T
+{
+    union
+    {
+        struct
+        {
+            WORD Length;
+            WORD MaximumLength;
+        };
+        T dummy;
+    };
+    T Buffer;
+};
 
+template <class T>
+struct __PEB_LDR_DATA_T {
+    DWORD                 Length_;                      //+00
+    DWORD                Initialized;                  //+04
+    T					 SsHandle;                     //+08
+    LIST_ENTRY_T<T>     InLoadOrderModuleList; 
+    LIST_ENTRY_T<T>     InMemoryOrderModuleList;
+    LIST_ENTRY_T<T>     InInitializationOrderModuleList;
+    DWORD                 EntryInProgress;              //+24  
+    DWORD                 ShutdownInProgress;           //+28
+    DWORD                 ShutdownThreadId;             //+2C
+};
+
+template <class T>
+struct __LDR_DATA_TABLE_ENTRY_T{
+  LIST_ENTRY_T<T>         InLoadOrderLinks;              //+00
+  LIST_ENTRY_T<T>         InMemoryOrderLinks;            //+08
+  LIST_ENTRY_T<T>         InInitializationOrderLinks;    //+10
+  T							DllBase;                        //+18
+  T							EntryPoint;                     //+1C
+  T                     SizeOfImage;        //DWORD     //+20
+  UNICODE_STRING_T<T>       FullDllName; //_UNICODE_STRING  //+28
+  UNICODE_STRING_T<T>       BaseDllName; //_UNICODE_STRING  //+30
+  DWORD                     Flags;                          //+34
+  short                     LoadCount;                      //+38
+  short                     TlsIndex;                       //+3C
+  union{
+  __LIST_ENTRY               HashLinks;
+  DWORD                     SectionPointer;
+  };
+  DWORD                     CheckSum;
+  union{
+    DWORD                   TimeDateStamp;
+    DWORD                   LoadedImports;
+  };
+  DWORD                     EntryPointActivationContext;
+  DWORD                     PatchInformation;
+  LIST_ENTRY_T<T>               ForwarderLinks;
+  LIST_ENTRY_T<T>               ServiceTagLinks;
+  LIST_ENTRY_T<T>               StaticLinks;
+};
+
+template <class T,int A>
+struct __RTl_USER_PROCESS_PARAMETERS_T
+{
+	BYTE Reservedl[A];
+	UNICODE_STRING_T<T> ImagePathName;
+	UNICODE_STRING_T<T> Commandline;
+	BYTE Reserved2[92];
+};
+
+template <class T, class NGF, int A>
+struct _PEB_T
+{
+    union
+    {
+        struct
+        {
+            BYTE InheritedAddressSpace;
+            BYTE ReadImageFileExecOptions;
+            BYTE BeingDebugged;
+            BYTE BitField;
+        };
+        T dummy01;
+    };
+    T Mutant;
+    T ImageBaseAddress;
+    T Ldr;
+    T ProcessParameters;
+    T SubSystemData;
+    T ProcessHeap;
+    T FastPebLock;
+    T AtlThunkSListPtr;
+    T IFEOKey;
+    T CrossProcessFlags;
+    T UserSharedInfoPtr;
+    DWORD SystemReserved;
+    DWORD AtlThunkSListPtr32;
+    T ApiSetMap;
+    T TlsExpansionCounter;
+    T TlsBitmap;
+    DWORD TlsBitmapBits[2];
+    T ReadOnlySharedMemoryBase;
+    T HotpatchInformation;
+    T ReadOnlyStaticServerData;
+    T AnsiCodePageData;
+    T OemCodePageData;
+    T UnicodeCaseTableData;
+    DWORD NumberOfProcessors;
+    union
+    {
+        DWORD NtGlobalFlag;
+        NGF dummy02;
+    };
+    LARGE_INTEGER CriticalSectionTimeout;
+    T HeapSegmentReserve;
+    T HeapSegmentCommit;
+    T HeapDeCommitTotalFreeThreshold;
+    T HeapDeCommitFreeBlockThreshold;
+    DWORD NumberOfHeaps;
+    DWORD MaximumNumberOfHeaps;
+    T ProcessHeaps;
+    T GdiSharedHandleTable;
+    T ProcessStarterHelper;
+    T GdiDCAttributeList;
+    T LoaderLock;
+    DWORD OSMajorVersion;
+    DWORD OSMinorVersion;
+    WORD OSBuildNumber;
+    WORD OSCSDVersion;
+    DWORD OSPlatformId;
+    DWORD ImageSubsystem;
+    DWORD ImageSubsystemMajorVersion;
+    T ImageSubsystemMinorVersion;
+    T ActiveProcessAffinityMask;
+    T GdiHandleBuffer[A];
+    T PostProcessInitRoutine;
+    T TlsExpansionBitmap;
+    DWORD TlsExpansionBitmapBits[32];
+    T SessionId;
+    ULARGE_INTEGER AppCompatFlags;
+    ULARGE_INTEGER AppCompatFlagsUser;
+    T pShimData;
+    T AppCompatInfo;
+    UNICODE_STRING_T<T> CSDVersion;
+    T ActivationContextData;
+    T ProcessAssemblyStorageMap;
+    T SystemDefaultActivationContextData;
+    T SystemAssemblyStorageMap;
+    T MinimumStackCommit;
+    T FlsCallback;
+    LIST_ENTRY_T<T> FlsListHead;
+    T FlsBitmap;
+    DWORD FlsBitmapBits[4];
+    T FlsHighIndex;
+    T WerRegistrationData;
+    T WerShipAssertPtr;
+    T pContextData;
+    T pImageHeaderHash;
+    T TracingFlags;
+};
+ 
+typedef _PEB_T<DWORD, PVOID64, 34> PEB32;
+typedef _PEB_T<PVOID64, DWORD, 30> PEB64;
+typedef __RTl_USER_PROCESS_PARAMETERS_T<DWORD,56> USER_PROCESS_PARAMETERS;
+typedef __RTl_USER_PROCESS_PARAMETERS_T<PVOID64,96> USER_PROCESS_PARAMETERS64;
+typedef UNICODE_STRING_T<DWORD> UNICODE_STRING32;
+typedef UNICODE_STRING_T<PVOID64> UNICODE_STRING64;
+typedef __PEB_LDR_DATA_T<DWORD> PEB_LDR_DATA32;
+typedef __PEB_LDR_DATA_T<PVOID64> PEB_LDR_DATA64;
+typedef __LDR_DATA_TABLE_ENTRY_T<DWORD> LDR_DATA_TABLE_ENTRY32;
+typedef __LDR_DATA_TABLE_ENTRY_T<PVOID64> LDR_DATA_TABLE_ENTRY64;
+
+#pragma pack(pop)
+
+//==================================================================================
 struct __RTl_USER_PROCESS_PARAMETERS
 {
 BYTE Reservedl[56];

@@ -253,6 +253,57 @@ void cString::Replace(char src, char dest)
 		}
 	}
 }
+
+
+void cString::Replace(const char *src, const char *dest)
+{
+	char *ret;
+	char* s = m_pString;
+	int i, count = 0;
+	size_t destlen = strlen(dest);
+	size_t srclen = strlen(src);
+	
+	
+	//Getting the number of accurance
+	for (i = 0; s[i] != '\0'; i++)
+	{
+		if (strstr(&s[i], src) == &s[i])
+		{
+			count++;
+			i += srclen;
+		}
+	}
+
+	//String not found .. skip
+	if (count == 0)
+		return; 
+
+	//Allocating a new buffer with new size
+	ret = (char*)malloc(i + count * (destlen - srclen) + 1);
+	memset(ret,0,i + count * (destlen - srclen) + 1);
+	if (ret == NULL)
+		return;
+
+	i = 0;
+	while (*s)
+	{
+		if (strstr(s, src) == s)
+		{
+			strcpy(&ret[i], dest);
+			i += destlen;
+			s += srclen;
+		} 
+		else
+			ret[i++] = *s++;
+	}
+	ret[i] = '\0';
+	free(m_pString);
+	m_pString = ret;
+	this->m_nLength = strlen(m_pString);
+	return;
+}
+
+
 bool cString::NumericParse(void* pvar, char flag)
 {
 	char* pTmpStr = m_pString;

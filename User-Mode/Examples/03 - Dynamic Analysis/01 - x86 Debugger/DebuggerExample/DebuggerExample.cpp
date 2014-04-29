@@ -10,6 +10,8 @@ using namespace Security::Libraries::Malware::Dynamic;
 using namespace Security::Targets::Memory;
 using namespace Security::Targets::Files;
 using namespace Security::Libraries::Malware::Static;
+
+
 class cDebuggerApp : public cConsoleApp
 {
 	cDebugger*	Debugger;

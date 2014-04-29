@@ -60,7 +60,6 @@ public:
 	char*		 Filename;
 	cFile(char* szFilename);
 	cFile(char* buffer,DWORD size);
-	int OpenFile(char* szFilename);
 	BOOL IsFound();
 	~cFile();
 	BOOL		IsReassembled;
@@ -660,8 +659,16 @@ public:
 
 struct MODULE_INFO
 {
-	DWORD moduleImageBase;
-	DWORD moduleSizeOfImage;
+	union
+	{
+		DWORD moduleImageBase;
+		PVOID64 moduleImageBase64;
+	};
+	union
+	{
+		DWORD moduleSizeOfImage;
+		DWORD64 moduleSizeOfImage64;
+	};
 	cString* moduleName;
 	cString* modulePath;
 	cString* moduleMD5;
@@ -675,6 +682,7 @@ struct MEMORY_MAP
 	DWORD Size;
 	DWORD Protection;
 	DWORD AllocationBase;
+	DWORD Type;
 };
 
 struct THREAD_INFO
@@ -686,6 +694,7 @@ struct THREAD_INFO
 	DWORD StackBase;
 	DWORD StackLimit;
 	DWORD SEH;
+	DWORD StartAddress;
 };
 
 class DLLIMPORT Security::Targets::Memory::MemoryRegion : public Security::Elements::XML::cSerializer
@@ -733,17 +742,21 @@ public:
 class DLLIMPORT Security::Targets::Memory::cProcess
 {
 	void AnalyzeProcess();
+	void AnalyzeProcess64();
 	cString Unicode2Ansi(LPWSTR,int);
 	BOOL GetMemoryMap();
 	void EnumerateThread(THREAD_INFO* ti);
 	cHash* ModuleImportedDlls(Security::Targets::Files::cPEFile* Module);
 public:
-	bool SkipThreads;
 	// parameters
+	BOOL is64Bits;
 	DWORD procHandle;
 	__PEB  *ppeb;
+	PEB64 *ppeb64;
 	DWORD ImageBase;
+	PVOID64 ImageBase64;
 	ULONG SizeOfImage;
+	DWORD64 SizeOfImage64;
 	cString processName;
 	cString processPath;
 	cString processMD5;
@@ -755,7 +768,7 @@ public:
 	bool isFound;
 	cList* Threads;
 	//methods
-	cProcess(int processId,bool SkipThreads = false);
+	cProcess(int processId);
 	~cProcess();
 	DWORD Read(DWORD startAddress,DWORD size);
 	DWORD Allocate (DWORD preferedAddress,DWORD size);

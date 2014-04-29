@@ -28,6 +28,37 @@ using namespace Security::Storage::Files;
 using namespace Security::Targets::Files;
 
 typedef NTSTATUS (NTAPI *MYPROC)(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG); 
+typedef NTSTATUS (WINAPI *pNtQIT)(HANDLE, LONG, PVOID, ULONG, PULONG);
+#define ThreadQuerySetWin32StartAddress 9
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS  ((NTSTATUS)0x00000000L)
+
+#define MAX_DLL_NUMBER	300				//just set a maximum number
+#endif
+
+
+typedef struct _PROCESS_BASIC_INFORMATION_WOW64 {
+    PVOID Reserved1[2];
+	PVOID64 PebBaseAddress;
+    PVOID Reserved2[4];
+    LARGE_INTEGER UniqueProcessId;
+	LARGE_INTEGER InheritedFromUniqueProcessId;
+    //PVOID Reserved3[2];
+} PROCESS_BASIC_INFORMATION_WOW64;
+
+typedef struct _UNICODE_STRING_WOW64 {
+  USHORT Length;
+  USHORT MaximumLength;
+  PVOID64 Buffer;
+} UNICODE_STRING_WOW64;
+
+typedef NTSTATUS (NTAPI *_NtWow64ReadVirtualMemory64)(
+    __in HANDLE ProcessHandle,
+    __in_opt PVOID64 BaseAddress,
+    __out_bcount(BufferSize) PVOID Buffer,
+    __in ULONGLONG BufferSize,
+    __out_opt PULONGLONG NumberOfBytesRead
+    );
 
 BOOL sm_EnableTokenPrivilege()
 {
@@ -82,40 +113,87 @@ cString cProcess::Unicode2Ansi(const LPWSTR unicodeString_,int stringLength)
 	
 }
 
-cProcess::cProcess(int processId,bool SkipThreads)
+cProcess::cProcess(int processId)
 {
 
 	ProcessId = processId;
 	Threads = NULL;
+	is64Bits = false;
+
 	sm_EnableTokenPrivilege();
 
 	HINSTANCE hinstLib; 
 	MYPROC ProcAdd; 
 	BOOL fRunTimeLinkSuccess; 
 	isFound = false;
-	this->SkipThreads = SkipThreads;
-	hinstLib = LoadLibrary(TEXT("ntdll.dll")); 
-	 
 	    
+	hinstLib = LoadLibrary(TEXT("ntdll.dll")); 
+	
 	if (hinstLib != NULL) 
 	{ 
-		ProcAdd = (MYPROC) GetProcAddress(hinstLib, "NtQueryInformationProcess"); 
-		if (NULL != ProcAdd) 
+		procHandle = (DWORD)OpenProcess(PROCESS_ALL_ACCESS , FALSE, DWORD(processId)); // setting process handle PROCESS_CREATE_THREAD | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_SUSPEND_RESUME
+		if (procHandle == NULL) return;
+		BOOL is64Processor = false;
+		BOOL is32Process = false;
+		
+		IsWow64Process(GetCurrentProcess(),&is64Processor);
+		IsWow64Process((HANDLE)procHandle,&is32Process);
+		if (is64Processor == TRUE && is32Process == FALSE)
 		{
-			fRunTimeLinkSuccess = TRUE;
-			procHandle = (DWORD)OpenProcess(PROCESS_ALL_ACCESS , FALSE, DWORD(processId)); // setting process handle PROCESS_CREATE_THREAD | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_SUSPEND_RESUME
-			if (procHandle != NULL)
-			{
-				__PROCESS_BASIC_INFORMATION pbi;
-				DWORD data_length = 0;
+			is64Bits = true;
+			
+			 ProcAdd = (MYPROC)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtWow64QueryInformationProcess64");
+			 _NtWow64ReadVirtualMemory64 read = (_NtWow64ReadVirtualMemory64)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtWow64ReadVirtualMemory64");
 
-				(ProcAdd)((HANDLE)procHandle, ProcessBasicInformation, &pbi, sizeof(pbi), &data_length);
-				ppeb = (__PEB*)pbi.PebBaseAddress;  // setting PEB address	
-				if(ppeb == NULL) return;
-				ParentID = pbi.InheritedFromUniqueProcessId;
-				AnalyzeProcess();
-				isFound = true;
+			 if (NULL != ProcAdd && NULL != read) 
+			 {
+				 fRunTimeLinkSuccess = TRUE;
+				 PROCESS_BASIC_INFORMATION_WOW64 pbi;
+				 DWORD data_length = 0;
+				
+				 (ProcAdd)((HANDLE)procHandle, ProcessBasicInformation, &pbi, sizeof(pbi), &data_length);
+				  
+
+				  //---------------------
+				   // determine if 64 or 32-bit processor
+					SYSTEM_INFO si;
+					GetNativeSystemInfo(&si);
+
+					// read basic info to get ProcessParameters address, we only need the beginning of PEB
+					DWORD pebSize = sizeof(PEB64);//ProcessParametersOffset + 8 + 1000;
+					ppeb64 = (PEB64*)malloc(pebSize);
+					ZeroMemory(ppeb64, pebSize);
+					
+					// read PEB from 64-bit address space
+					NTSTATUS err = read((HANDLE)procHandle, pbi.PebBaseAddress, ppeb64, pebSize, NULL);
+					if (err != 0)
+					{
+						CloseHandle((HANDLE)procHandle);
+						return ;
+					}
+					ParentID = pbi.InheritedFromUniqueProcessId.LowPart;
+					AnalyzeProcess64();
+					isFound = true;
+			 }
+		}
+		else
+		{
+			ProcAdd = (MYPROC) GetProcAddress(hinstLib, "NtQueryInformationProcess"); 
+			if (NULL != ProcAdd) 
+			{
+
+					fRunTimeLinkSuccess = TRUE;
+					__PROCESS_BASIC_INFORMATION pbi;
+					DWORD data_length = 0;
+
+					(ProcAdd)((HANDLE)procHandle, ProcessBasicInformation, &pbi, sizeof(pbi), &data_length);
+					ppeb = (__PEB*)pbi.PebBaseAddress;  // setting PEB address	
+					if(ppeb == NULL) return;
+					ParentID = pbi.InheritedFromUniqueProcessId;
+					AnalyzeProcess();
+					isFound = true;
 			}
+	       
 		}
 			
 	}
@@ -126,6 +204,197 @@ cProcess::cProcess(int processId,bool SkipThreads)
 bool cProcess::IsFound()
 {
 	return isFound;
+}
+
+void cProcess::AnalyzeProcess64()
+{
+	NTSTATUS err;
+	// read basic info to get CommandLine address, we only need the beginning of ProcessParameters
+	USER_PROCESS_PARAMETERS64* ProcessParameters = (USER_PROCESS_PARAMETERS64*)malloc(sizeof(USER_PROCESS_PARAMETERS64));
+	ZeroMemory(ProcessParameters, sizeof(USER_PROCESS_PARAMETERS64));
+					
+	_NtWow64ReadVirtualMemory64 read = (_NtWow64ReadVirtualMemory64)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtWow64ReadVirtualMemory64");
+
+	// read ProcessParameters from 64-bit address space
+	PBYTE* parameters = (PBYTE*)(ppeb64->ProcessParameters); // address in remote process adress space
+	err = read((HANDLE)procHandle, parameters, ProcessParameters, sizeof(USER_PROCESS_PARAMETERS64), NULL);
+	if (err != 0)
+	{
+		CloseHandle((HANDLE)procHandle);
+		return;
+	}
+	//-------------------------------------------------------------
+
+	//Getting ProcessPath
+
+	UNICODE_STRING64* pProcessPath = (UNICODE_STRING64*)(&ProcessParameters->ImagePathName);
+	PWSTR processpath = (PWSTR)malloc(pProcessPath->MaximumLength*2 +1000);
+	memset(processpath,0,pProcessPath->MaximumLength*2  +1000);
+	err = read((HANDLE)procHandle, (PVOID64)pProcessPath->Buffer, processpath, pProcessPath->MaximumLength, NULL);
+	if (err != 0)
+	{
+		CloseHandle((HANDLE)procHandle);
+		return ;
+	}
+	
+	//To a readable and easy format
+	processPath = Unicode2Ansi(processpath,pProcessPath->MaximumLength);
+	processPath.Replace("system32","sysnative");
+	processPath.Replace("System32","Sysnative");
+	processPath.Replace("SYSTEM32","sysnative");
+	free(processpath);
+
+	//Getting Commandline
+	UNICODE_STRING64* pCommandLine = (UNICODE_STRING64*)(&ProcessParameters->Commandline);
+	PWSTR cmdLine = (PWSTR)malloc(pCommandLine->MaximumLength*2 +1000);
+	memset(cmdLine,0,pCommandLine->MaximumLength*2  +1000);
+	err = read((HANDLE)procHandle, (PVOID64)pCommandLine->Buffer, cmdLine, pCommandLine->MaximumLength, NULL);
+	if (err)
+	{
+		CloseHandle((HANDLE)procHandle);
+		return ;
+	}
+	
+	//To a readable and easy format
+	CommandLine = Unicode2Ansi(cmdLine,pCommandLine->MaximumLength);
+	CommandLine.Replace("system32","sysnative");
+	CommandLine.Replace("System32","Sysnative");
+	CommandLine.Replace("SYSTEM32","sysnative");
+	free(cmdLine);
+
+	//---------------------------------------------------------------------------------------------
+	//Read The Modules
+
+	PEB_LDR_DATA64 tmp1 = {0};
+	PVOID64 LDRDataPtr = NULL;
+	LDR_DATA_TABLE_ENTRY64	tmp2;
+	LPWSTR pathBuffer,nameBuffer,moduleNameBuffer,modulePathBuffer;
+	DWORD bytesRead;
+	PVOID64 myFlag;
+	MODULE_INFO mod;
+	modulesList =cList(sizeof(MODULE_INFO));
+	ImageBase64 = ppeb64->ImageBaseAddress;
+	LARGE_INTEGER modImagebase = {0};
+	modImagebase.QuadPart = (LONGLONG)ImageBase64;
+	//printf("Process Imagebase = %08x%08x\n\n",modImagebase.HighPart,modImagebase.LowPart);
+
+	err = read((HANDLE)procHandle,(PVOID64)(ppeb64->Ldr),(PVOID)&tmp1,sizeof(tmp1),NULL);
+	if(err == ERROR_SUCCESS)
+	{
+			
+
+		if (read((HANDLE)procHandle,(PVOID64)(tmp1.InLoadOrderModuleList.Flink),&tmp2,sizeof(tmp2),NULL) != ERROR_SUCCESS)return;
+		myFlag = tmp2.DllBase;
+
+		do{	
+			ReadProcessMemory((HANDLE)procHandle,(PVOID64)(tmp2.InLoadOrderLinks.Flink),&tmp2,sizeof(tmp2),NULL);
+			if (ImageBase64 == tmp2.DllBase)
+			{
+				//Initializing The Variables
+				mod.moduleName = new cString(" ");
+				mod.modulePath = new cString(" ");
+				mod.moduleMD5 = new cString(" ");
+				mod.moduleImageBase = 0;
+				mod.moduleSizeOfImage = 0;
+				mod.ImportedDLLs = new cHash();
+
+				SizeOfImage64 = (DWORD64)tmp2.SizeOfImage;
+				
+				pathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
+				memset(pathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
+				err = read((HANDLE)procHandle,(PVOID64)(tmp2.FullDllName.Buffer),pathBuffer,(tmp2.FullDllName.Length+1)*2,NULL);
+				processPath = Unicode2Ansi(pathBuffer,(tmp2.FullDllName.Length+1)*2);
+				processPath.Replace("system32","sysnative");
+				processPath.Replace("System32","Sysnative");
+				processPath.Replace("SYSTEM32","sysnative");
+				free(pathBuffer);
+
+				nameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
+				memset(nameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
+				read((HANDLE)procHandle,tmp2.BaseDllName.Buffer,nameBuffer,(tmp2.BaseDllName.Length+1)*2,NULL);
+				processName = Unicode2Ansi(nameBuffer , (tmp2.BaseDllName.Length+1)*2);
+				free(nameBuffer);
+
+				mod.moduleName = &processName;
+				mod.moduleImageBase64 = tmp2.DllBase;
+				mod.moduleSizeOfImage64 = (DWORD64)tmp2.SizeOfImage;
+				mod.modulePath = &processPath;
+				mod.nExportedAPIs = 0;
+				mod.ImportedDLLs = new cHash();
+				cFile* ModuleFile = new cFile(mod.modulePath->GetChar());
+				if (!ModuleFile->IsFound())
+				{
+					mod.moduleMD5 = new cString("");
+				}
+				else
+				{
+					cMD5String* MD5 = new cMD5String();
+					processMD5 = MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength);
+					mod.moduleMD5 = &processMD5;
+					delete MD5;
+				}
+				delete ModuleFile;
+				modulesList.AddItem((char*)&mod);//*/
+			}
+			else
+			{
+				//Initializing The Variables
+				mod.moduleName = new cString(" ");
+				mod.modulePath = new cString(" ");
+				mod.moduleMD5 = new cString(" ");
+				mod.moduleImageBase = 0;
+				mod.moduleSizeOfImage = 0;
+				mod.ImportedDLLs = new cHash();
+
+				if (tmp2.DllBase == 0)continue;
+				
+				mod.moduleImageBase64 = tmp2.DllBase;
+				mod.moduleSizeOfImage64 = (DWORD64)tmp2.SizeOfImage;
+				modulePathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
+				memset(modulePathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
+				err = read((HANDLE)procHandle,(PVOID64)(tmp2.FullDllName.Buffer),modulePathBuffer,(tmp2.FullDllName.Length+1)*2,NULL);
+				mod.modulePath = new cString(Unicode2Ansi(modulePathBuffer,(tmp2.FullDllName.Length+1)*2));
+				mod.modulePath->Replace("system32","sysnative");
+				mod.modulePath->Replace("System32","Sysnative");
+				mod.modulePath->Replace("SYSTEM32","sysnative");
+				
+				free(modulePathBuffer);
+				moduleNameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
+				memset(moduleNameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
+				read((HANDLE)procHandle,tmp2.BaseDllName.Buffer,moduleNameBuffer,(tmp2.BaseDllName.Length+1)*2,NULL);
+				mod.moduleName = new cString(Unicode2Ansi(moduleNameBuffer , (tmp2.BaseDllName.Length+1)*2));
+				free(moduleNameBuffer);
+				
+				if (mod.modulePath->GetLength() == 0)
+				{
+					mod.moduleMD5 = new cString("");
+					mod.ImportedDLLs = new cHash();
+					continue;
+				}
+				cFile* ModuleFile = new cFile(mod.modulePath->GetChar());
+				if (!ModuleFile->IsFound())
+				{
+					mod.moduleMD5 = new cString("");
+				}
+				else
+				{
+					cMD5String* MD5 = new cMD5String();
+					mod.moduleMD5 = new cString(MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength));
+					delete MD5;
+				}
+
+				mod.ImportedDLLs = new cHash();
+				mod.nExportedAPIs = 0;
+				modulesList.AddItem((char*)&mod);
+				
+				delete ModuleFile;//*/
+			}
+
+			//LARGE_INTEGER modImagebase = {0};
+			//modImagebase.QuadPart = (LONGLONG)tmp2.DllBase;
+			//printf("DLLBase = %08x%08x\n",modImagebase.HighPart,modImagebase.LowPart);	
+		} while(myFlag != tmp2.DllBase || modulesList.GetNumberOfItems() > MAX_DLL_NUMBER);
+	}
 }
 
 void cProcess::AnalyzeProcess()
@@ -151,23 +420,24 @@ void cProcess::AnalyzeProcess()
 
 	//setting  processSizeOfImage , processPath , processName ,MODULE_INFO
 
-	_PEB_LDR_DATA2 *LoaderData = NULL;
-	_LDR_DATA_TABLE_ENTRY2	ModuleEntry;
+	_PEB_LDR_DATA2 *tmp1=NULL;
+	_LDR_DATA_TABLE_ENTRY2	tmp2;
 	LPWSTR pathBuffer,nameBuffer,moduleNameBuffer,modulePathBuffer;
 	DWORD bytesRead;
 	DWORD myFlag;
 	MODULE_INFO mod;
 	modulesList =cList(sizeof(MODULE_INFO));
-	ReadProcessMemory((HANDLE)procHandle,&(ppeb->LoaderData),&LoaderData,sizeof(LoaderData),NULL);
-	if(LoaderData)
+	ReadProcessMemory((HANDLE)procHandle,&(ppeb->LoaderData),&tmp1,sizeof(tmp1),NULL);
+	if(tmp1)
 	{
-		if (!ReadProcessMemory((HANDLE)procHandle,&(LoaderData->InLoadOrderModuleList),&ModuleEntry,sizeof(ModuleEntry),&bytesRead))return;
+		if (!ReadProcessMemory((HANDLE)procHandle,&(tmp1->InLoadOrderModuleList),&tmp2,sizeof(tmp2),&bytesRead))return;
 		
-		myFlag = ModuleEntry.DllBase;
+		myFlag = tmp2.DllBase;
 			
 		do{	
-			ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.InLoadOrderLinks.Flink),&ModuleEntry,sizeof(ModuleEntry),&bytesRead);
-			if (ImageBase == ModuleEntry.DllBase)
+			ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.InLoadOrderLinks.Flink),&tmp2,sizeof(tmp2),&bytesRead);
+			//cout << modulesList.GetNumberOfItems() << "\n";
+			if (ImageBase == tmp2.DllBase)
 			{
 				//Initializing The Variables
 				mod.moduleName = new cString(" ");
@@ -177,21 +447,20 @@ void cProcess::AnalyzeProcess()
 				mod.moduleSizeOfImage = 0;
 				mod.ImportedDLLs = new cHash();
 
-				SizeOfImage = ModuleEntry.SizeOfImage;
-
-				pathBuffer = (LPWSTR) malloc((ModuleEntry.FullDllName.Length+1)*2);
-				memset(pathBuffer , 0 ,(ModuleEntry.FullDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.FullDllName.Buffer),pathBuffer,(ModuleEntry.FullDllName.Length+1)*2,&bytesRead);
-				processPath = Unicode2Ansi(pathBuffer,(ModuleEntry.FullDllName.Length+1)*2);
+				SizeOfImage = tmp2.SizeOfImage;
+				pathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
+				memset(pathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.FullDllName.Buffer),pathBuffer,(tmp2.FullDllName.Length+1)*2,&bytesRead);
+				processPath = Unicode2Ansi(pathBuffer,(tmp2.FullDllName.Length+1)*2);
 				free(pathBuffer);
-				nameBuffer = (LPWSTR) malloc((ModuleEntry.BaseDllName.Length+1)*2);
-				memset(nameBuffer , 0 ,(ModuleEntry.BaseDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.BaseDllName.Buffer),nameBuffer,(ModuleEntry.BaseDllName.Length+1)*2,&bytesRead);
-				processName = Unicode2Ansi(nameBuffer , (ModuleEntry.BaseDllName.Length+1)*2);
+				nameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
+				memset(nameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.BaseDllName.Buffer),nameBuffer,(tmp2.BaseDllName.Length+1)*2,&bytesRead);
+				processName = Unicode2Ansi(nameBuffer , (tmp2.BaseDllName.Length+1)*2);
 				free(nameBuffer);
 				mod.moduleName = &processName;
-				mod.moduleImageBase = ModuleEntry.DllBase;
-				mod.moduleSizeOfImage = ModuleEntry.SizeOfImage;
+				mod.moduleImageBase = tmp2.DllBase;
+				mod.moduleSizeOfImage = tmp2.SizeOfImage;
 				mod.modulePath = &processPath;
 				mod.nExportedAPIs = 0;
 				cPEFile* ModuleFile = new cPEFile(mod.modulePath->GetChar());
@@ -207,6 +476,7 @@ void cProcess::AnalyzeProcess()
 					mod.moduleMD5 = &processMD5;
 					if (ModuleFile->IsFound())mod.ImportedDLLs = ModuleImportedDlls(ModuleFile);
 					else mod.ImportedDLLs = new cHash();
+
 					delete MD5;
 				}
 				delete ModuleFile;
@@ -222,19 +492,19 @@ void cProcess::AnalyzeProcess()
 				mod.moduleSizeOfImage = 0;
 				mod.ImportedDLLs = new cHash();
 
-				if (ModuleEntry.DllBase == 0)continue;
+				if (tmp2.DllBase == 0)continue;
 
-				mod.moduleImageBase = ModuleEntry.DllBase;
-				mod.moduleSizeOfImage = ModuleEntry.SizeOfImage;
-				modulePathBuffer = (LPWSTR) malloc((ModuleEntry.FullDllName.Length+1)*2);
-				memset(modulePathBuffer , 0 ,(ModuleEntry.FullDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.FullDllName.Buffer),modulePathBuffer,(ModuleEntry.FullDllName.Length+1)*2,&bytesRead);
-				mod.modulePath = new cString(Unicode2Ansi(modulePathBuffer,(ModuleEntry.FullDllName.Length+1)*2));
+				mod.moduleImageBase = tmp2.DllBase;
+				mod.moduleSizeOfImage = tmp2.SizeOfImage;
+				modulePathBuffer = (LPWSTR) malloc((tmp2.FullDllName.Length+1)*2);
+				memset(modulePathBuffer , 0 ,(tmp2.FullDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.FullDllName.Buffer),modulePathBuffer,(tmp2.FullDllName.Length+1)*2,&bytesRead);
+				mod.modulePath = new cString(Unicode2Ansi(modulePathBuffer,(tmp2.FullDllName.Length+1)*2));
 				free(modulePathBuffer);
-				moduleNameBuffer = (LPWSTR) malloc((ModuleEntry.BaseDllName.Length+1)*2);
-				memset(moduleNameBuffer , 0 ,(ModuleEntry.BaseDllName.Length+1)*2);
-				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(ModuleEntry.BaseDllName.Buffer),moduleNameBuffer,(ModuleEntry.BaseDllName.Length+1)*2,&bytesRead);
-				mod.moduleName = new cString(Unicode2Ansi(moduleNameBuffer , (ModuleEntry.BaseDllName.Length+1)*2));
+				moduleNameBuffer = (LPWSTR) malloc((tmp2.BaseDllName.Length+1)*2);
+				memset(moduleNameBuffer , 0 ,(tmp2.BaseDllName.Length+1)*2);
+				ReadProcessMemory((HANDLE)procHandle,(LPCVOID)(tmp2.BaseDllName.Buffer),moduleNameBuffer,(tmp2.BaseDllName.Length+1)*2,&bytesRead);
+				mod.moduleName = new cString(Unicode2Ansi(moduleNameBuffer , (tmp2.BaseDllName.Length+1)*2));
 				free(moduleNameBuffer);
 				if (mod.modulePath->GetLength() == 0)
 				{
@@ -249,9 +519,12 @@ void cProcess::AnalyzeProcess()
 					mod.ImportedDLLs = new cHash();
 					mod.nExportedAPIs = 0;
 				}
-				cMD5String* MD5 = new cMD5String();
-				mod.moduleMD5 = new cString(MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength));
-				delete MD5;
+				else
+				{
+					cMD5String* MD5 = new cMD5String();
+					mod.moduleMD5 = new cString(MD5->Encrypt((char*)ModuleFile->BaseAddress,ModuleFile->FileLength));
+					delete MD5;
+				}
 				if (mod.moduleImageBase != 0)
 				{
 					if (ModuleFile->IsFound())mod.ImportedDLLs = ModuleImportedDlls(ModuleFile);
@@ -262,12 +535,11 @@ void cProcess::AnalyzeProcess()
 				delete ModuleFile;
 			}
 				
-		} while(myFlag != ModuleEntry.DllBase);
+		} while(myFlag != tmp2.DllBase && modulesList.GetNumberOfItems() < MAX_DLL_NUMBER);
 		
 	}
 	GetMemoryMap();
-	if(!SkipThreads)
-		RefreshThreads();
+	RefreshThreads();
 
 }
 cHash* cProcess::ModuleImportedDlls(cPEFile* Module)
@@ -280,9 +552,9 @@ cHash* cProcess::ModuleImportedDlls(cPEFile* Module)
 		}
 	return hash;
 }
+
 BOOL cProcess::GetMemoryMap()
 {
-	
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	char *pMin = (char*)si.lpMinimumApplicationAddress;
@@ -290,6 +562,7 @@ BOOL cProcess::GetMemoryMap()
 
 	MEMORY_MAP memMap;
 	MemoryMap = cList(sizeof(MEMORY_MAP));
+	
 	for (char* pAddress = pMin; pAddress<pMax; /*Empty*/)
 	{
 		MEMORY_BASIC_INFORMATION mbi;
@@ -301,11 +574,11 @@ BOOL cProcess::GetMemoryMap()
 		}
 		if (mbi.State == MEM_COMMIT)
 		{
-
 			memMap.Address = (DWORD)mbi.BaseAddress;
 			memMap.Size	= (DWORD)mbi.RegionSize;
 			memMap.AllocationBase = (DWORD)mbi.AllocationBase;
 			memMap.Protection = (DWORD)mbi.AllocationProtect;
+			memMap.Type = (DWORD)mbi.Type;
 			MemoryMap.AddItem((char*)&memMap);
 		}
  
@@ -424,6 +697,7 @@ void cProcess::RefreshThreads()
 	 {
 			return;	
 	 }
+
 	 Threads = new cList(sizeof(THREAD_INFO));
 	 memset(&te32,0,sizeof(te32));
 	 te32.dwSize = sizeof( THREADENTRY32 );
@@ -484,10 +758,22 @@ void cProcess::EnumerateThread(THREAD_INFO* ti)
 			DWORD* SEHAddr = (DWORD*)(TEB);
 			DWORD*  StackLimitAddr = (DWORD*)(TEB+4);
 			DWORD*  StackBaseAddr = (DWORD*)(TEB+8);
+			NTSTATUS ntStatus;
+
 			ti->SEH = *SEHAddr;
 			ti->StackBase = *StackBaseAddr;
 			ti->StackLimit = *StackLimitAddr;
-			free((void*)TEB);
+			ti->StartAddress = NULL;
+
+			pNtQIT NtQueryInformationThread = (pNtQIT)GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQueryInformationThread");
+
+			if(NtQueryInformationThread != NULL) 
+			{
+
+				ntStatus = NtQueryInformationThread(ti->Handle, ThreadQuerySetWin32StartAddress, &ti->StartAddress, sizeof(DWORD), NULL);
+
+				free((void*)TEB);
+			}
 		}
 	}
 	CloseHandle(ti->Handle);

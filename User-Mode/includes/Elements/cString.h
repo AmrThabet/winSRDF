@@ -47,6 +47,7 @@ public:
 	int Search(const char* str);
 	int Search(const char c);
 	void Replace(char src, char dest);
+	void Replace(const char *src, const char *dest);
 	// format string
 	int Format(const char* format, ...);
 	void Substr(cString Str, DWORD offset,DWORD length);

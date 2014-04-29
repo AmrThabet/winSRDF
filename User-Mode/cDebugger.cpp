@@ -540,7 +540,8 @@ void cDebugger::RemoveMemoryBreakpoint(DWORD Address)
 
 void cDebugger::Pause()
 {
-	SuspendThread((HANDLE)hThread);
+	 Wow64SuspendThread((HANDLE)hThread);
+	//SuspendThread((HANDLE)hThread);
 }
 
 void cDebugger::Resume()

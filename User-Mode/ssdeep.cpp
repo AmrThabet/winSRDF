@@ -30,6 +30,7 @@ cString SSDeep::Hash(const unsigned char *buffer,  DWORD  size)
 	memset(result,0,Max_Result);
 	if (fuzzy_hash_buf(buffer,size,result) ==0 )
 	{
+		
 		cString Result = result;
 		free(result);
 		return Result;
