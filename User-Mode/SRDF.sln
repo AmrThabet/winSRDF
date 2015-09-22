@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{79017C43-DCF0-4845-9A79-97DA129073F9}"
-EndProject
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SRDF", "SRDF.vcxproj", "{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}"
 EndProject
 Global
@@ -24,8 +24,8 @@ Global
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Mixed Platforms.ActiveCfg = Release|Win32
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Mixed Platforms.Build.0 = Release|Win32
-		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Win32.ActiveCfg = Release|Win32
-		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Win32.Build.0 = Release|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|Win32.Build.0 = Debug|Win32
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Debug|x64.ActiveCfg = Debug|Win32
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Release|Any CPU.ActiveCfg = Release|Win32
 		{FEAE3BD9-B251-426E-9CE3-D2C2885ECDA1}.Release|Mixed Platforms.ActiveCfg = Release|Win32
